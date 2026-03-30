@@ -156,7 +156,7 @@ export default function CatalogPublicView() {
           width: 100%;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 0 16px;
+          padding: 0 20px;
         }
 
         .sticky-inner {
@@ -217,7 +217,7 @@ export default function CatalogPublicView() {
 
         {/* Sticky nav */}
         <div style={{position:'sticky',top:0,zIndex:50,background:`${theme.cardBg}f8`,backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:`1px solid ${theme.border}`,borderTop:`1px solid ${theme.border}`}}>
-          <div className="catalog-container" style={{padding:'12px 0'}}>
+          <div className="catalog-container" style={{padding:'16px 20px'}}>
             <div className="sticky-inner">
               <div className="search-container" style={{position:'relative'}}>
                 <Search style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:theme.muted,pointerEvents:'none'}}/>
@@ -228,7 +228,7 @@ export default function CatalogPublicView() {
               </div>
               
               {catalogCats.length>0&&(
-                <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none',padding:'2px 4px'}}>
+                <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none',padding:'4px 2px'}}>
                   {[{id:'all',name:'Todas'},...catalogCats].map(c=>{const active=activeCat===c.id;return(
                     <button key={c.id} onClick={()=>setActiveCat(c.id)} style={{flexShrink:0,padding:'7px 18px',fontSize:9,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',borderRadius:99,cursor:'pointer',transition:'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',background:active?theme.accent:'transparent',color:active?onAccent:theme.muted,border:`1px solid ${active?theme.accent:theme.border}`,boxShadow:active?`0 4px 12px ${theme.accent}30`:'none'}}>
                       {c.name}
@@ -248,7 +248,7 @@ export default function CatalogPublicView() {
         </p>
         {filtered.length===0
           ? <div style={{textAlign:'center',padding:'80px 0',color:theme.muted,background:theme.cardBg,borderRadius:20,border:`1px dashed ${theme.border}`}}><ShoppingBag style={{width:40,height:40,margin:'0 auto 16px',opacity:0.2,color:theme.accent}}/><p style={{fontSize:14,fontFamily:theme.sans,fontWeight:500}}>Nenhuma peça encontrada nesta categoria.</p></div>
-          : <div className="product-grid" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:12}}>
+          : <div className="product-grid" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
               {filtered.map((item,i)=>{
                 const isSoldOut=item.stock_quantity<=0;
                 const displayImg=item.images?.[0]||item.image_url;
@@ -391,10 +391,10 @@ export default function CatalogPublicView() {
                 <span style={{fontFamily:theme.serif,fontSize:20,fontWeight:600,color:theme.accent}}>{fmt(cartTotal)}</span>
               </div>
               <button onClick={sendCart}
-                style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:9,padding:'13px 18px',background:'#25d366',color:'#fff',border:'none',cursor:'pointer',fontFamily:theme.sans,fontWeight:700,fontSize:12,letterSpacing:'0.08em',borderRadius:4,transition:'opacity 0.18s'}}
-                onMouseEnter={e=>(e.currentTarget.style.opacity='0.88')} onMouseLeave={e=>(e.currentTarget.style.opacity='1')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.853L.054 23.925a.5.5 0 0 0 .613.613l6.114-1.468A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.96 9.96 0 0 1-5.085-1.395l-.361-.214-3.755.903.926-3.689-.235-.375A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                Enviar Pedido pelo WhatsApp
+                style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'16px 20px',background:'#25d366',color:'#fff',border:'none',cursor:'pointer',fontFamily:theme.sans,fontWeight:800,fontSize:13,letterSpacing:'0.06em',borderRadius:10,transition:'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',boxShadow:'0 10px 25px rgba(37, 211, 102, 0.4)'}}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 30px rgba(37, 211, 102, 0.5)'}} onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 10px 25px rgba(37, 211, 102, 0.4)'}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.853L.054 23.925a.5.5 0 0 0 .613.613l6.114-1.468A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.96 9.96 0 0 1-5.085-1.395l-.361-.214-3.755.903.926-3.689-.235-.375A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                ENVIAR PEDIDO PELO WHATSAPP
               </button>
             </div>
           </div>

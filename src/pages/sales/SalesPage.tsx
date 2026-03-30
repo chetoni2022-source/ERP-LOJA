@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BadgeDollarSign, Plus, Loader2, CheckCircle2, 
   UserCircle2, Trash2, Minus, History as HistoryIcon,
-  ShoppingCart, Package, TrendingUp, X, Search
+  ShoppingCart, Package, TrendingUp, X, Search, Edit
 } from 'lucide-react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
@@ -29,11 +29,13 @@ interface CartItem {
 interface Sale {
   id: string;
   created_at: string;
+  product_id: string;
   quantity: number;
   total_price: number;
   customer_name?: string;
+  customer_id?: string;
   lead_source?: string;
-  products?: { name: string };
+  products?: { name: string, stock_quantity: number };
 }
 
 interface Customer {
@@ -66,6 +68,10 @@ export default function SalesPage() {
   const [availableLeadSources, setAvailableLeadSources] = useState<string[]>(['WhatsApp', 'Instagram', 'Ads', 'Indicação', 'Loja']);
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [editQty, setEditQty] = useState('');
+  const [editCustomer, setEditCustomer] = useState('');
+  const [editSource, setEditSource] = useState('');
 
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -107,7 +113,7 @@ export default function SalesPage() {
       const [{ data: prodData }, { data: custData }, { data: salesData }] = await Promise.all([
         supabase.from('products').select('*').eq('user_id', user.id).order('name'),
         supabase.from('customers').select('id, full_name, phone').eq('user_id', user.id).order('full_name'),
-        supabase.from('sales').select(`*, products(name)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+        supabase.from('sales').select(`*, products(name, stock_quantity)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
       ]);
       setProducts(prodData || []);
       setCustomers(custData || []);
@@ -217,6 +223,99 @@ export default function SalesPage() {
       fetchData();
     } catch (err: any) {
       toastError('Erro ao registrar venda: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteSale(sale: Sale) {
+    if (!window.confirm(`Deseja realmente cancelar esta venda? O estoque de "${sale.products?.name || 'Item Excluído'}" será devolvido (+${sale.quantity}).`)) return;
+    
+    try {
+      // 1. Devolver estoque
+      if (sale.product_id && sale.products) {
+        const { error: stockErr } = await supabase.from('products')
+          .update({ stock_quantity: (sale.products.stock_quantity || 0) + sale.quantity })
+          .eq('id', sale.product_id);
+        if (stockErr) throw stockErr;
+
+        // 2. Registrar movimento corretivo
+        await supabase.from('product_movements').insert([{
+          product_id: sale.product_id,
+          user_id: user?.id,
+          type: 'in',
+          quantity: sale.quantity,
+          reason: `Venda cancelada (Exclusão) — ${sale.customer_name || 'Balcão'}`,
+        }]);
+      }
+
+      // 3. Deletar venda
+      const { error: delErr } = await supabase.from('sales').delete().eq('id', sale.id);
+      if (delErr) throw delErr;
+
+      success('Venda cancelada e estoque devolvido.');
+      fetchData();
+    } catch (err: any) {
+      toastError('Erro ao excluir venda: ' + err.message);
+    }
+  }
+
+  const openEditSale = (sale: Sale) => {
+    setEditingSale(sale);
+    setEditQty(sale.quantity.toString());
+    setEditCustomer(sale.customer_name || '');
+    setEditSource(sale.lead_source || 'WhatsApp');
+  };
+
+  async function handleUpdateSale(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingSale || !user) return;
+    setSaving(true);
+
+    try {
+      const newQty = parseInt(editQty) || 1;
+      const oldQty = editingSale.quantity;
+      const qtyDelta = newQty - oldQty; // +1 means we sold 1 more, so stock goes -1
+
+      // 1. Validar estoque se aumentou a venda
+      if (qtyDelta > 0) {
+        if (qtyDelta > (editingSale.products?.stock_quantity || 0)) {
+           toastError('Estoque insuficiente para este aumento.');
+           return;
+        }
+      }
+
+      // 2. Atualizar Estoque do Produto
+      if (qtyDelta !== 0 && editingSale.product_id) {
+         const { error: stockErr } = await supabase.from('products')
+           .update({ stock_quantity: (editingSale.products?.stock_quantity || 0) - qtyDelta })
+           .eq('id', editingSale.product_id);
+         if (stockErr) throw stockErr;
+
+         await supabase.from('product_movements').insert([{
+           product_id: editingSale.product_id,
+           user_id: user.id,
+           type: qtyDelta > 0 ? 'out' : 'in',
+           quantity: Math.abs(qtyDelta),
+           reason: `Venda editada (Ajuste Qtd) — ${editCustomer}`,
+         }]);
+      }
+
+      // 3. Atualizar Venda
+      const { error: saleErr } = await supabase.from('sales').update({
+        quantity: newQty,
+        total_price: (editingSale.total_price / oldQty) * newQty, // Proportionally update total
+        customer_name: editCustomer || null,
+        lead_source: editSource || null
+      }).eq('id', editingSale.id);
+
+      if (saleErr) throw saleErr;
+
+      success('Venda atualizada!');
+      setEditingSale(null);
+      fetchData();
+    } catch (err: any) {
+      toastError('Erro ao atualizar: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -471,7 +570,23 @@ export default function SalesPage() {
                            <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-tighter">{sale.lead_source}</span>
                         </td>
                         <td className="px-2 py-3 text-center opacity-40 font-black">×{sale.quantity}</td>
-                        <td className="px-2 py-3 text-right font-black text-foreground">{fmt(sale.total_price)}</td>
+                        <td className="px-2 py-3 text-right font-black text-foreground">
+                           <div className="flex items-center justify-end gap-1.5 uppercase tracking-tighter">
+                             <span className="mr-1">{fmt(sale.total_price)}</span>
+                             <button 
+                               onClick={() => openEditSale(sale)}
+                               className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-md transition-all"
+                             >
+                               <Edit size={12} />
+                             </button>
+                             <button 
+                               onClick={() => handleDeleteSale(sale)}
+                               className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-md transition-all"
+                             >
+                               <Trash2 size={12} />
+                             </button>
+                           </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -481,6 +596,50 @@ export default function SalesPage() {
           )}
         </div>
       </div>
+
+      {/* ── MODAL EDIÇÃO DE VENDA ── */}
+      {editingSale && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setEditingSale(null)}></div>
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border z-10 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+              <h3 className="font-black text-sm uppercase tracking-widest text-foreground">Editar Lançamento</h3>
+              <button onClick={() => setEditingSale(null)} className="p-1 hover:bg-muted rounded-full"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleUpdateSale} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">Produto</Label>
+                <div className="p-3 bg-muted/20 border border-border/40 rounded-xl text-xs font-bold text-foreground">
+                  {editingSale.products?.name || 'Item Excluído'}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Quantidade</Label>
+                  <Input type="number" min="1" value={editQty} onChange={e=>setEditQty(e.target.value)} className="h-10 text-xs font-black" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Canal</Label>
+                  <select value={editSource} onChange={e=>setEditSource(e.target.value)} className="w-full h-10 px-3 bg-muted/20 border border-border/40 text-xs font-bold rounded-xl appearance-none">
+                    {availableLeadSources.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">Cliente</Label>
+                <Input value={editCustomer} onChange={e=>setEditCustomer(e.target.value)} placeholder="Balcão / Nome..." className="h-10 text-xs font-bold" />
+              </div>
+
+              <div className="pt-4 flex gap-2">
+                <Button type="button" variant="ghost" onClick={()=>setEditingSale(null)} className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest border border-border/40">Cancelar</Button>
+                <Button type="submit" disabled={saving} className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-lg">
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : 'Salvar Alterações'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

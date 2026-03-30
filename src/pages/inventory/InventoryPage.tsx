@@ -348,8 +348,11 @@ export default function InventoryPage() {
                   const isDiscount = !!product.sale_price;
 
                   return (
-                  <div key={product.id} className="group flex flex-col bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
-                    <div className="aspect-[4/5] bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
+                  <div key={product.id} 
+                    onClick={() => openEditModal(product)}
+                    className="group flex flex-col bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
+                  >
+                    <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
                         <img src={displayImage} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
                       ) : (
@@ -357,48 +360,48 @@ export default function InventoryPage() {
                       )}
                       
                       {product.stock_quantity <= 0 && (
-                        <div className="absolute top-2 left-2 bg-red-500/95 text-white text-[10px] font-bold px-2.5 py-1 rounded shadow-sm uppercase tracking-wide backdrop-blur-sm z-10">
+                        <div className="absolute top-2 left-2 bg-red-500/95 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-widest backdrop-blur-sm z-10">
                           Esgotado
                         </div>
                       )}
 
                       <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                        <button onClick={() => openEditModal(product)} className="h-8 w-8 bg-card/90 backdrop-blur-md text-foreground rounded flex items-center justify-center shadow-md hover:text-primary transition-colors hover:bg-card">
-                          <Edit size={16} />
-                        </button>
-                        <button onClick={() => handleDelete(product)} className="h-8 w-8 bg-red-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-red-600 transition-colors">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
+                          className="h-8 w-8 bg-red-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
 
                       {Array.isArray(product.images) && product.images.length > 1 && (
-                        <div className="absolute bottom-2 left-2 bg-foreground/80 text-background text-[10px] font-bold px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md">
-                          <ImageIcon className="h-3 w-3" /> {product.images.length} Fotos
+                        <div className="absolute bottom-2 left-2 bg-foreground/80 text-background text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md">
+                          <ImageIcon className="h-3 w-3" /> {product.images.length}
                         </div>
                       )}
                     </div>
                     
-                    <div className="p-4 flex flex-col flex-1">
-                      <h4 className="text-sm font-bold text-foreground line-clamp-1 mb-2">{product.name}</h4>
+                    <div className="p-3 flex flex-col flex-1">
+                      <h4 className="text-[11px] font-bold text-foreground line-clamp-1 mb-1.5 uppercase tracking-tight">{product.name}</h4>
                       
                       <div className="mt-auto flex items-end justify-between">
                         <div className="flex flex-col">
                           {isDiscount && (
-                            <span className="text-[10px] line-through text-muted-foreground mb-0.5 font-semibold">
+                            <span className="text-[9px] line-through text-muted-foreground font-semibold">
                               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
                             </span>
                           )}
-                          <span className={cn("font-black text-[16px] tracking-tight", isDiscount ? "text-green-600 dark:text-green-400" : "text-foreground")}>
+                          <span className={cn("font-black text-[14px] tracking-tight", isDiscount ? "text-green-600 dark:text-green-400" : "text-foreground")}>
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentPrice)}
                           </span>
                         </div>
                         <div className="flex flex-col items-end">
-                           <div className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight shadow-sm border", 
+                           <div className={cn("px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border", 
                              (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
                              {fmt(currentPrice - product.cost_price)}
                            </div>
-                           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1.5 opacity-60">
-                             Estoque: {product.stock_quantity}
+                           <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
+                             Qtd: {product.stock_quantity}
                            </span>
                         </div>
                       </div>
@@ -413,8 +416,11 @@ export default function InventoryPage() {
                   const currentPrice = product.sale_price || product.price;
                   
                   return (
-                    <div key={product.id} className="flex items-center gap-4 bg-card border border-border rounded-xl p-3 hover:shadow-md transition-shadow">
-                       <div className="h-16 w-16 min-w-[64px] rounded-lg overflow-hidden bg-muted relative">
+                    <div key={product.id} 
+                      onClick={() => openEditModal(product)}
+                      className="flex items-center gap-4 bg-card border border-border rounded-xl p-3 hover:shadow-md transition-shadow cursor-pointer"
+                    >
+                       <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
                            {displayImage ? (
                              <img src={displayImage} alt={product.name} className="object-cover w-full h-full" />
                            ) : (
@@ -423,30 +429,25 @@ export default function InventoryPage() {
                        </div>
                        
                        <div className="flex-1 min-w-0">
-                         <h4 className="font-bold text-foreground truncate">{product.name}</h4>
-                         <span className="text-xs text-muted-foreground flex gap-3 mt-1 font-medium">
-                           <span>Estoque: {product.stock_quantity}</span>
-                           {product.sale_price && <span className="text-green-600 dark:text-green-400 font-bold">Promoção Ativa</span>}
+                         <h4 className="text-xs font-bold text-foreground truncate uppercase tracking-tight">{product.name}</h4>
+                         <span className="text-[10px] text-muted-foreground flex gap-3 mt-0.5 font-medium uppercase tracking-widest">
+                           <span>Qtd: {product.stock_quantity}</span>
+                           {product.sale_price && <span className="text-green-600 dark:text-green-400 font-bold tracking-tighter">Oferta</span>}
                          </span>
                        </div>
 
                        <div className="flex flex-col items-end px-5">
-                         {product.sale_price && (
-                           <span className="text-xs line-through text-muted-foreground font-semibold">
-                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
-                           </span>
-                         )}
-                         <span className="font-black text-lg text-foreground">
+                         <span className="font-black text-sm text-foreground tabular-nums">
                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentPrice)}
                          </span>
                        </div>
 
-                       <div className="flex items-center gap-2 pl-5 border-l border-border/70">
-                          <button onClick={() => openEditModal(product)} className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors bg-muted/30">
-                            <Edit size={18} />
-                          </button>
-                          <button onClick={() => handleDelete(product)} className="p-2.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors bg-muted/30">
-                            <Trash2 size={18} />
+                       <div className="flex items-center gap-2 pl-3 border-l border-border/70">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
+                            className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                          >
+                            <Trash2 size={16} />
                           </button>
                        </div>
                     </div>

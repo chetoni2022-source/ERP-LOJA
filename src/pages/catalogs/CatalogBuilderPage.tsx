@@ -131,7 +131,8 @@ export default function CatalogBuilderPage() {
   }
 
   async function copyLink(cat: any) {
-    await navigator.clipboard.writeText(`${window.location.origin}/c/${cat.id}`);
+    const link = `${window.location.origin}/#/c/${cat.id}`;
+    await navigator.clipboard.writeText(link);
     success('Link copiado! 🔗');
   }
 
@@ -374,7 +375,14 @@ export default function CatalogBuilderPage() {
                   <Button onClick={() => copyLink(cat)} className="flex-1 h-9 bg-transparent border border-border text-foreground hover:bg-muted font-semibold shadow-none text-xs">
                     <LinkIcon className="h-3.5 w-3.5 mr-1.5" /> Copiar Link
                   </Button>
-                  <Link to={`/c/${cat.id}`} target="_blank" className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-muted hover:text-primary transition-colors bg-background shrink-0"><ExternalLink size={15} /></Link>
+                  <a 
+                    href={`${window.location.origin}/#/c/${cat.id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-muted hover:text-primary transition-colors bg-background shrink-0"
+                  >
+                    <ExternalLink size={15} />
+                  </a>
                   <button onClick={() => openEdit(cat)} className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-500 transition-colors bg-background shrink-0"><Edit2 size={14} /></button>
                   <button onClick={() => handleDelete(cat)} className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 transition-colors bg-background shrink-0"><Trash2 size={14} /></button>
                 </div>

@@ -156,7 +156,7 @@ export default function CatalogPublicView() {
           width: 100%;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 0 20px;
+          padding: 0 32px;
         }
 
         .sticky-inner {
@@ -338,15 +338,25 @@ export default function CatalogPublicView() {
         </div>
       </footer>
 
-      {/* ── FLOATING CART BUTTON ── */}
+      {/* ── FLOATING WHATSAPP CART BUTTON ── */}
       {cartCount>0&&!cartOpen&&(
         <button onClick={()=>setCartOpen(true)}
-          style={{position:'fixed',bottom:20,right:16,zIndex:80,display:'flex',alignItems:'center',gap:8,padding:'11px 18px',background:theme.accent,color:onAccent,border:'none',cursor:'pointer',boxShadow:`0 6px 28px ${theme.accent}55`,fontFamily:theme.sans,fontWeight:700,fontSize:11,letterSpacing:'0.04em',borderRadius:4,transition:'transform 0.18s'}}
-          onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-2px)')} onMouseLeave={e=>(e.currentTarget.style.transform='translateY(0)')}>
-          <ShoppingCart style={{width:15,height:15}}/>
-          {cartCount} {cartCount===1?'peça':'peças'} • {fmt(cartTotal)}
+          style={{position:'fixed',bottom:24,right:20,zIndex:80,display:'flex',alignItems:'center',gap:10,padding:'14px 22px',background:'#25d366',color:'#fff',border:'none',cursor:'pointer',boxShadow:`0 8px 32px rgba(37, 211, 102, 0.5)`,fontFamily:theme.sans,fontWeight:800,fontSize:12,letterSpacing:'0.04em',borderRadius:12,transition:'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',animation:'pulse-green 2s infinite'}}
+          onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.05) translateY(-4px)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1) translateY(0)')}>
+          <div style={{position:'relative'}}>
+            <ShoppingCart style={{width:18,height:18}}/>
+            <span style={{position:'absolute',top:-8,right:-8,background:'#ff3b30',color:'#fff',fontSize:9,fontWeight:900,minWidth:16,height:16,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #25d366'}}>{cartCount}</span>
+          </div>
+          <span style={{borderLeft:'1px solid rgba(255,255,255,0.3)',paddingLeft:10}}>Finalizar no WhatsApp</span>
         </button>
       )}
+      <style>{`
+        @keyframes pulse-green {
+          0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
+      `}</style>
 
       {/* ── CART DRAWER ── */}
       {cartOpen&&(

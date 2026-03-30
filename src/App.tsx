@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './components/theme-provider';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
@@ -38,7 +38,6 @@ export default function App() {
   }, [setUser]);
 
   async function handlePostLogin(user: any) {
-    // 1. Check for team invites
     try {
       const { data: invite } = await supabase
         .from('team_invites')
@@ -47,18 +46,13 @@ export default function App() {
         .maybeSingle();
 
       if (invite) {
-        // Update profile role
         await supabase.from('profiles').update({ role: invite.role }).eq('id', user.id);
-        // Delete invite
         await supabase.from('team_invites').delete().eq('email', user.email);
-        // Refresh page to apply role changes if needed or just notify
         console.log('Joined team with role:', invite.role);
       }
     } catch (err) {
       console.error('Error joining team:', err);
     }
-
-    // 2. Initial Setup Check (handled in AppLayout usually, but can be here too)
   }
 
   if (loading) {
@@ -67,7 +61,7 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={user ? <AppLayout><DashboardPage /></AppLayout> : <Navigate to="/auth" replace />} />
@@ -81,7 +75,7 @@ export default function App() {
           <Route path="/c/:id" element={<CatalogPublicView />} />
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </ThemeProvider>
   );
 }

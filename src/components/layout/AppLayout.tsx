@@ -57,40 +57,76 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('store_settings')
-      .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
-      .eq('user_id', user.id)
-      .limit(1).maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setBrand({ 
-            name: data.store_name || 'Agência ERP', 
-            logo: data.logo_url,
-            logoW: data.logo_width || 200,
-            logoH: data.logo_height || 80,
-            logoFit: data.logo_fit || 'contain',
-            logoPos: data.logo_position || 'center',
-            isDefault: !data.logo_url && data.store_name === 'Laris Acessórios'
-          });
-          if (data.favicon_url) {
-            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-            if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-            link.href = `${data.favicon_url}?v=${Date.now()}`;
-            document.title = data.store_name || 'Laris ERP';
-          }
-        } else {
-          // Reset to default if no settings found
-          setBrand({ 
-            name: 'Laris Acessórios', 
-            logo: null,
-            logoW: 200,
-            logoH: 80,
-            logoFit: 'contain',
-            logoPos: 'center',
-            isDefault: true
-          });
-        }
+
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('store_settings')
+        .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
+        .eq('user_id', user.id)
+        .limit(1).maybeSingle();
+
+      if (data) {
+        applySettings(data);
+      } else {
+        resetSettings();
+      }
+    };
+
+    const applySettings = (data: any) => {
+      setBrand({ 
+        name: data.store_name || 'Laris ERP', 
+        logo: data.logo_url,
+        logoW: data.logo_width || 200,
+        logoH: data.logo_height || 80,
+        logoFit: data.logo_fit || 'contain',
+        logoPos: data.logo_position || 'center',
+        isDefault: !data.logo_url && (data.store_name === 'Laris Acessórios' || !data.store_name)
       });
+
+      if (data.favicon_url) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+        link.href = `${data.favicon_url}?v=${Date.now()}`;
+      }
+      if (data.store_name) {
+        document.title = data.store_name + ' | Laris ERP';
+      }
+    };
+
+    const resetSettings = () => {
+      setBrand({ 
+        name: 'Laris Acessórios', 
+        logo: null,
+        logoW: 200,
+        logoH: 80,
+        logoFit: 'contain',
+        logoPos: 'center',
+        isDefault: true
+      });
+    };
+
+    fetchSettings();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'store_settings',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Realtime settings update:', payload.new);
+          if (payload.new) applySettings(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleSignOut = async () => {
@@ -110,16 +146,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-background overflow-hidden relative w-full">
       {/* ── Mobile Top Bar ────────────────────────────────── */}
       <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-card border-b border-border z-30 fixed top-0 w-full shadow-sm">
-        <div className="flex items-center gap-3 overflow-hidden h-full py-2">
+          <div className="flex items-center gap-3 overflow-hidden h-full py-1">
           {brand.logo ? (
             <img 
               src={brand.logo} 
               alt="Logo" 
               style={{
-                height: '100%',
-                maxHeight: brand.logoH * 0.4, // Scale down for mobile top bar
+                height: 'auto',
+                maxHeight: 32, // Fixed height for top bar
                 width: 'auto',
-                maxWidth: brand.logoW * 0.4,
+                maxWidth: 120,
                 objectFit: brand.logoFit as any,
                 objectPosition: brand.logoPos
               }}
@@ -127,7 +163,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           ) : (
             <Store className="h-5 w-5 text-primary" />
           )}
-          <span className="font-black text-[15px] truncate text-foreground tracking-tight">{brand.name}</span>
+          <span className="font-black text-sm truncate text-foreground tracking-tight">{brand.name}</span>
         </div>
       </div>
 
@@ -158,15 +194,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     alt="Logo" 
                     style={{
                       height: 'auto',
-                      maxHeight: brand.logoH * 0.8,
+                      maxHeight: brand.logoH,
                       width: 'auto',
-                      maxWidth: Math.min(brand.logoW, 200),
+                      maxWidth: brand.logoW,
                       objectFit: brand.logoFit as any,
                       objectPosition: brand.logoPos
                     }}
-                    className="drop-shadow-sm mb-1.5" 
+                    className="drop-shadow-sm mb-1" 
                   />
-                  <span className="font-bold text-[10px] uppercase tracking-widest truncate text-muted-foreground">{brand.name}</span>
+                  <span className="font-bold text-[9px] uppercase tracking-widest truncate text-muted-foreground/60">{brand.name}</span>
                 </>
               ) : (
                 <div className="flex items-center gap-3">

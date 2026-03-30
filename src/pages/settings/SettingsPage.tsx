@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -41,6 +41,8 @@ export default function SettingsPage() {
   const [logoHeight, setLogoHeight] = useState(80);
   const [logoFit, setLogoFit] = useState<'contain' | 'cover' | 'fill'>('contain');
   const [logoPosition, setLogoPosition] = useState('center');
+  const [leadSources, setLeadSources] = useState<string[]>([]);
+  const [newLeadSource, setNewLeadSource] = useState('');
   const [savingDisplay, setSavingDisplay] = useState(false);
 
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
@@ -48,7 +50,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     supabase.from('store_settings')
-      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number')
+      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources')
       .eq('user_id', user.id)
       .limit(1).maybeSingle().then(({ data }) => {
         if (data) {
@@ -61,6 +63,7 @@ export default function SettingsPage() {
           if (data.logo_height) setLogoHeight(data.logo_height);
           if (data.logo_fit) setLogoFit(data.logo_fit);
           if (data.logo_position) setLogoPosition(data.logo_position);
+          if (data.lead_sources) setLeadSources(data.lead_sources);
         }
       });
   }, [user]);
@@ -107,6 +110,7 @@ export default function SettingsPage() {
       if (logoUrl) { payload.logo_url = logoUrl; setCurrentLogoUrl(logoUrl); }
       if (faviconUrl) { payload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
       if (monthlyGoal) payload.monthly_goal = parseFloat(monthlyGoal);
+      payload.lead_sources = leadSources;
 
       if (Object.keys(payload).length === 0) { toastError('Preencha ao menos um campo para salvar.'); return; }
       if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
@@ -120,7 +124,12 @@ export default function SettingsPage() {
       }
 
       setLogoFile(null); setFaviconFile(null); setLogoPreview(null); setFaviconPreview(null);
-      success('Identidade visual salva! Recarregue a página para sincronizar.');
+      if (faviconUrl) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+        link.href = `${faviconUrl}?v=${Date.now()}`;
+      }
+      success('Identidade visual salva! As alterações foram aplicadas em todo o sistema.');
     } catch (err: any) { 
       console.error('Error saving branding:', err);
       toastError('Erro ao salvar: ' + (err.message || 'Verifique sua conexão ou permissões.')); 
@@ -198,10 +207,41 @@ export default function SettingsPage() {
             <div className="flex bg-muted/40 p-1.5 rounded-xl border border-border overflow-hidden">
               {([['light','Claro',<Sun size={16}/>],['dark','Escuro',<Moon size={16}/>],['system','Auto',<Monitor size={16}/>]] as const).map(([t,label,icon])=>(
                 <button key={t} onClick={()=>setTheme(t as any)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all ${theme===t?'bg-background shadow-md text-foreground border border-border/70':'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}>
-                  {icon}{label}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${theme===t ? 'bg-background shadow-md text-foreground':'text-muted-foreground hover:text-foreground'}`}>
+                  {icon} {label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Origens de Lead */}
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-4 flex items-center text-foreground gap-2"><Target className="w-5 h-5 text-primary" /> Origens de Venda</h2>
+            <p className="text-xs text-muted-foreground mb-4 font-medium uppercase tracking-wider">Adicione os canais por onde seus clientes chegam (ex: WhatsApp, Loja, Ads).</p>
+            
+            <div className="flex flex-wrap gap-2 mb-4">
+              {leadSources.map((source, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold border border-primary/20 animate-in zoom-in-50 duration-200">
+                  {source}
+                  <button onClick={() => setLeadSources(leadSources.filter((_, i) => i !== idx))} className="hover:text-red-500 transition-colors">
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              {leadSources.length === 0 && <span className="text-xs italic text-muted-foreground">Nenhuma origem cadastrada. Use os padrões sugeridos no banco.</span>}
+            </div>
+
+            <div className="flex gap-2">
+              <Input 
+                value={newLeadSource} 
+                onChange={e => setNewLeadSource(e.target.value)} 
+                onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); if(newLeadSource.trim()) { setLeadSources([...leadSources, newLeadSource.trim()]); setNewLeadSource(''); } } }}
+                placeholder="Ex: TikTok, Indicação..." 
+                className="h-10 text-sm font-bold bg-background shadow-sm" 
+              />
+              <Button onClick={() => { if(newLeadSource.trim()) { setLeadSources([...leadSources, newLeadSource.trim()]); setNewLeadSource(''); } }} className="h-10 px-4 font-bold uppercase tracking-widest text-[10px]">
+                Add
+              </Button>
             </div>
           </div>
 
@@ -294,8 +334,8 @@ export default function SettingsPage() {
 
           {/* ── LOGO DISPLAY SETTINGS ── */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-1 flex items-center gap-2 text-foreground"><Crop className="w-5 h-5 text-primary"/> Exibição da Logo no Catálogo</h2>
-            <p className="text-sm text-muted-foreground mb-5">Ajuste o tamanho, modo de corte e posição da logo que aparece na vitrine pública.</p>
+            <h2 className="text-lg font-bold mb-1 flex items-center gap-2 text-foreground"><Crop className="w-5 h-5 text-primary"/> Exibição da Logo no Painel e Catálogo</h2>
+            <p className="text-sm text-muted-foreground mb-5">Ajuste o tamanho e posição da logo que aparece no seu menu lateral e na vitrine pública.</p>
 
             {/* Live preview */}
             <div className="border border-border rounded-xl overflow-hidden mb-5 bg-[#0c0b09]">

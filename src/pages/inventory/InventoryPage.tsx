@@ -393,12 +393,12 @@ export default function InventoryPage() {
                           </span>
                         </div>
                         <div className="flex flex-col items-end">
-                           <span className={cn("text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded border", 
-                             (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-600/30 bg-emerald-500/5" : "text-red-600 border-red-600/30 bg-red-500/5")}>
-                             Lucro: {fmt(currentPrice - product.cost_price)}
-                           </span>
-                           <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1">
-                             Qtd: {product.stock_quantity}
+                           <div className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight shadow-sm border", 
+                             (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
+                             {fmt(currentPrice - product.cost_price)}
+                           </div>
+                           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1.5 opacity-60">
+                             Estoque: {product.stock_quantity}
                            </span>
                         </div>
                       </div>
@@ -503,11 +503,11 @@ export default function InventoryPage() {
                     <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
                     <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande. Tudo o que escrever aqui aparece no catálogo.</p>
                     <div className="flex gap-1 mb-1.5">
-                      {(['bold','big'] as const).map(fmt => (
-                        <button key={fmt} type="button"
+                      {(['bold','big'] as const).map(fmtTag => (
+                        <button key={fmtTag} type="button"
                           className="h-7 px-2.5 text-xs font-bold border border-border rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
-                          onClick={() => { const ref = { current: document.getElementById('descTextarea') as HTMLTextAreaElement }; const el = ref.current; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmt === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); }}
-                        >{fmt === 'bold' ? 'N (Negrito)' : 'G (Grande)'}</button>
+                          onClick={() => { const ref = { current: document.getElementById('descTextarea') as HTMLTextAreaElement }; const el = ref.current; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); }}
+                        >{fmtTag === 'bold' ? 'N (Negrito)' : 'G (Grande)'}</button>
                       ))}
                     </div>
                     <textarea
@@ -544,52 +544,68 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-4 pt-1">
-                  <div className="space-y-4 col-span-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest">Custos Detalhados (Opcional)</Label>
-                      <button type="button" onClick={() => setCosts([...costs, { label: '', value: '' }])} className="text-[10px] font-black uppercase text-primary hover:underline">
-                        + Add Outro Custo
-                      </button>
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                    <div>
+                      <Label className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Estrutura de Custos</Label>
+                      <p className="text-[9px] text-muted-foreground/60 font-medium">Cadastre insumos, fretes e embalagens.</p>
                     </div>
-                    <div className="space-y-2">
-                      {costs.map((c, idx) => (
-                        <div key={idx} className="flex gap-2 items-center animate-in slide-in-from-right-1 duration-200">
+                    <button 
+                      type="button" 
+                      onClick={() => setCosts([...costs, { label: '', value: '' }])} 
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
+                    >
+                      <Plus className="h-3 w-3" /> Adicionar Custo
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {costs.map((c, idx) => (
+                      <div key={idx} className="flex gap-2 items-center bg-card border border-border/50 p-2 rounded-xl shadow-sm hover:border-primary/30 transition-all group/cost">
+                        <div className="flex-1 space-y-1">
+                          <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Descrição</span>
                           <Input 
                             value={c.label} 
                             onChange={e => { const nc = [...costs]; nc[idx].label = e.target.value; setCosts(nc); }} 
-                            placeholder="Ex: Embalagem, Envio..." 
-                            className="h-10 text-xs font-bold bg-background/50 flex-1" 
+                            placeholder="Ex: Embalagem..." 
+                            className="h-9 text-xs font-bold bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
                           />
-                          <div className="relative w-28">
-                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">R$</span>
+                        </div>
+                        <div className="w-24 space-y-1">
+                           <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Valor</span>
+                           <div className="relative">
+                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-muted-foreground/60">R$</span>
                              <Input 
                                 type="number" 
                                 step="0.01" 
                                 value={c.value} 
                                 onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
                                 placeholder="0,00" 
-                                className="h-10 pl-7 text-xs font-black bg-background/50" 
+                                className="h-9 pl-6 text-xs font-black bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
                              />
-                          </div>
-                          {costs.length > 1 && (
-                            <button type="button" onClick={() => setCosts(costs.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-red-500 p-1">
-                              <X size={14} />
-                            </button>
-                          )}
+                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 col-span-2">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
-                    <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
-                      R$ {profitPerSale.toFixed(2).replace('.', ',')}
-                    </div>
+                        {costs.length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => setCosts(costs.filter((_, i) => i !== idx))} 
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
+
+                <div className="space-y-1.5 pt-2">
+                  <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
+                  <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
+                    R$ {profitPerSale.toFixed(2).replace('.', ',')}
+                  </div>
+                </div>
+
                 <div className="space-y-3 pt-4 mt-2 border-t border-border">
                   <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Galeria da Peça (Arraste p/ Ordenar Capa)</Label>
                   

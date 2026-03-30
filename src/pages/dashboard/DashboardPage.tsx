@@ -38,29 +38,36 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card border border-border shadow-2xl rounded-xl p-4 min-w-[240px]">
-        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>
-        <p className="font-black text-2xl text-primary mb-3">
+      <div className="bg-card/80 border border-border shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-2xl p-4 min-w-[280px] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em]">{label}</p>
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+        </div>
+        <p className="font-black text-3xl text-foreground mb-4 tracking-tighter">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}
         </p>
         {data.items?.length > 0 && (
-          <div className="space-y-2.5 pt-3 border-t border-border">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Peças vendidas:</span>
-            {data.items.slice(0, 4).map((item: any, i: number) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-lg bg-muted overflow-hidden flex-shrink-0 border border-border">
-                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <PackageSearch className="w-full h-full p-2 text-muted-foreground/40" />}
+          <div className="space-y-3 pt-4 border-t border-border/50">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Destaques do Dia:</span>
+            {data.items.slice(0, 3).map((item: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 bg-muted/30 p-2 rounded-xl border border-border/30 hover:bg-muted/50 transition-colors group">
+                <div className="h-12 w-12 rounded-lg bg-card overflow-hidden flex-shrink-0 border border-border relative">
+                  {item.image ? (
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                  ) : (
+                    <PackageSearch className="w-full h-full p-2 text-muted-foreground/40" />
+                  )}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-xs font-bold text-foreground truncate">{item.name}</span>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">{item.quantity}x</span>
-                    <span className="text-[10px] font-bold text-primary">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.revenue)}</span>
+                  <span className="text-[11px] font-bold text-foreground truncate">{item.name}</span>
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded">{item.quantity}x</span>
+                    <span className="text-[10px] font-black text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.revenue)}</span>
                   </div>
                 </div>
               </div>
             ))}
-            {data.items.length > 4 && <div className="text-[10px] text-center text-muted-foreground font-bold pt-1">+ {data.items.length - 4} outros</div>}
+            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tracking-widest uppercase">+ {data.items.length - 3} itens</div>}
           </div>
         )}
       </div>
@@ -69,7 +76,34 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-// ─── Inline Date Picker Component ────────────────────────────────────────────
+// ─── 3D Cylinder Shape for Charts ───────────────────────────────────────────
+const ThreeDCylinder = (props: any) => {
+  const { fill, x, y, width, height } = props;
+  if (!height || isNaN(height) || height <= 0) return null;
+  const barX = x || 0;
+  const barY = y || 0;
+  const barW = width || 0;
+  const barH = height || 0;
+
+  return (
+    <g className="transition-all duration-500 ease-out hover:brightness-110">
+      {/* Side face for 3D effect */}
+      <path
+        d={`M ${barX + barW},${barY} L ${barX + barW + 5},${barY - 5} L ${barX + barW + 5},${barY + barH - 5} L ${barX + barW},${barY + barH} Z`}
+        fill={fill}
+        filter="brightness(0.7)"
+      />
+      {/* Top face for 3D effect */}
+      <path
+        d={`M ${barX},${barY} L ${barX + 5},${barY - 5} L ${barX + barW + 5},${barY - 5} L ${barX + barW},${barY} Z`}
+        fill={fill}
+        filter="brightness(1.2)"
+      />
+      {/* Main Bar */}
+      <rect x={barX} y={barY} width={barW} height={barH} fill={fill} rx={2} />
+    </g>
+  );
+};
 const QUICK_RANGES = [
   { label: 'Hoje', days: 0 },
   { label: '7 dias', days: 7 },
@@ -234,18 +268,29 @@ export default function DashboardPage() {
 
         const dailyData = sales.reduce((acc: any, sale: any) => {
           const date = new Date(sale.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-          if (!acc[date]) acc[date] = { date, total: 0, items: [] };
+          if (!acc[date]) acc[date] = { date, total: 0, profit: 0, items: [] };
           acc[date].total += sale.total_price;
+          acc[date].profit += (sale.total_price - (sale.unit_cost_at_sale * sale.quantity));
           const p = sale.products as any;
           const prodName = p?.name || 'Excluído';
           const prodImg = p?.images?.[0] || p?.image_url || null;
           const existing = acc[date].items.find((i: any) => i.name === prodName);
-          if (existing) { existing.quantity += sale.quantity; existing.revenue += sale.total_price; }
-          else acc[date].items.push({ name: prodName, image: prodImg, quantity: sale.quantity, revenue: sale.total_price });
+          if (existing) { 
+            existing.quantity += sale.quantity; 
+            existing.revenue += sale.total_price;
+            existing.profit += (sale.total_price - (sale.unit_cost_at_sale * sale.quantity));
+          }
+          else acc[date].items.push({ 
+            name: prodName, 
+            image: prodImg, 
+            quantity: sale.quantity, 
+            revenue: sale.total_price,
+            profit: (sale.total_price - (sale.unit_cost_at_sale * sale.quantity))
+          });
           return acc;
         }, {});
 
-        Object.values(dailyData).forEach((day: any) => day.items.sort((a: any, b: any) => b.revenue - a.revenue));
+        Object.values(dailyData).forEach((day: any) => day.items.sort((a: any, b: any) => b.profit - a.profit));
         setSalesData(Object.values(dailyData));
 
         const prodCount = sales.reduce((acc: any, sale: any) => {
@@ -406,31 +451,65 @@ export default function DashboardPage() {
 
           {/* Charts */}
           <div className="grid gap-4 md:gap-6 md:grid-cols-7">
-            {/* Revenue Chart */}
-            <div className="md:col-span-4 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col">
-              <div className="mb-3">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center gap-2">
-                  <History className="text-primary h-5 w-5 md:h-6 md:w-6" /> Evolução de Receita Diária
-                </h3>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Passe o mouse nas barras para ver as peças do dia.</p>
+            {/* Profit & Revenue Chart */}
+            <div className="md:col-span-4 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden group/chart">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl opacity-0 group-hover/chart:opacity-100 transition-opacity" />
+              <div className="mb-3 flex justify-between items-start">
+                <div>
+                  <h3 className="font-black text-lg md:text-2xl text-foreground flex items-center gap-2 tracking-tight">
+                    <TrendingUp className="text-emerald-500 h-5 w-5 md:h-7 md:w-7" /> Performance de Lucro
+                  </h3>
+                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Evolução Diária Real</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Lucro</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 opacity-40">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Receita</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-h-[240px] md:min-h-[300px] w-full mt-3">
+              <div className="flex-1 min-h-[300px] md:min-h-[380px] w-full mt-4">
                 {salesData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={salesData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
-                      <XAxis dataKey="date" stroke="#888" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" tickMargin={10} />
-                      <YAxis stroke="#888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} fontWeight="bold" tickMargin={8} width={60} />
-                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.5 }} />
-                      <Bar dataKey="total" fill="var(--primary)" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                        {salesData.map((_, index) => <Cell key={`cell-${index}`} className="opacity-90 hover:opacity-100" />)}
+                    <BarChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#059669" stopOpacity={1} />
+                        </linearGradient>
+                        <filter id="3dShadow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.2" />
+                        </filter>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
+                      <XAxis dataKey="date" stroke="#888" fontSize={9} tickLine={false} axisLine={false} fontWeight="black" tickMargin={12} />
+                      <YAxis stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} fontWeight="black" tickMargin={10} width={50} />
+                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} />
+                      <Bar 
+                        dataKey="profit" 
+                        shape={<ThreeDCylinder />}
+                        maxBarSize={40}
+                        animationDuration={1500}
+                      >
+                        {salesData.map((_, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={index === salesData.length - 1 ? '#10b981' : 'url(#profitGradient)'} 
+                          />
+                        ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/10">
-                    <TrendingUp className="h-10 w-10 mb-3 opacity-30" />
-                    <span className="font-semibold text-sm">Nenhuma venda no período selecionado.</span>
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-4 border-dashed border-border/50 rounded-[2rem] bg-muted/5 p-10 animate-in fade-in duration-700">
+                    <div className="h-20 w-20 rounded-full bg-muted/20 flex items-center justify-center mb-6">
+                       <TrendingUp className="h-10 w-10 opacity-20" />
+                    </div>
+                    <span className="font-black text-xs uppercase tracking-[0.3em] opacity-40 text-center">Nenhum dado financeiro<br/>disponível no período</span>
                   </div>
                 )}
               </div>

@@ -109,6 +109,7 @@ export default function SettingsPage() {
       if (monthlyGoal) payload.monthly_goal = parseFloat(monthlyGoal);
 
       if (Object.keys(payload).length === 0) { toastError('Preencha ao menos um campo para salvar.'); return; }
+      if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
 
       if (existing) {
         const { error: upError } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
@@ -131,6 +132,7 @@ export default function SettingsPage() {
     setSavingDisplay(true);
     try {
       const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
+      if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
       const payload = { logo_width: logoWidth, logo_height: logoHeight, logo_fit: logoFit, logo_position: logoPosition };
       
       if (existing) {

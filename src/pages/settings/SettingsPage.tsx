@@ -149,6 +149,34 @@ export default function SettingsPage() {
     }
     finally { setSavingDisplay(false); }
   };
+  
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    if (!user?.id) return;
+    
+    setSavingBrand(true); // Using this as general loading for settings
+    try {
+      const { error } = await supabase.from('team_invites').insert([{
+        email: inviteEmail.toLowerCase().trim(),
+        role: 'sales',
+        invited_by: user.id
+      }]);
+      
+      if (error) {
+        if (error.code === '23505') throw new Error('Este e-mail já foi convidado.');
+        throw error;
+      }
+      
+      success(`Convite enviado para ${inviteEmail}!`);
+      setInviteEmail('');
+    } catch (err: any) {
+      console.error('Error inviting member:', err);
+      toastError(err.message || 'Erro ao enviar convite.');
+    } finally {
+      setSavingBrand(false);
+    }
+  };
 
   const previewImg = logoPreview || currentLogoUrl;
   const faviconImg = faviconPreview || currentFaviconUrl;
@@ -181,10 +209,13 @@ export default function SettingsPage() {
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-foreground"><Users className="h-5 w-5 text-primary" /> Equipe e Acessos</h2>
             <p className="text-sm text-muted-foreground mb-4">Gerencie quem tem acesso ao painel do seu ERP.</p>
-            <div className="flex gap-2">
-              <Input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="vendedor@loja.com" className="bg-background shadow-sm h-11" />
-              <Button className="bg-primary text-primary-foreground font-bold shadow-md px-4 h-11"><UserPlus className="h-4 w-4 mr-1.5" /> Convidar</Button>
-            </div>
+            <form onSubmit={handleInviteMember} className="flex gap-2">
+              <Input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="vendedor@loja.com" className="bg-background shadow-sm h-11" required type="email" />
+              <Button type="submit" disabled={savingBrand} className="bg-primary text-primary-foreground font-bold shadow-md px-4 h-11">
+                {savingBrand ? <Loader2 className="animate-spin h-4 w-4 mr-1.5" /> : <UserPlus className="h-4 w-4 mr-1.5" />}
+                Convidar
+              </Button>
+            </form>
             <div className="pt-4 border-t border-border mt-4">
               <div className="flex justify-between items-center py-3 px-4 bg-background border border-border rounded-xl shadow-sm">
                 <div><p className="text-sm font-bold text-foreground">{user?.email}</p><p className="text-xs text-muted-foreground">Proprietário (Admin)</p></div>

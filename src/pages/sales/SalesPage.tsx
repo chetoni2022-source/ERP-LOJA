@@ -37,6 +37,8 @@ interface Customer {
   phone?: string;
 }
 
+const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
+
 export default function SalesPage() {
   const { user } = useAuthStore();
   const { success, error: toastError } = useToast();
@@ -138,7 +140,7 @@ export default function SalesPage() {
       for (const item of cart) {
         const unitPrice = item.product.sale_price || item.product.price;
         const totalPrice = unitPrice * item.quantity;
-        const unitCost = (item.product.cost_price || 0) + (item.product.other_costs || 0);
+        const unitCost = item.product.cost_price || 0;
 
         await supabase.from('sales').insert([{
           product_id: item.product.id,
@@ -183,10 +185,13 @@ export default function SalesPage() {
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-5 animate-in fade-in duration-300 pb-20">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5">Registro de Vendas</h1>
-        <p className="text-sm text-muted-foreground">Adicione múltiplas peças ao carrinho e registre tudo de uma vez.</p>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2 block">Terminal de Operações</span>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground">Registro de Vendas</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md font-medium">PDV Simplificado: Gerencie múltiplas peças e finalize pedidos em segundos.</p>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
@@ -198,28 +203,32 @@ export default function SalesPage() {
             </h2>
 
             {/* Add to cart */}
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Adicionar Produto</Label>
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+                <PackageSearch size={14}/> Adicionar Produto ao Carrinho
+              </Label>
               <div className="flex gap-2">
                 <select
                   value={selectedProductId}
                   onChange={e => setSelectedProductId(e.target.value)}
-                  className="flex-1 h-10 px-2 bg-background border border-border text-foreground font-bold text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="flex-1 h-12 px-3 bg-muted/30 border border-border text-foreground font-bold text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Selecione a peça...</option>
                   {products.map(p => (
                     <option key={p.id} value={p.id} disabled={p.stock_quantity <= 0}>
-                      {p.name} ({p.stock_quantity} un)
+                      {p.name} ({p.stock_quantity} em estoque)
                     </option>
                   ))}
                 </select>
-                <Input
-                  type="number" min="1" value={cartQty}
-                  onChange={e => setCartQty(e.target.value)}
-                  className="w-16 h-10 text-center font-black bg-background"
-                />
-                <Button onClick={addToCart} disabled={!selectedProductId} className="h-10 px-3 bg-primary text-primary-foreground">
-                  <Plus className="h-4 w-4" />
+                <div className="relative w-20">
+                  <Input
+                    type="number" min="1" value={cartQty}
+                    onChange={e => setCartQty(e.target.value)}
+                    className="w-full h-12 text-center font-black bg-muted/30 border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <Button onClick={addToCart} disabled={!selectedProductId} className="h-12 w-12 rounded-xl bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform">
+                  <Plus className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -296,29 +305,33 @@ export default function SalesPage() {
             </div>
 
             {/* Lead Source */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Canal de Origem</Label>
-              <select
-                value={leadSource}
-                onChange={e => setLeadSource(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-border bg-background text-foreground px-3 font-bold text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Instagram">Instagram</option>
-                <option value="Ads">Anúncio Pago</option>
-                <option value="Indicação">Indicação</option>
-                <option value="Loja Física">Loja Física</option>
-              </select>
+            <div className="space-y-1.5 pb-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Origem da Lead</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {['WhatsApp', 'Instagram', 'Ads', 'Indicação', 'Loja'].map(source => (
+                  <button
+                    key={source}
+                    type="button"
+                    onClick={() => setLeadSource(source)}
+                    className={cn(
+                      "py-2 text-[10px] font-black rounded-lg border transition-all uppercase tracking-tighter",
+                      leadSource === source ? "bg-primary border-primary text-primary-foreground shadow-md" : "bg-muted/20 border-border text-muted-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    {source}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <form onSubmit={handleRegisterSale}>
               <Button
                 type="submit"
                 disabled={saving || cart.length === 0}
-                className="w-full h-12 font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                className="w-full h-14 font-black uppercase tracking-[0.1em] bg-foreground text-background hover:bg-foreground/90 shadow-xl rounded-xl group transition-all"
               >
-                {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
-                {saving ? 'Registrando...' : `Confirmar Venda${cart.length > 0 ? ` · ${fmt(cartTotal)}` : ''}`}
+                {saving ? <Loader2 className="animate-spin h-5 w-5 mr-3" /> : null}
+                {saving ? 'Registrando Transação...' : `Finalizar Venda · ${fmt(cartTotal)}`}
               </Button>
             </form>
           </div>

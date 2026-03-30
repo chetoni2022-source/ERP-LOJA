@@ -13,7 +13,7 @@ interface Product {
   price: number;
   sale_price: number | null;
   cost_price: number;
-  other_costs: number;
+  additional_costs: { label: string, value: number }[] | null;
   stock_quantity: number;
   image_url: string | null;
   images: string[] | null;
@@ -22,6 +22,7 @@ interface Product {
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
+const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export default function InventoryPage() {
   const { user } = useAuthStore();
@@ -43,8 +44,7 @@ export default function InventoryPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
-  const [costPrice, setCostPrice] = useState('');
-  const [otherCosts, setOtherCosts] = useState('');
+  const [costs, setCosts] = useState<{label: string, value: string}[]>([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
   const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
   
@@ -106,8 +106,14 @@ export default function InventoryPage() {
     setDescription(p.description || '');
     setPrice(p.price.toString());
     setSalePrice(p.sale_price ? p.sale_price.toString() : '');
-    setCostPrice(p.cost_price ? p.cost_price.toString() : '0');
-    setOtherCosts(p.other_costs ? p.other_costs.toString() : '0');
+    
+    // Convert DB additional_costs to form costs
+    if (p.additional_costs && p.additional_costs.length > 0) {
+      setCosts(p.additional_costs.map(c => ({ label: c.label, value: c.value.toString() })));
+    } else {
+      setCosts([{ label: 'Preço de Custo', value: p.cost_price.toString() }]);
+    }
+
     setStock(p.stock_quantity.toString());
     
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
@@ -190,14 +196,16 @@ export default function InventoryPage() {
         }
       }
 
+      const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+
       const payload = {
         name,
         sku: sku || null,
         description: description || null,
         price: parseFloat(price),
         sale_price: salePrice ? parseFloat(salePrice) : null,
-        cost_price: parseFloat(costPrice) || 0,
-        other_costs: parseFloat(otherCosts) || 0,
+        cost_price: totalCost,
+        additional_costs: costs.map(c => ({ label: c.label, value: parseFloat(c.value) || 0 })),
         stock_quantity: parseInt(stock, 10),
         images: finalImageUrls,
         image_url: finalImageUrls[0] || null,
@@ -231,8 +239,7 @@ export default function InventoryPage() {
     setDescription('');
     setPrice('');
     setSalePrice('');
-    setCostPrice('');
-    setOtherCosts('');
+    setCosts([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
     setStock('');
     setImages([]);
     setCategoryId('');
@@ -259,6 +266,12 @@ export default function InventoryPage() {
   const isDiscountValid = salePrice && promoPrice > 0 && promoPrice < orgPrice;
   const discountAbs = orgPrice - promoPrice;
   const discountPct = orgPrice ? Math.round((discountAbs / orgPrice) * 100) : 0;
+
+  const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+  const profitPerSale = (promoPrice || orgPrice || 0) - totalCost;
+  const profitColor = profitPerSale > 0 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" : 
+                      profitPerSale < 0 ? "text-red-500 bg-red-500/10 border-red-500/30" : 
+                      "text-muted-foreground bg-muted/30 border-border";
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
@@ -379,9 +392,15 @@ export default function InventoryPage() {
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentPrice)}
                           </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider bg-muted/60 px-2 py-1 rounded-md border border-border">
-                          Qtd: {product.stock_quantity}
-                        </span>
+                        <div className="flex flex-col items-end">
+                           <span className={cn("text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded border", 
+                             (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-600/30 bg-emerald-500/5" : "text-red-600 border-red-600/30 bg-red-500/5")}>
+                             Lucro: {fmt(currentPrice - product.cost_price)}
+                           </span>
+                           <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1">
+                             Qtd: {product.stock_quantity}
+                           </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -440,15 +459,20 @@ export default function InventoryPage() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 py-8">
-          <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}}></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:py-8">
+          <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={() => {setIsModalOpen(false); resetForm();}}></div>
           
-          <div className="bg-card w-full max-w-4xl rounded-xl shadow-2xl border border-border flex flex-col z-10 max-h-full overflow-hidden">
-            <div className="p-6 border-b border-border bg-card">
-              <h3 className="text-xl md:text-2xl font-black tracking-tight text-foreground">{editingProduct ? 'Editar Peça' : 'Cadastrar Nova Peça'}</h3>
-              <p className="text-[11px] font-bold text-muted-foreground mt-1 uppercase tracking-widest hidden md:block">
-                Campos Compactos de Preço, Categoria e Galeria Interativa
-              </p>
+          <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col z-10 max-h-[90vh] md:max-h-[85vh] overflow-hidden">
+            <div className="px-6 py-5 border-b border-border bg-card flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-foreground">{editingProduct ? 'Editar Peça' : 'Nova Peça'}</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Gestão de Preço, Estoque e Custos Reais
+                </p>
+              </div>
+              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="p-2 hover:bg-muted rounded-full transition-colors">
+                <X size={20} className="text-muted-foreground" />
+              </button>
             </div>
             
             <div className="p-5 md:p-6 overflow-y-auto bg-muted/5 flex-1 custom-scrollbar">
@@ -520,35 +544,50 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-1">
-                  <div className="space-y-1.5">
-                    <Label className="font-bold text-xs uppercase text-orange-500/80 tracking-widest block">Preço de Custo</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-black text-xs">R$</span>
-                      <Input type="number" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-orange-500/30 bg-orange-500/5 shadow-sm focus:border-orange-500" />
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-4 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest">Custos Detalhados (Opcional)</Label>
+                      <button type="button" onClick={() => setCosts([...costs, { label: '', value: '' }])} className="text-[10px] font-black uppercase text-primary hover:underline">
+                        + Add Outro Custo
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {costs.map((c, idx) => (
+                        <div key={idx} className="flex gap-2 items-center animate-in slide-in-from-right-1 duration-200">
+                          <Input 
+                            value={c.label} 
+                            onChange={e => { const nc = [...costs]; nc[idx].label = e.target.value; setCosts(nc); }} 
+                            placeholder="Ex: Embalagem, Envio..." 
+                            className="h-10 text-xs font-bold bg-background/50 flex-1" 
+                          />
+                          <div className="relative w-28">
+                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">R$</span>
+                             <Input 
+                                type="number" 
+                                step="0.01" 
+                                value={c.value} 
+                                onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
+                                placeholder="0,00" 
+                                className="h-10 pl-7 text-xs font-black bg-background/50" 
+                             />
+                          </div>
+                          {costs.length > 1 && (
+                            <button type="button" onClick={() => setCosts(costs.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-red-500 p-1">
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="font-bold text-xs uppercase text-orange-500/80 tracking-widest block">Outros Custos (Envio/Embalagem)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-black text-xs">R$</span>
-                      <Input type="number" step="0.01" value={otherCosts} onChange={e => setOtherCosts(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-orange-500/30 bg-orange-500/5 shadow-sm focus:border-orange-500" />
+                  <div className="space-y-1.5 col-span-2">
+                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
+                    <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
+                      R$ {profitPerSale.toFixed(2).replace('.', ',')}
                     </div>
                   </div>
-
-                  <div className="space-y-1.5 col-span-2 md:col-span-1">
-                    <Label className="font-bold text-xs uppercase text-emerald-500/80 tracking-widest block">Lucro p/ Venda</Label>
-                    <div className="h-11 flex items-center justify-center bg-emerald-500/10 border border-emerald-500/30 rounded-md text-emerald-600 font-black text-lg">
-                      R$ {((parseFloat(salePrice) || parseFloat(price) || 0) - (parseFloat(costPrice) || 0) - (parseFloat(otherCosts) || 0)).toFixed(2).replace('.', ',')}
-                    </div>
-                  </div>
-                  
-                  {isDiscountValid && (
-                    <div className="col-span-full mt-[-8px] text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-md flex items-center justify-center gap-1.5 border border-emerald-500/20">
-                      <ArrowDownToLine size={12}/> Desconto Aplicado: R$ {discountAbs.toFixed(2).replace('.', ',')} ({discountPct}%)
-                    </div>
-                  )}
                 </div>
                 
                 <div className="space-y-3 pt-4 mt-2 border-t border-border">

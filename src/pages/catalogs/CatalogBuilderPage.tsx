@@ -43,9 +43,9 @@ export default function CatalogBuilderPage() {
   async function fetchData() {
     try {
       const [{ data: catData }, { data: prodData }, { data: catsData }] = await Promise.all([
-        supabase.from('catalogs').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('*').order('name'),
-        supabase.from('categories').select('*').order('name'),
+        supabase.from('catalogs').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
+        supabase.from('products').select('*').eq('user_id', user?.id).order('name'),
+        supabase.from('categories').select('*').eq('user_id', user?.id).order('name'),
       ]);
       setCatalogs(catData || []);
       setProducts(prodData || []);

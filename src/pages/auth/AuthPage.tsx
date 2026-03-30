@@ -12,27 +12,15 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // White-label state
-  const [brand, setBrand] = useState<{name: string, logo: string | null}>({ name: 'Laris ERP', logo: null });
+  // White-label state - Keep it generic on login to prevent cross-tenant branding leak
+  const [brand] = useState<{name: string, logo: string | null}>({ 
+    name: 'Laris ERP', 
+    logo: null 
+  });
 
   useEffect(() => {
-    fetchBrandSettings();
+    // Branding is applied after login in AppLayout based on the specific user.
   }, []);
-
-  async function fetchBrandSettings() {
-    try {
-      const { data } = await supabase.from('store_settings').select('store_name, logo_url, favicon_url').limit(1).maybeSingle();
-      if (data) {
-        setBrand({ name: data.store_name || 'Laris ERP', logo: data.logo_url });
-        if (data.favicon_url) {
-          const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-          if (link) { link.href = data.favicon_url; }
-        }
-      }
-    } catch (e) {
-      console.log('Sem dados de branding.');
-    }
-  }
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +28,12 @@ export default function AuthPage() {
     setError(null);
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
         navigate('/dashboard');
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) throw signUpError;
         alert('Confirme seu e-mail para continuar ou tente logar direto.');
       }
     } catch (err: any) {

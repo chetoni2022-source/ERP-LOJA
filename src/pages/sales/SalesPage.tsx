@@ -10,6 +10,8 @@ interface Product {
   name: string;
   price: number;
   sale_price?: number;
+  cost_price: number;
+  other_costs: number;
   stock_quantity: number;
   image_url?: string | null;
 }
@@ -72,9 +74,9 @@ export default function SalesPage() {
   async function fetchData() {
     try {
       const [{ data: prodData }, { data: custData }, { data: salesData }] = await Promise.all([
-        supabase.from('products').select('*').order('name'),
-        supabase.from('customers').select('id, full_name, phone').order('full_name'),
-        supabase.from('sales').select(`*, products(name)`).order('created_at', { ascending: false }).limit(30),
+        supabase.from('products').select('*').eq('user_id', user.id).order('name'),
+        supabase.from('customers').select('id, full_name, phone').eq('user_id', user.id).order('full_name'),
+        supabase.from('sales').select(`*, products(name)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(30),
       ]);
       setProducts(prodData || []);
       setCustomers(custData || []);
@@ -136,11 +138,13 @@ export default function SalesPage() {
       for (const item of cart) {
         const unitPrice = item.product.sale_price || item.product.price;
         const totalPrice = unitPrice * item.quantity;
+        const unitCost = (item.product.cost_price || 0) + (item.product.other_costs || 0);
 
         await supabase.from('sales').insert([{
           product_id: item.product.id,
           quantity: item.quantity,
           total_price: totalPrice,
+          unit_cost_at_sale: unitCost,
           customer_id: selectedCustomerId || null,
           customer_name: customerSearch || null,
           lead_source: leadSource || null,

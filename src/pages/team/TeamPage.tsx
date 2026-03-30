@@ -41,7 +41,9 @@ export default function TeamPage() {
   async function fetchMembers() {
     setLoading(true);
     try {
-      const { data } = await supabase.from('profiles').select('*').order('created_at');
+      // For now, simple: you see yourself. 
+      // Later: you see everyone linked to your store_id.
+      const { data } = await supabase.from('profiles').select('*').eq('id', user?.id).order('created_at');
       setMembers(data || []);
     } catch (error) {
       console.error(error);

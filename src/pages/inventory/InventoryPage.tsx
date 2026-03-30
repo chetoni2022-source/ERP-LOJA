@@ -12,6 +12,8 @@ interface Product {
   description?: string | null;
   price: number;
   sale_price: number | null;
+  cost_price: number;
+  other_costs: number;
   stock_quantity: number;
   image_url: string | null;
   images: string[] | null;
@@ -41,6 +43,8 @@ export default function InventoryPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
+  const [otherCosts, setOtherCosts] = useState('');
   const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
   
@@ -55,8 +59,8 @@ export default function InventoryPage() {
 
   async function fetchCategories() {
     try {
-      const { data } = await supabase.from('categories').select('*').order('name');
-      if (data) setCategories(data);
+      const { data } = await supabase.from('categories').select('*').eq('user_id', user.id).order('name');
+      setCategories(data || []);
     } catch(err) { console.error(err); }
   }
 
@@ -102,6 +106,8 @@ export default function InventoryPage() {
     setDescription(p.description || '');
     setPrice(p.price.toString());
     setSalePrice(p.sale_price ? p.sale_price.toString() : '');
+    setCostPrice(p.cost_price ? p.cost_price.toString() : '0');
+    setOtherCosts(p.other_costs ? p.other_costs.toString() : '0');
     setStock(p.stock_quantity.toString());
     
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
@@ -190,6 +196,8 @@ export default function InventoryPage() {
         description: description || null,
         price: parseFloat(price),
         sale_price: salePrice ? parseFloat(salePrice) : null,
+        cost_price: parseFloat(costPrice) || 0,
+        other_costs: parseFloat(otherCosts) || 0,
         stock_quantity: parseInt(stock, 10),
         images: finalImageUrls,
         image_url: finalImageUrls[0] || null,
@@ -223,6 +231,8 @@ export default function InventoryPage() {
     setDescription('');
     setPrice('');
     setSalePrice('');
+    setCostPrice('');
+    setOtherCosts('');
     setStock('');
     setImages([]);
     setCategoryId('');
@@ -504,9 +514,34 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 col-span-2 md:col-span-1">
+                  <div className="space-y-1.5">
                     <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Estoque</Label>
                     <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 text-base font-black bg-background shadow-sm text-center" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-1">
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase text-orange-500/80 tracking-widest block">Preço de Custo</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-black text-xs">R$</span>
+                      <Input type="number" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-orange-500/30 bg-orange-500/5 shadow-sm focus:border-orange-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-xs uppercase text-orange-500/80 tracking-widest block">Outros Custos (Envio/Embalagem)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-black text-xs">R$</span>
+                      <Input type="number" step="0.01" value={otherCosts} onChange={e => setOtherCosts(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-orange-500/30 bg-orange-500/5 shadow-sm focus:border-orange-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 col-span-2 md:col-span-1">
+                    <Label className="font-bold text-xs uppercase text-emerald-500/80 tracking-widest block">Lucro p/ Venda</Label>
+                    <div className="h-11 flex items-center justify-center bg-emerald-500/10 border border-emerald-500/30 rounded-md text-emerald-600 font-black text-lg">
+                      R$ {((parseFloat(salePrice) || parseFloat(price) || 0) - (parseFloat(costPrice) || 0) - (parseFloat(otherCosts) || 0)).toFixed(2).replace('.', ',')}
+                    </div>
                   </div>
                   
                   {isDiscountValid && (

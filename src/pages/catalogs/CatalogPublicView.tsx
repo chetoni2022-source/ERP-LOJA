@@ -65,7 +65,7 @@ export default function CatalogPublicView() {
   const [catalog, setCatalog] = useState<any>(null);
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [categoryMap, setCategoryMap] = useState<Record<string,string>>({});
-  const [brand, setBrand] = useState<{name:string;logo:string|null;favicon:string|null;logoW:number;logoH:number;logoFit:string;logoPos:string}>({name:'Laris Acessórios',logo:null,favicon:null,logoW:200,logoH:80,logoFit:'contain',logoPos:'center'});
+  const [brand, setBrand] = useState<{name:string;logo:string|null;favicon:string|null;logoW:number;logoH:number;logoFit:string;logoPos:string;whatsapp:string|null}>({name:'Laris Acessórios',logo:null,favicon:null,logoW:200,logoH:80,logoFit:'contain',logoPos:'center',whatsapp:null});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewers, setViewers] = useState(Math.floor(Math.random()*5)+3);
@@ -104,8 +104,8 @@ export default function CatalogPublicView() {
       if(cids.length>0){const {data:cd}=await supabase.from('categories').select('id,name').in('id',cids);const m:Record<string,string>={};(cd||[]).forEach((c:any)=>{m[c.id]=c.name;});setCategoryMap(m);all=all.map(p=>({...p,_categoryName:p.category_id?m[p.category_id]:undefined}));}
       setItems(all);
 
-      const {data:sd}=await supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position').limit(1).maybeSingle();
-      const b={name:sd?.store_name||'Laris Acessórios',logo:sd?.logo_url||null,favicon:sd?.favicon_url||null,logoW:sd?.logo_width||200,logoH:sd?.logo_height||80,logoFit:sd?.logo_fit||'contain',logoPos:sd?.logo_position||'center'};
+      const {data:sd}=await supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position,whatsapp_number').eq('user_id', cat.user_id).limit(1).maybeSingle();
+      const b={name:sd?.store_name||'Laris Acessórios',logo:sd?.logo_url||null,favicon:sd?.favicon_url||null,logoW:sd?.logo_width||200,logoH:sd?.logo_height||80,logoFit:sd?.logo_fit||'contain',logoPos:sd?.logo_position||'center',whatsapp:sd?.whatsapp_number||null};
       setBrand(b);
       if(b.favicon){let l=document.querySelector("link[rel~='icon']") as HTMLLinkElement;if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.href=b.favicon;}
       document.title=`${cat.name} — ${b.name}`;
@@ -134,7 +134,8 @@ export default function CatalogPublicView() {
     if(!cart.length)return;
     const lines=cart.map(c=>`- ${c.item.name} - ${c.qty}x - ${fmt(c.item.sale_price||c.item.price)} cada (Total: ${fmt((c.item.sale_price||c.item.price)*c.qty)})`);
     const msg=[`Ola! Gostaria de fazer um pedido do catalogo "${catalog?.name||brand.name}":`,'',...lines,'',`Total: ${fmt(cartTotal)}`,'','Poderia confirmar a disponibilidade?'].join('\n');
-    window.open(`https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`,'_blank');
+    const phone = brand.whatsapp || WA_NUMBER;
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`,'_blank');
   }
 
   if(loading) return(<div style={{background:'#0c0b09',minHeight:'100svh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14}}><Loader2 className="animate-spin" style={{width:28,height:28,color:'#c9a96e'}}/><p style={{color:'#c9a96e',fontSize:10,letterSpacing:'0.25em',textTransform:'uppercase',fontFamily:'Georgia,serif'}}>Carregando coleção...</p></div>);

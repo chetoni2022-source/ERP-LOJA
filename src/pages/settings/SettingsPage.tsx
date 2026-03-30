@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   
   // White-label State
   const [storeName, setStoreName] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [monthlyGoal, setMonthlyGoal] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
@@ -45,11 +46,14 @@ export default function SettingsPage() {
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
   useEffect(() => {
+    if (!user) return;
     supabase.from('store_settings')
-      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
+      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number')
+      .eq('user_id', user.id)
       .limit(1).maybeSingle().then(({ data }) => {
         if (data) {
           if (data.store_name) setStoreName(data.store_name);
+          if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
           if (data.monthly_goal) setMonthlyGoal(data.monthly_goal.toString());
           if (data.logo_url) setCurrentLogoUrl(data.logo_url);
           if (data.favicon_url) setCurrentFaviconUrl(data.favicon_url);
@@ -59,7 +63,7 @@ export default function SettingsPage() {
           if (data.logo_position) setLogoPosition(data.logo_position);
         }
       });
-  }, []);
+  }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: any, setPreview: any) => {
     if (e.target.files && e.target.files[0]) {
@@ -95,10 +99,11 @@ export default function SettingsPage() {
         faviconUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
-      const { data: existing } = await supabase.from('store_settings').select('id').limit(1).maybeSingle();
+      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
       
       const payload: any = {};
       if (storeName) payload.store_name = storeName;
+      if (whatsappNumber) payload.whatsapp_number = whatsappNumber;
       if (logoUrl) { payload.logo_url = logoUrl; setCurrentLogoUrl(logoUrl); }
       if (faviconUrl) { payload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
       if (monthlyGoal) payload.monthly_goal = parseFloat(monthlyGoal);
@@ -125,7 +130,7 @@ export default function SettingsPage() {
   const handleSaveDisplaySettings = async () => {
     setSavingDisplay(true);
     try {
-      const { data: existing } = await supabase.from('store_settings').select('id').limit(1).maybeSingle();
+      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
       const payload = { logo_width: logoWidth, logo_height: logoHeight, logo_fit: logoFit, logo_position: logoPosition };
       
       if (existing) {
@@ -197,6 +202,12 @@ export default function SettingsPage() {
               <div className="space-y-1.5">
                 <Label className="font-semibold text-foreground text-sm">Nome Principal do ERP</Label>
                 <Input value={storeName} onChange={e=>setStoreName(e.target.value)} placeholder="Laris Acessórios" className="bg-background shadow-sm h-11 font-medium" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Phone size={14} className="text-primary"/> WhatsApp de Contato</Label>
+                <Input value={whatsappNumber} onChange={e=>setWhatsappNumber(e.target.value)} placeholder="5511999999999" className="bg-background shadow-sm h-11 font-medium" />
+                <p className="text-[10px] text-muted-foreground">Formato: 55 + DDD + Numero (apenas números)</p>
               </div>
 
               <div className="space-y-1.5">

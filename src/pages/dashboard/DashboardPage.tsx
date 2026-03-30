@@ -191,6 +191,7 @@ export default function DashboardPage() {
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [stockData, setStockData] = useState<any[]>([]);
   const [leadSourceData, setLeadSourceData] = useState<any[]>([]);
+  const [totalProfit, setTotalProfit] = useState(0);
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0];
@@ -201,9 +202,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       // Monthly goal
-      const { data: settings } = await supabase.from('store_settings').select('monthly_goal').limit(1).maybeSingle();
+      const { data: settings } = await supabase.from('store_settings').select('monthly_goal').eq('user_id', user.id).limit(1).maybeSingle();
       if (settings?.monthly_goal) setMonthlyGoal(settings.monthly_goal);
-      const { data: products } = await supabase.from('products').select('id, name, stock_quantity, image_url, images, price').order('stock_quantity', { ascending: false });
+      const { data: products } = await supabase.from('products').select('id, name, stock_quantity, image_url, images, price').eq('user_id', user.id).order('stock_quantity', { ascending: false });
 
       if (products) {
         setStockData(products);
@@ -220,13 +221,16 @@ export default function DashboardPage() {
       const { data: sales } = await supabase
         .from('sales')
         .select(`*, products(name, image_url, images)`)
+        .eq('user_id', user.id)
         .gte('created_at', startDT.toISOString())
         .lte('created_at', endDT.toISOString())
         .order('created_at', { ascending: true });
 
       if (sales) {
         const total = sales.reduce((acc, s) => acc + s.total_price, 0);
+        const profit = sales.reduce((acc, s) => acc + (s.total_price - (s.unit_cost_at_sale * s.quantity)), 0);
         setMonthlySalesValue(total);
+        setTotalProfit(profit);
 
         const dailyData = sales.reduce((acc: any, sale: any) => {
           const date = new Date(sale.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
@@ -277,11 +281,16 @@ export default function DashboardPage() {
 
         const { data: thisMonthSales } = await supabase
           .from('sales')
-          .select('total_price')
+          .select('total_price, unit_cost_at_sale, quantity')
+          .eq('user_id', user.id)
           .gte('created_at', curMonthStart.toISOString());
         const thisMonth = (thisMonthSales || []).reduce((a, s) => a + s.total_price, 0);
+        const thisMonthProfit = (thisMonthSales || []).reduce((a, s) => a + (s.total_price - (s.unit_cost_at_sale * s.quantity)), 0);
         // Only override if we're looking at current month; otherwise use filtered total
-        if (sd === undefined) setMonthlySalesValue(thisMonth);
+        if (sd === undefined) {
+          setMonthlySalesValue(thisMonth);
+          setTotalProfit(thisMonthProfit);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -309,7 +318,7 @@ export default function DashboardPage() {
 
   const statCards = [
     { label: 'Receita do Filtro', value: formatCurrency(monthlySalesValue), sub: 'Performance bruta no período', icon: BadgeDollarSign, color: 'text-primary' },
-    { label: 'Peças Vendidas', value: topProducts.reduce((a: number, b: any) => a + b.quantity, 0), sub: 'Volume consolidado do período', icon: TrendingUp, color: 'text-emerald-500' },
+    { label: 'Lucro Estimado', value: formatCurrency(totalProfit), sub: 'Lucro líquido aproximado', icon: TrendingUp, color: 'text-emerald-500' },
     { label: 'Alerta de Estoque', value: lowStockCount, sub: 'Peças abaixo de 5 unidades', icon: AlertCircle, color: 'text-red-500' },
     { label: 'Total de Produtos', value: totalProducts, sub: 'Modelos ativos na vitrine', icon: PackageSearch, color: 'text-violet-500' },
   ];

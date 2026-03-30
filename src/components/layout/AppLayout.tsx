@@ -32,7 +32,7 @@ const bottomNavItems = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuthStore();
+  const { user, signOut } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -56,8 +56,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    if (!user) return;
     supabase.from('store_settings')
       .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
+      .eq('user_id', user.id)
       .limit(1).maybeSingle()
       .then(({ data }) => {
         if (data) {
@@ -76,9 +78,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             link.href = `${data.favicon_url}?v=${Date.now()}`;
             document.title = data.store_name || 'Laris ERP';
           }
+        } else {
+          // Reset to default if no settings found
+          setBrand({ 
+            name: 'Laris Acessórios', 
+            logo: null,
+            logoW: 200,
+            logoH: 80,
+            logoFit: 'contain',
+            logoPos: 'center',
+            isDefault: true
+          });
         }
       });
-  }, []);
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();

@@ -37,8 +37,8 @@ export default function CategoriesPage() {
     setLoading(true);
     try {
       const [{ data: cats }, { data: prods }] = await Promise.all([
-        supabase.from('categories').select('*').order('name', { ascending: true }),
-        supabase.from('products').select('id, name, image_url, category_id').order('name'),
+        supabase.from('categories').select('*').eq('user_id', user.id).order('name', { ascending: true }),
+        supabase.from('products').select('id, name, image_url, category_id').eq('user_id', user.id).order('name'),
       ]);
 
       const catsWithCount = (cats || []).map(cat => ({

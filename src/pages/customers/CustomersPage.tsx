@@ -34,8 +34,8 @@ export default function CustomersPage() {
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: custs } = await supabase.from('customers').select('*').order('full_name');
-      const { data: salesData } = await supabase.from('sales').select('customer_id, total_price');
+      const { data: custs } = await supabase.from('customers').select('*').eq('user_id', user.id).order('full_name');
+      const { data: salesData } = await supabase.from('sales').select('customer_id, total_price').eq('user_id', user.id);
 
       const enriched = (custs || []).map(c => {
         const custSales = (salesData || []).filter(s => s.customer_id === c.id);
@@ -101,6 +101,7 @@ export default function CustomersPage() {
     const { data } = await supabase
       .from('sales')
       .select('*, products(name, image_url)')
+      .eq('user_id', user.id)
       .eq('customer_id', c.id)
       .order('created_at', { ascending: false });
     setCustomerSales(data || []);

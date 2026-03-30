@@ -44,13 +44,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     logoH: number;
     logoFit: string;
     logoPos: string;
+    isDefault: boolean;
   }>({ 
     name: 'Laris Acessórios', 
     logo: null,
     logoW: 200,
     logoH: 80,
     logoFit: 'contain',
-    logoPos: 'center'
+    logoPos: 'center',
+    isDefault: true
   });
 
   useEffect(() => {
@@ -65,7 +67,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             logoW: data.logo_width || 200,
             logoH: data.logo_height || 80,
             logoFit: data.logo_fit || 'contain',
-            logoPos: data.logo_position || 'center'
+            logoPos: data.logo_position || 'center',
+            isDefault: !data.logo_url && data.store_name === 'Laris Acessórios'
           });
           if (data.favicon_url) {
             let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
@@ -206,7 +209,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Main ──────────────────────────────────────────── */}
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
+        {brand.isDefault && location.pathname !== '/settings' && (
+          <div className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shrink-0">
+                <Settings size={16} className="animate-spin-slow" />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-foreground">Sua plataforma está quase pronta! 🚀</p>
+                <p className="text-[11px] text-muted-foreground">Configure o nome da sua empresa e o seu logotipo para começar com estilo profissional.</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => navigate('/settings')}
+              className="h-9 px-4 text-xs font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 border-none"
+            >
+              Configurar Agora
+            </Button>
+          </div>
+        )}
         {children}
       </main>
 

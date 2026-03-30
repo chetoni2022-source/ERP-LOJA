@@ -22,16 +22,44 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) handlePostLogin(session.user);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'SIGNED_IN' && session?.user) {
+        handlePostLogin(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [setUser]);
+
+  async function handlePostLogin(user: any) {
+    // 1. Check for team invites
+    try {
+      const { data: invite } = await supabase
+        .from('team_invites')
+        .select('role')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      if (invite) {
+        // Update profile role
+        await supabase.from('profiles').update({ role: invite.role }).eq('id', user.id);
+        // Delete invite
+        await supabase.from('team_invites').delete().eq('email', user.email);
+        // Refresh page to apply role changes if needed or just notify
+        console.log('Joined team with role:', invite.role);
+      }
+    } catch (err) {
+      console.error('Error joining team:', err);
+    }
+
+    // 2. Initial Setup Check (handled in AppLayout usually, but can be here too)
+  }
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;

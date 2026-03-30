@@ -58,22 +58,21 @@ export default function TeamPage() {
     setSuccessMsg('');
 
     try {
-      const { error } = await supabase.auth.admin.inviteUserByEmail(inviteEmail, {
-        data: { role: inviteRole }
+      const { error } = await supabase.from('team_invites').insert({
+        email: inviteEmail,
+        role: inviteRole,
+        invited_by: user?.id
       });
 
       if (error) {
-        // Fallback: if admin API not available, try signUp with random password
-        // Most Supabase free projects need server-side function for invite
+        if (error.code === '23505') throw new Error('Este e-mail já possui um convite pendente.');
         throw error;
       }
 
-      setSuccessMsg(`Convite enviado para ${inviteEmail}! O membro verá a opção de definir a senha por e-mail.`);
+      setSuccessMsg(`Convite registrado para ${inviteEmail}! Agora, peça para o membro se cadastrar na plataforma com este e-mail para entrar automaticamente no seu time.`);
       setInviteEmail('');
-      fetchMembers();
     } catch (err: any) {
-      // Fallback message
-      setErrorMsg('Para convidar membros, é necessário configurar um Edge Function no Supabase ou usar o Painel do Supabase > Authentication > Users > Invite user.');
+      setErrorMsg(err.message || 'Erro ao registrar convite. Verifique se o e-mail está correto.');
     } finally {
       setInviting(false);
     }

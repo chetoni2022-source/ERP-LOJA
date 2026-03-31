@@ -59,6 +59,10 @@ export default function SalesPage() {
   const [selectedProductId, setSelectedProductId] = useState('');
   const [cartQty, setCartQty] = useState('1');
 
+  const [productSearch, setProductSearch] = useState('');
+  const [productDropdownOpen, setProductDropdownOpen] = useState(false);
+  const productRef = useRef<HTMLDivElement>(null);
+
   const [customerSearch, setCustomerSearch] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
@@ -83,6 +87,9 @@ export default function SalesPage() {
     const handleClick = (e: MouseEvent) => {
       if (customerRef.current && !customerRef.current.contains(e.target as Node)) {
         setCustomerDropdownOpen(false);
+      }
+      if (productRef.current && !productRef.current.contains(e.target as Node)) {
+        setProductDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -144,6 +151,7 @@ export default function SalesPage() {
       setCart(prev => [...prev, { product: p, quantity: qty }]);
     }
     setSelectedProductId('');
+    setProductSearch('');
     setCartQty('1');
   };
 
@@ -173,6 +181,18 @@ export default function SalesPage() {
     c.full_name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     c.phone?.includes(customerSearch)
   );
+
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const selectProduct = (p: Product) => {
+    if (p.stock_quantity <= 0) return;
+    setSelectedProductId(p.id);
+    setProductSearch(p.name);
+    setProductDropdownOpen(false);
+  };
 
   const selectCustomer = (c: Customer) => {
     setSelectedCustomerId(c.id);
@@ -370,20 +390,37 @@ export default function SalesPage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Produto</Label>
-                <div className="relative">
-                  <select
-                    value={selectedProductId}
-                    onChange={e => setSelectedProductId(e.target.value)}
-                    className="w-full h-11 px-3 bg-muted/20 border border-border/40 text-foreground font-bold text-xs rounded-xl focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-                  >
-                    <option value="">Selecione a peça...</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id} disabled={p.stock_quantity <= 0}>
-                        {p.name} — {fmt(p.sale_price || p.price)} ({p.stock_quantity} un.)
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
+                <div ref={productRef} className="relative">
+                  <Input
+                    value={productSearch}
+                    onChange={e => { setProductSearch(e.target.value); setSelectedProductId(''); setProductDropdownOpen(true); }}
+                    onFocus={() => setProductDropdownOpen(true)}
+                    placeholder="Nome da peça ou SKU..."
+                    className="h-11 pr-9 text-xs font-bold bg-muted/20 border-border/40 rounded-xl"
+                  />
+                  {productDropdownOpen && filteredProducts.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border shadow-xl z-50 rounded-xl max-h-56 overflow-y-auto p-1 backdrop-blur-md custom-scrollbar">
+                      {filteredProducts.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          disabled={p.stock_quantity <= 0}
+                          onClick={() => selectProduct(p)}
+                          className={cn("w-full text-left px-3 py-2 text-[11px] rounded-lg transition-colors flex items-center justify-between group", 
+                            p.stock_quantity > 0 ? "hover:bg-primary/10 cursor-pointer" : "opacity-50 cursor-not-allowed bg-muted/10")}
+                        >
+                          <div className="flex flex-col truncate pr-2">
+                             <span className="font-bold truncate">{p.name} {p.sku ? `(${p.sku})` : ''}</span>
+                             <span className="text-[9px] text-muted-foreground font-medium">{fmt(p.sale_price || p.price)}</span>
+                          </div>
+                          <span className={cn("text-[9px] font-black uppercase tracking-widest shrink-0", p.stock_quantity > 0 ? "text-primary" : "text-red-500")}>
+                            {p.stock_quantity > 0 ? `${p.stock_quantity} un.` : 'Esgotado'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
                     <Search className="h-4 w-4" />
                   </div>
                 </div>

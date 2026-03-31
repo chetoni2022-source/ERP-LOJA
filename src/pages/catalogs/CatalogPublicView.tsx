@@ -417,9 +417,9 @@ export default function CatalogPublicView() {
           <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.78)',backdropFilter:'blur(6px)'}} onClick={()=>setDetailItem(null)}/>
           <div className="animate-in slide-in-from-bottom-4 duration-300" style={{position:'relative',background:theme.cardBg,border:`1px solid ${theme.border}`,borderBottom:'none',maxHeight:'92svh',display:'flex',flexDirection:'column',width:'100%',maxWidth:640,margin:'0 auto',borderRadius:'16px 16px 0 0',overflow:'hidden'}}>
             {/* Image */}
-            <div style={{position:'relative',width:'100%',aspectRatio:'4/3',background:theme.bg,flexShrink:0}}>
+            <div style={{position:'relative',width:'100%',maxHeight:'40vh',minHeight:'280px',background:theme.bg,flexShrink:0}}>
               {(detailItem.images?.[0]||detailItem.image_url)
-                ? <img src={detailItem.images?.[0]||detailItem.image_url||''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                ? <img src={detailItem.images?.[0]||detailItem.image_url||''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px'}}/>
                 : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:48,height:48,color:theme.text}}/></div>
               }
               <button onClick={()=>setDetailItem(null)} style={{position:'absolute',top:12,right:12,width:34,height:34,borderRadius:'50%',background:`${theme.bg}d0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text}}>

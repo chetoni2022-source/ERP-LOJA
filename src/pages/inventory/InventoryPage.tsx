@@ -33,6 +33,7 @@ export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_desc' | 'price_asc'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
   
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -82,6 +83,11 @@ export default function InventoryPage() {
 
   const processedProducts = products
     .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(p => {
+      if (stockFilter === 'in_stock') return p.stock_quantity > 0;
+      if (stockFilter === 'out_of_stock') return p.stock_quantity <= 0;
+      return true;
+    })
     .sort((a, b) => {
       const priceA = a.sale_price ? a.sale_price : a.price;
       const priceB = b.sale_price ? b.sale_price : b.price;
@@ -92,6 +98,9 @@ export default function InventoryPage() {
       if (sortBy === 'price_asc') return priceA - priceB;
       return 0;
     });
+
+  const totalModels = products.length;
+  const totalItems = products.reduce((acc, p) => acc + (p.stock_quantity > 0 ? p.stock_quantity : 0), 0);
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -279,6 +288,11 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 text-foreground">Estoque & Peças</h1>
           <p className="text-sm md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">Adicione, edite ou crie promoções no seu acervo de jóias.</p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+            <span>Total de Modelos: <strong className="text-foreground">{totalModels}</strong></span>
+            <span className="hidden sm:inline">•</span>
+            <span>Peças no Acervo: <strong className="text-foreground">{totalItems}</strong></span>
+          </div>
         </div>
         <Button onClick={openAddModal} className="w-full sm:w-auto shadow-md h-12 md:h-14 px-6 font-black tracking-wide bg-primary hover:bg-primary/90 text-primary-foreground transform duration-300 text-sm md:text-base uppercase rounded-xl">
           <Plus className="mr-2 h-5 w-5" /> Inserir Novo
@@ -287,17 +301,29 @@ export default function InventoryPage() {
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
         <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between bg-muted/20 items-center">
-          <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-              className="pl-10 bg-background shadow-sm h-11 w-full text-base font-medium" 
-              placeholder="Pesquisar colar, brinco..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex gap-2 w-full md:max-w-md">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input 
+                className="pl-10 bg-background shadow-sm h-11 w-full text-base font-medium" 
+                placeholder="Pesquisar colar, brinco..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <select
+              className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none min-w-[140px]"
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value as any)}
+            >
+              <option value="all">Todo o Estoque</option>
+              <option value="in_stock">Apenas com Estoque</option>
+              <option value="out_of_stock">Filtro: Esgotados</option>
+            </select>
+
             <select 
               className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none"
               value={sortBy}

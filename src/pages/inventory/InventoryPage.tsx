@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -23,6 +23,7 @@ interface Product {
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
 export default function InventoryPage() {
   const { user } = useAuthStore();
@@ -57,6 +58,36 @@ export default function InventoryPage() {
     fetchProducts();
     fetchCategories();
   }, [user]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!e.clipboardData) return;
+      const items = e.clipboardData.items;
+      const newFiles: {file: File | null, preview: string, isExisting: boolean}[] = [];
+      
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            if (file.size > MAX_FILE_SIZE_INVENTORY) {
+              toastError('Uma imagem colada é muito grande (>3MB) e foi descartada.');
+            } else {
+              newFiles.push({ file, preview: URL.createObjectURL(file), isExisting: false });
+            }
+          }
+        }
+      }
+      
+      if (newFiles.length > 0) {
+        setImages(prev => [...prev, ...newFiles]);
+        success(`${newFiles.length} foto(s) importada(s) da área de transferência!`);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isModalOpen, toastError, success]);
 
   async function fetchCategories() {
     try {
@@ -132,6 +163,29 @@ export default function InventoryPage() {
     setIsModalOpen(true);
   };
 
+  const handleClone = (p: Product) => {
+    setEditingProduct(null);
+    setName(`${p.name} (Cópia)`);
+    setSku(p.sku ? `${p.sku}-COPIA` : '');
+    setDescription(p.description || '');
+    setPrice(p.price.toString());
+    setSalePrice(p.sale_price ? p.sale_price.toString() : '');
+    
+    if (p.additional_costs && p.additional_costs.length > 0) {
+      setCosts(p.additional_costs.map(c => ({ label: c.label, value: c.value.toString() })));
+    } else {
+      setCosts([{ label: 'Preço de Custo', value: p.cost_price.toString() }]);
+    }
+
+    setStock(p.stock_quantity.toString());
+    
+    const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
+    setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
+    setCategoryId(p.category_id || '');
+    
+    setIsModalOpen(true);
+  };
+
   const handleDelete = async (p: Product) => {
     if (!window.confirm(`Deseja excluir "${p.name}"? Essa ação não pode ser desfeita.`)) return;
     try {
@@ -143,8 +197,6 @@ export default function InventoryPage() {
        toastError('Erro ao excluir: ' + error.message);
     }
   };
-
-  const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -393,6 +445,13 @@ export default function InventoryPage() {
 
                       <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                         <button 
+                          onClick={(e) => { e.stopPropagation(); handleClone(product); }} 
+                          title="Duplicar Produto"
+                          className="h-8 w-8 bg-blue-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button 
                           onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
                           className="h-8 w-8 bg-red-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
                         >
@@ -469,6 +528,13 @@ export default function InventoryPage() {
                        </div>
 
                        <div className="flex items-center gap-2 pl-3 border-l border-border/70">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleClone(product); }} 
+                            title="Duplicar Produto"
+                            className="p-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-md transition-colors"
+                          >
+                            <Copy size={16} />
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
                             className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"

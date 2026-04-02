@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -10,6 +10,7 @@ interface Product {
   name: string;
   sku?: string | null;
   description?: string | null;
+  ean?: string | null;
   price: number;
   sale_price: number | null;
   cost_price: number;
@@ -43,6 +44,7 @@ export default function InventoryPage() {
   
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
+  const [ean, setEan] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
@@ -54,10 +56,22 @@ export default function InventoryPage() {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
 
+  const [geminiKey, setGeminiKey] = useState('');
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [focusChannel, setFocusChannel] = useState('');
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchSettings();
   }, [user]);
+
+  async function fetchSettings() {
+    if (!user) return;
+    const { data } = await supabase.from('store_settings').select('gemini_api_key').eq('user_id', user.id).maybeSingle();
+    if (data?.gemini_api_key) setGeminiKey(data.gemini_api_key);
+  }
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -143,6 +157,7 @@ export default function InventoryPage() {
     setEditingProduct(p);
     setName(p.name);
     setSku(p.sku || '');
+    setEan(p.ean || '');
     setDescription(p.description || '');
     setPrice(p.price.toString());
     setSalePrice(p.sale_price ? p.sale_price.toString() : '');
@@ -167,6 +182,7 @@ export default function InventoryPage() {
     setEditingProduct(null);
     setName(`${p.name} (Cópia)`);
     setSku(p.sku ? `${p.sku}-COPIA` : '');
+    setEan('');
     setDescription(p.description || '');
     setPrice(p.price.toString());
     setSalePrice(p.sale_price ? p.sale_price.toString() : '');
@@ -262,6 +278,7 @@ export default function InventoryPage() {
       const payload = {
         name,
         sku: sku || null,
+        ean: ean || null,
         description: description || null,
         price: parseFloat(price),
         sale_price: salePrice ? parseFloat(salePrice) : null,
@@ -297,6 +314,7 @@ export default function InventoryPage() {
   function resetForm() {
     setName('');
     setSku('');
+    setEan('');
     setDescription('');
     setPrice('');
     setSalePrice('');
@@ -320,6 +338,63 @@ export default function InventoryPage() {
     setDescription(newVal);
     setTimeout(() => { el.focus(); el.setSelectionRange(start, start + wrapped.length); }, 0);
   }
+
+  const generateEAN = () => {
+    const prefix = "789";
+    const randomDigits = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+    const payload = prefix + randomDigits;
+    
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+       sum += parseInt(payload[i]) * (i % 2 === 0 ? 1 : 3);
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+    setEan(payload + checkDigit);
+    success('GTIN/EAN fictício com dígito verificador gerado!');
+  };
+
+  const generateAIDescription = async () => {
+    if (!geminiKey) {
+       toastError('Chave da API do Google Gemini não configurada. Configure no painel de Configurações para continuar.');
+       setShowAiPrompt(false);
+       return;
+    }
+    if (!name) {
+       toastError('Preencha o nome do produto primeiro.');
+       return;
+    }
+    setGeneratingDesc(true);
+    setShowAiPrompt(false);
+
+    try {
+      const prompt = `Atue como um copywriter profissional de vendas e marketing voltado para joias e acessórios de luxo/semi-joias. 
+Escreva uma descrição atraente, com foco em conversão e escassez, para o produto com nome: "${name}". 
+${description ? 'Detalhes técnicos adicionais (se baseie nisto): ' + description : ''}
+Crie o texto pronto para publicar no canal: "${focusChannel || 'Redes sociais / E-commerce'}".
+A descrição deve usar gatilhos mentais, falar dos benefícios do material e ser formatada em parágrafos curtos, prontos para ler no celular. Retorne apenas a resposta que vai ao público, não fale comigo ou se apresente. Para formatar use **negrito** (não use hashtags se for ecommerce).`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+      
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (generatedText) {
+        setDescription(generatedText);
+        success('Texto super otimizado gerado com sucesso pela Inteligência Artificial!');
+      } else {
+        throw new Error('Retorno vazio da API da Inteligência Artificial');
+      }
+    } catch (err: any) {
+      toastError(`Erro com a Inteligência Artificial: ${err.message}`);
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
 
   // Pre-calculations for smart formatting
   const orgPrice = parseFloat(price) || 0;
@@ -588,13 +663,46 @@ export default function InventoryPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
+                  <div className="space-y-1.5 md:col-span-1">
                     <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência (Opcional)</Label>
                     <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Ex: LAR-2024-001" className="h-11 text-sm font-mono bg-background shadow-sm" />
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
-                    <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande. Tudo o que escrever aqui aparece no catálogo.</p>
+                  <div className="space-y-1.5 md:col-span-1">
+                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest flex items-center justify-between">
+                      EAN/GTIN (Opcional)
+                      <button type="button" onClick={generateEAN} title="Gerar EAN Fictício Aceito em Marketplaces" className="text-[10px] text-primary hover:text-primary/70 transition-colors uppercase tracking-widest flex items-center gap-1">
+                        <Wand2 size={12} /> Gerar
+                      </button>
+                    </Label>
+                    <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="Ex: 789..." className="h-11 text-sm font-mono bg-background shadow-sm" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2 relative">
+                    <div className="flex items-center justify-between mb-1">
+                       <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
+                       <button type="button" onClick={() => setShowAiPrompt(!showAiPrompt)} className="text-[10px] bg-primary/10 text-primary px-3 py-1.5 flex items-center gap-1.5 rounded font-black uppercase tracking-wider hover:bg-primary/20 transition-colors shadow-sm">
+                          {generatingDesc ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                          {generatingDesc ? 'Pensando...' : 'Gerar com IA'}
+                       </button>
+                    </div>
+
+                    {showAiPrompt && (
+                       <div className="absolute top-8 right-0 z-10 w-full sm:w-[320px] bg-card border border-border/60 shadow-2xl rounded-xl p-4 animate-in zoom-in-95 duration-200">
+                          <p className="text-xs font-black uppercase tracking-widest text-foreground mb-3 text-center">Foco de Venda</p>
+                          <select value={focusChannel} onChange={e=>setFocusChannel(e.target.value)} className="w-full h-11 px-3 text-xs border border-border/50 rounded-lg mb-3 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-semibold">
+                            <option value="">Onde será o foco?</option>
+                            <option value="Instagram / TikTok">Vídeos Redes Sociais</option>
+                            <option value="Mercado Livre / Shopee / Amazon">Marketplaces</option>
+                            <option value="E-commerce (Tom Minimalista/Luxo)">Loja Virtual Fina</option>
+                          </select>
+                          <div className="flex gap-2">
+                             <Button type="button" variant="ghost" onClick={()=>setShowAiPrompt(false)} className="h-9 text-[10px] font-bold tracking-widest flex-1 uppercase">Cancelar</Button>
+                             <Button type="button" onClick={generateAIDescription} className="h-9 text-[10px] font-bold tracking-widest bg-primary text-primary-foreground flex-1 shadow-md uppercase">Aplicar</Button>
+                          </div>
+                          <div className="absolute -top-1.5 right-6 w-3 h-3 bg-card border-l border-t border-border/60 transform rotate-45"></div>
+                       </div>
+                    )}
+
+                    <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande.</p>
                     <div className="flex gap-1 mb-1.5">
                       {(['bold','big'] as const).map(fmtTag => (
                         <button key={fmtTag} type="button"

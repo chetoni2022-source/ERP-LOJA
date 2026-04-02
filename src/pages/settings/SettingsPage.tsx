@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [storeName, setStoreName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [monthlyGoal, setMonthlyGoal] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     supabase.from('store_settings')
-      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources')
+      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources, gemini_api_key')
       .eq('user_id', user.id)
       .limit(1).maybeSingle().then(({ data }) => {
         if (data) {
@@ -64,6 +65,7 @@ export default function SettingsPage() {
           if (data.logo_fit) setLogoFit(data.logo_fit);
           if (data.logo_position) setLogoPosition(data.logo_position);
           if (data.lead_sources) setLeadSources(data.lead_sources);
+          if (data.gemini_api_key) setGeminiKey(data.gemini_api_key);
         }
       });
   }, [user]);
@@ -111,6 +113,7 @@ export default function SettingsPage() {
       if (faviconUrl) { payload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
       if (monthlyGoal) payload.monthly_goal = parseFloat(monthlyGoal);
       payload.lead_sources = leadSources;
+      if (geminiKey !== undefined) payload.gemini_api_key = geminiKey;
 
       if (Object.keys(payload).length === 0) { toastError('Preencha ao menos um campo para salvar.'); return; }
       if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
@@ -262,6 +265,33 @@ export default function SettingsPage() {
                 <span className="text-xs font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-md border border-emerald-500/20">Ativo</span>
               </div>
             </div>
+          </div>
+
+          {/* Inteligência Artificial */}
+          <div className="bg-card border border-primary/20 rounded-xl p-6 shadow-sm border-t-2 border-t-primary relative overflow-hidden">
+             {/* Decorative background glow */}
+             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full"></div>
+             
+             <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-foreground relative z-10"><Sparkles className="h-5 w-5 text-primary" /> Inteligência Artificial (Google Gemini)</h2>
+             <p className="text-sm text-muted-foreground mb-4 relative z-10">Configure sua API Key para usar funções de IA, como geração de EANs e decrições ultra-persuasivas.</p>
+             
+             <div className="space-y-3 relative z-10">
+                <Label className="font-semibold text-foreground text-sm">Sua Chave (Gemini API Key)</Label>
+                <div className="flex gap-2">
+                  <Input type="password" value={geminiKey} onChange={e=>setGeminiKey(e.target.value)} placeholder="AIzaSyB..." className="bg-background shadow-sm h-11 font-mono text-xs flex-1" />
+                  <Button onClick={handleSaveBranding} disabled={savingBrand} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black px-4 h-11 shadow-md">
+                    {savingBrand ? <Loader2 className="animate-spin h-4 w-4" /> : 'Salvar'}
+                  </Button>
+                </div>
+                <div className="text-[10px] text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/50">
+                  <p className="font-bold mb-1">Como conseguir de graça:</p>
+                  <ol className="list-decimal pl-4 space-y-1">
+                    <li>Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-primary hover:underline">aistudio.google.com/app/apikey</a></li>
+                    <li>Faça login e clique em "Create API Key"</li>
+                    <li>Copie o código e cole acima.</li>
+                  </ol>
+                </div>
+             </div>
           </div>
         </div>
 

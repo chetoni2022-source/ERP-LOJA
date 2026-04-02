@@ -1,0 +1,2 @@
+ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS gemini_api_key TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS ean TEXT;

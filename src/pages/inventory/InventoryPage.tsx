@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -336,19 +336,34 @@ export default function InventoryPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row justify-between gap-4 md:items-end">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 text-foreground">Estoque & Peças</h1>
-          <p className="text-sm md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">Adicione, edite ou crie promoções no seu acervo de jóias.</p>
-          <div className="flex flex-col sm:flex-row gap-3 pt-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            <span>Total de Modelos: <strong className="text-foreground">{totalModels}</strong></span>
-            <span className="hidden sm:inline">•</span>
-            <span>Peças no Acervo: <strong className="text-foreground">{totalItems}</strong></span>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1 text-foreground">Gestão de Peças</h1>
+          <p className="text-sm md:text-base text-muted-foreground">O coração do seu negócio. Pressione Inserir Novo para injetar mercadoria nova no catálogo.</p>
         </div>
-        <Button onClick={openAddModal} className="w-full sm:w-auto shadow-md h-12 md:h-14 px-6 font-black tracking-wide bg-primary hover:bg-primary/90 text-primary-foreground transform duration-300 text-sm md:text-base uppercase rounded-xl">
-          <Plus className="mr-2 h-5 w-5" /> Inserir Novo
+        <Button onClick={openAddModal} className="w-full sm:w-auto shadow-xl h-12 md:h-14 px-6 font-black tracking-widest bg-foreground hover:bg-foreground/90 text-background transform duration-300 uppercase rounded-xl">
+          <Plus className="mr-2 h-5 w-5" /> Cadastrar Peça
         </Button>
+      </div>
+
+      {/* KPI Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pb-2">
+         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between group">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2"><PackageSearch size={14} className="text-primary" /> Total Modelos</span>
+            <span className="text-2xl md:text-3xl font-black text-foreground">{totalModels}</span>
+         </div>
+         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between group">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2"><Grid size={14} className="text-blue-500" /> Peças Acervo</span>
+            <span className="text-2xl md:text-3xl font-black text-foreground">{totalItems}</span>
+         </div>
+         <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('in_stock')}>
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2"><CheckCircle2 size={14} /> Ativas</span>
+            <span className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-300">{products.filter(p => p.stock_quantity > 0).length}</span>
+         </div>
+         <div className="bg-red-500/10 border-l-4 border-red-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('out_of_stock')}>
+            <span className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400 flex items-center gap-1.5 mb-2"><AlertTriangle size={14} /> Esgotadas</span>
+            <span className="text-2xl md:text-3xl font-black text-red-700 dark:text-red-300">{products.filter(p => p.stock_quantity <= 0).length}</span>
+         </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">

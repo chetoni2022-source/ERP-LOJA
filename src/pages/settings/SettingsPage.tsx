@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -45,12 +45,19 @@ export default function SettingsPage() {
   const [newLeadSource, setNewLeadSource] = useState('');
   const [savingDisplay, setSavingDisplay] = useState(false);
 
+  // Shopee Integration State
+  const [shopeeAppId, setShopeeAppId] = useState('');
+  const [shopeeSecret, setShopeeSecret] = useState('');
+  const [shopeeShopId, setShopeeShopId] = useState('');
+  const [shopeeMarkup, setShopeeMarkup] = useState('0');
+  const [savingShopee, setSavingShopee] = useState(false);
+
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
   useEffect(() => {
     if (!user) return;
     supabase.from('store_settings')
-      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources')
+      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources, shopee_app_id, shopee_app_secret, shopee_shop_id, shopee_markup_pct')
       .eq('user_id', user.id)
       .limit(1).maybeSingle().then(({ data }) => {
         if (data) {
@@ -64,6 +71,10 @@ export default function SettingsPage() {
           if (data.logo_fit) setLogoFit(data.logo_fit);
           if (data.logo_position) setLogoPosition(data.logo_position);
           if (data.lead_sources) setLeadSources(data.lead_sources);
+          if (data.shopee_app_id) setShopeeAppId(data.shopee_app_id);
+          if (data.shopee_app_secret) setShopeeSecret(data.shopee_app_secret);
+          if (data.shopee_shop_id) setShopeeShopId(data.shopee_shop_id);
+          if (data.shopee_markup_pct !== null) setShopeeMarkup(data.shopee_markup_pct.toString());
         }
       });
   }, [user]);
@@ -159,6 +170,34 @@ export default function SettingsPage() {
     finally { setSavingDisplay(false); }
   };
   
+  const handleSaveShopee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingShopee(true);
+    try {
+      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
+      if (!user?.id) { toastError('Erro: Usuário não identificado.'); return; }
+      
+      const payload = { 
+        shopee_app_id: shopeeAppId || null, 
+        shopee_app_secret: shopeeSecret || null, 
+        shopee_shop_id: shopeeShopId || null, 
+        shopee_markup_pct: parseFloat(shopeeMarkup) || 0 
+      };
+      
+      if (existing) {
+        const { error } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+         toastError('Erro: Registre sua marca em "Identidade Visual" primeiro.'); return;
+      }
+      success('Configurações da Shopee salvas no ERP!');
+    } catch (err: any) { 
+      console.error(err);
+      toastError('Erro ao salvar Shopee: ' + err.message); 
+    }
+    finally { setSavingShopee(false); }
+  };
+
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
@@ -263,6 +302,48 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+          
+          {/* Shopee Hub */}
+          <div className="bg-card border-2 border-[#f53d2d]/30 overflow-hidden rounded-xl shadow-sm relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#f53d2d]/10 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl" />
+            <div className="p-6 relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                 <ShoppingBag className="h-6 w-6 text-[#f53d2d]" />
+                 <h2 className="text-lg font-black text-foreground">Hub Shopee Open Platform</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Insira suas credenciais de parceiro da Shopee para sincronização passiva de catálogo e preços.</p>
+              
+              <form onSubmit={handleSaveShopee} className="space-y-4">
+                <div className="space-y-1.5">
+                   <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">App ID / Partner ID</Label>
+                   <Input value={shopeeAppId} onChange={e=>setShopeeAppId(e.target.value)} placeholder="Aguardando liberação Shopee..." className="bg-background shadow-sm h-11 font-mono text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                   <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">App Secret / Partner Key</Label>
+                   <Input type="password" value={shopeeSecret} onChange={e=>setShopeeSecret(e.target.value)} placeholder="********************" className="bg-background shadow-sm h-11 font-mono text-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">Shop ID na Shopee</Label>
+                     <Input value={shopeeShopId} onChange={e=>setShopeeShopId(e.target.value)} placeholder="0000000" className="bg-background shadow-sm h-11 font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">Markup/Lucro (%)</Label>
+                     <div className="relative">
+                       <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-primary text-xs">%</span>
+                       <Input type="number" value={shopeeMarkup} onChange={e=>setShopeeMarkup(e.target.value)} placeholder="15" className="bg-background shadow-sm h-11 pl-8 font-black font-mono text-sm" />
+                     </div>
+                     <p className="text-[9px] text-[#f53d2d] font-bold">Acréscimo automático nos envios.</p>
+                  </div>
+                </div>
+                <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-12 shadow-md">
+                   {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+                   Aplicar Chaves
+                </Button>
+              </form>
+            </div>
+          </div>
+          
         </div>
 
         <div className="space-y-6">

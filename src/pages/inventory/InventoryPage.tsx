@@ -19,6 +19,12 @@ interface Product {
   images: string[] | null;
   created_at: string;
   category_id?: string | null;
+  ean?: string | null;
+  weight_g?: number;
+  length_cm?: number;
+  width_cm?: number;
+  height_cm?: number;
+  shopee_item_id?: string | null;
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -48,6 +54,11 @@ export default function InventoryPage() {
   const [salePrice, setSalePrice] = useState('');
   const [costs, setCosts] = useState<{label: string, value: string}[]>([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
   const [stock, setStock] = useState('');
+  const [ean, setEan] = useState('');
+  const [weight, setWeight] = useState('300'); // Padrão
+  const [length, setLength] = useState('16');
+  const [width, setWidth] = useState('11');
+  const [height, setHeight] = useState('6');
   const [saving, setSaving] = useState(false);
   
   const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean}[]>([]);
@@ -155,6 +166,11 @@ export default function InventoryPage() {
     }
 
     setStock(p.stock_quantity.toString());
+    setEan(p.ean || '');
+    setWeight(p.weight_g ? p.weight_g.toString() : '');
+    setLength(p.length_cm ? p.length_cm.toString() : '');
+    setWidth(p.width_cm ? p.width_cm.toString() : '');
+    setHeight(p.height_cm ? p.height_cm.toString() : '');
     
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
@@ -178,6 +194,11 @@ export default function InventoryPage() {
     }
 
     setStock(p.stock_quantity.toString());
+    setEan('');
+    setWeight(p.weight_g ? p.weight_g.toString() : '');
+    setLength(p.length_cm ? p.length_cm.toString() : '');
+    setWidth(p.width_cm ? p.width_cm.toString() : '');
+    setHeight(p.height_cm ? p.height_cm.toString() : '');
     
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
@@ -268,6 +289,11 @@ export default function InventoryPage() {
         cost_price: totalCost,
         additional_costs: costs.map(c => ({ label: c.label, value: parseFloat(c.value) || 0 })),
         stock_quantity: parseInt(stock, 10),
+        ean: ean || null,
+        weight_g: parseInt(weight) || 0,
+        length_cm: parseInt(length) || 0,
+        width_cm: parseInt(width) || 0,
+        height_cm: parseInt(height) || 0,
         images: finalImageUrls,
         image_url: finalImageUrls[0] || null,
         category_id: categoryId || null,
@@ -302,6 +328,11 @@ export default function InventoryPage() {
     setSalePrice('');
     setCosts([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
     setStock('');
+    setEan('');
+    setWeight('300');
+    setLength('16');
+    setWidth('11');
+    setHeight('6');
     setImages([]);
     setCategoryId('');
     setDraggedIdx(null);
@@ -482,7 +513,14 @@ export default function InventoryPage() {
                     </div>
                     
                     <div className="p-3 flex flex-col flex-1">
-                      <h4 className="text-[11px] font-bold text-foreground line-clamp-1 mb-1.5 uppercase tracking-tight">{product.name}</h4>
+                      <div className="flex justify-between items-start gap-2 mb-1.5">
+                        <h4 className="text-[11px] font-bold text-foreground line-clamp-1 uppercase tracking-tight">{product.name}</h4>
+                        {product.shopee_item_id && (
+                           <div className="h-4 w-4 rounded bg-[#f53d2d] flex items-center justify-center shrink-0 shadow-sm" title="Sincronizado na Shopee">
+                             <div className="text-white text-[8px] font-black">S</div>
+                           </div>
+                        )}
+                      </div>
                       
                       <div className="mt-auto flex items-end justify-between">
                         <div className="flex flex-col">
@@ -543,6 +581,11 @@ export default function InventoryPage() {
                        </div>
 
                        <div className="flex items-center gap-2 pl-3 border-l border-border/70">
+                          {product.shopee_item_id && (
+                             <div className="hidden sm:flex text-[10px] items-center text-[#f53d2d] font-black uppercase tracking-widest gap-1 mr-2" title="Peça na Shopee ativa">
+                               <div className="h-1.5 w-1.5 rounded-full bg-[#f53d2d] animate-pulse" /> Shopee
+                             </div>
+                          )}
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleClone(product); }} 
                             title="Duplicar Produto"
@@ -603,7 +646,12 @@ export default function InventoryPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
+                  <div className="space-y-1.5 md:col-span-1">
+                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Código GTIN/EAN (Opcional)</Label>
+                    <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="Ex: 7891234567890" className="h-11 text-sm font-mono bg-background shadow-sm border-primary/20" />
+                    <p className="text-[10px] text-[#f53d2d] font-bold">Importante para a Shopee</p>
+                  </div>
+                  <div className="space-y-1.5 md:col-span-1">
                     <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência (Opcional)</Label>
                     <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Ex: LAR-2024-001" className="h-11 text-sm font-mono bg-background shadow-sm" />
                   </div>
@@ -714,6 +762,34 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
+                <div className="space-y-4 pt-4 mt-2 border-t border-border">
+                  <div className="flex items-center justify-between">
+                     <div>
+                       <Label className="font-bold text-xs uppercase text-[#f53d2d] tracking-widest block">Logística (Correios/Shopee)</Label>
+                       <p className="text-[10px] text-muted-foreground">Obrigatório preencher para exportar anúncios online usando frete Correios.</p>
+                     </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
+                    <div className="space-y-1">
+                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Peso (g)</Label>
+                       <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                    </div>
+                    <div className="space-y-1">
+                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Comp. (cm)</Label>
+                       <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 text-sm font-black text-center" />
+                    </div>
+                    <div className="space-y-1">
+                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Larg. (cm)</Label>
+                       <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 text-sm font-black text-center" />
+                    </div>
+                    <div className="space-y-1">
+                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Alt. (cm)</Label>
+                       <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-3 pt-4 mt-2 border-t border-border">
                   <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Galeria da Peça (Arraste p/ Ordenar Capa)</Label>
                   
@@ -773,13 +849,21 @@ export default function InventoryPage() {
               </form>
             </div>
 
-            <div className="p-4 md:p-5 border-t border-border bg-card flex gap-3 items-center shrink-0 mt-auto">
-              <Button type="button" className="w-[120px] md:w-auto h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm md:text-base uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
+            <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 mt-auto">
+              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
                 Voltar
               </Button>
-              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest" disabled={saving || (!name && images.length === 0)}>
+              {editingProduct && (
+                 <Button type="button" onClick={() => {
+                     if (!weight || !images.length) toastError("Preencha dimensões e coloque fotos para publicar.");
+                     else success("Shopee Hub não ativado. Cadastre as chaves de integração primeiro.");
+                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 h-12 md:h-14 font-black uppercase tracking-widest text-xs">
+                   Subir Shopee
+                 </Button>
+              )}
+              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto" disabled={saving || (!name && images.length === 0)}>
                 {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                {editingProduct ? 'Gravar' : 'Cadastrar'}
+                {editingProduct ? 'Gravar Alterações' : 'Cadastrar'}
               </Button>
             </div>
           </div>

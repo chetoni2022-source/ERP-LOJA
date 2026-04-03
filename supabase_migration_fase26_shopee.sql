@@ -1,0 +1,18 @@
+-- Migração Fase 26: Preparação Omnichannel Shopee
+
+-- 1. Expansão da Tabela de Configurações da Loja
+ALTER TABLE store_settings 
+ADD COLUMN IF NOT EXISTS shopee_app_id VARCHAR(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS shopee_app_secret VARCHAR(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS shopee_shop_id VARCHAR(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS shopee_markup_pct NUMERIC DEFAULT 0;
+
+-- 2. Expansão da Tabela de Produtos (Logística e Shopee IDs)
+ALTER TABLE products 
+ADD COLUMN IF NOT EXISTS ean VARCHAR(50) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS weight_g INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS length_cm INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS width_cm INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS height_cm INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS shopee_item_id VARCHAR(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS shopee_status VARCHAR(50) DEFAULT 'unlinked';

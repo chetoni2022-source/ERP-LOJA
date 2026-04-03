@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download } from 'lucide-react';
+import { useDashboardStore } from '../../stores/dashboardStore';
+import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Button } from '../../components/ui';
 
@@ -214,18 +215,21 @@ function DateRangePicker({ startDate, endDate, onStartChange, onEndChange, onApp
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(true);
+  const { cachedData, setCachedData } = useDashboardStore();
+  
+  const [loading, setLoading] = useState(!cachedData);
 
-  const [monthlySalesValue, setMonthlySalesValue] = useState(0);
-  const [lastMonthValue, setLastMonthValue] = useState(0);
-  const [monthlyGoal, setMonthlyGoal] = useState(0);
-  const [lowStockCount, setLowStockCount] = useState(0);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [salesData, setSalesData] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [stockData, setStockData] = useState<any[]>([]);
-  const [leadSourceData, setLeadSourceData] = useState<any[]>([]);
-  const [totalProfit, setTotalProfit] = useState(0);
+  const [monthlySalesValue, setMonthlySalesValue] = useState(cachedData?.monthlySalesValue || 0);
+  const [lastMonthValue, setLastMonthValue] = useState(cachedData?.lastMonthValue || 0);
+  const [monthlyGoal, setMonthlyGoal] = useState(cachedData?.monthlyGoal || 0);
+  const [lowStockCount, setLowStockCount] = useState(cachedData?.lowStockCount || 0);
+  const [totalProducts, setTotalProducts] = useState(cachedData?.totalProducts || 0);
+  const [salesData, setSalesData] = useState<any[]>(cachedData?.salesData || []);
+  const [topProducts, setTopProducts] = useState<any[]>(cachedData?.topProducts || []);
+  const [topProfitableProducts, setTopProfitableProducts] = useState<any[]>(cachedData?.topProfitableProducts || []);
+  const [stockData, setStockData] = useState<any[]>(cachedData?.stockData || []);
+  const [leadSourceData, setLeadSourceData] = useState<any[]>(cachedData?.leadSourceData || []);
+  const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0];
@@ -233,7 +237,7 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const fetchDashboardData = useCallback(async (sd?: string, ed?: string) => {
-    setLoading(true);
+    if (!user) return;
     try {
       // Monthly goal
       const { data: settings } = await supabase.from('store_settings').select('monthly_goal').eq('user_id', user.id).limit(1).maybeSingle();
@@ -295,13 +299,19 @@ export default function DashboardPage() {
 
         const prodCount = sales.reduce((acc: any, sale: any) => {
           const name = (sale.products as any)?.name || 'Excluído';
-          if (!acc[name]) acc[name] = { name, quantity: 0, revenue: 0 };
+          if (!acc[name]) acc[name] = { name, quantity: 0, revenue: 0, profit: 0 };
           acc[name].quantity += sale.quantity;
           acc[name].revenue += sale.total_price;
+          acc[name].profit += (sale.total_price - (sale.unit_cost_at_sale * sale.quantity));
           return acc;
         }, {});
 
-        setTopProducts(Object.values(prodCount).sort((a: any, b: any) => b.quantity - a.quantity).slice(0, 5));
+        const allProductsList = Object.values(prodCount);
+        const tp = [...allProductsList].sort((a: any, b: any) => b.quantity - a.quantity).slice(0, 5);
+        const tpp = [...allProductsList].sort((a: any, b: any) => b.profit - a.profit).slice(0, 5);
+        
+        setTopProducts(tp);
+        setTopProfitableProducts(tpp);
 
         // Lead source breakdown
         const sourceCount = sales.reduce((acc: any, sale: any) => {
@@ -335,6 +345,20 @@ export default function DashboardPage() {
         if (sd === undefined) {
           setMonthlySalesValue(thisMonth);
           setTotalProfit(thisMonthProfit);
+
+          setCachedData({
+            monthlySalesValue: thisMonth,
+            lastMonthValue: lastMonthSales ? lastMonthSales.reduce((a, s) => a + s.total_price, 0) : 0,
+            monthlyGoal: settings?.monthly_goal || 0,
+            lowStockCount: products ? products.filter(p => p.stock_quantity < 5).length : 0,
+            totalProducts: products ? products.length : 0,
+            salesData: Object.values(dailyData),
+            topProducts: tp,
+            topProfitableProducts: tpp,
+            stockData: products || [],
+            leadSourceData: Object.entries(sourceCount).map(([n, v]) => ({ name: n, value: v })),
+            totalProfit: thisMonthProfit
+          });
         }
       }
     } catch (error) {
@@ -538,6 +562,53 @@ export default function DashboardPage() {
                 )) : (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/10 p-8">
                     <span className="font-semibold text-sm text-center">Registre vendas para ver o ranking.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Top Profitable 3D Block */}
+            <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden group/chart2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl opacity-0 group-hover/chart2:opacity-100 transition-opacity" />
+              <div className="mb-4">
+                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center gap-2">
+                  <Award className="text-amber-500 h-5 w-5" /> Estrelas de Lucro
+                </h3>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Top Produtos que mais encorparam o lucro liquido (Gráfico 3D).</p>
+              </div>
+              <div className="flex-1 w-full mt-2 h-[280px]">
+                {topProfitableProducts.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topProfitableProducts} layout="vertical" margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" opacity={0.3} />
+                      <XAxis type="number" stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} fontWeight="bold" />
+                      <YAxis dataKey="name" type="category" stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '…' : v} fontWeight="bold" width={70} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
+                        itemStyle={{ fontWeight: 'black', color: 'var(--foreground)' }}
+                        formatter={(val: any) => formatCurrency(val)} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} 
+                      />
+                      <Bar 
+                        dataKey="profit" 
+                        shape={<ThreeDCylinder />} 
+                        maxBarSize={24}
+                        animationDuration={1500}
+                      >
+                        {topProfitableProducts.map((_, index) => (
+                           <Cell key={`cell-${index}`} fill={'url(#goldGradient)'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-[2rem] bg-muted/10 p-4">
+                    <span className="font-semibold text-sm text-center">Nenhum lucro registrado.</span>
                   </div>
                 )}
               </div>

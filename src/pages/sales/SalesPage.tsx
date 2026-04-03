@@ -42,6 +42,8 @@ interface Customer {
   id: string;
   full_name: string;
   phone?: string;
+  total_spent?: number;
+  purchase_count?: number;
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -117,13 +119,24 @@ export default function SalesPage() {
   async function fetchData() {
     try {
       if (!user) return;
-      const [{ data: prodData }, { data: custData }, { data: salesData }] = await Promise.all([
+      const [{ data: prodData }, { data: custData }, { data: salesData }, { data: allSalesForLtv }] = await Promise.all([
         supabase.from('products').select('*').eq('user_id', user.id).order('name'),
         supabase.from('customers').select('id, full_name, phone').eq('user_id', user.id).order('full_name'),
         supabase.from('sales').select(`*, products(name, stock_quantity)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+        supabase.from('sales').select('customer_id, total_price').eq('user_id', user.id)
       ]);
+
+      const enrichedCustomers = (custData || []).map(c => {
+        const custSales = (allSalesForLtv || []).filter(s => s.customer_id === c.id);
+        return {
+          ...c,
+          total_spent: custSales.reduce((a, s) => a + s.total_price, 0),
+          purchase_count: custSales.length,
+        };
+      });
+
       setProducts(prodData || []);
-      setCustomers(custData || []);
+      setCustomers(enrichedCustomers);
       setSales(salesData?.map(s => ({ ...s, products: (s.products as any) })) || []);
     } catch (err) {
       console.error(err);
@@ -206,6 +219,22 @@ export default function SalesPage() {
     setSaving(true);
 
     try {
+      let finalCustomerId = selectedCustomerId;
+      let finalCustomerName = customerSearch;
+
+      // Se digitou um nome, mas não amarrou a nenhum cliente existente, CADASTRA na hora!
+      if (!finalCustomerId && customerSearch.trim()) {
+        const { data: newCust, error: custErr } = await supabase.from('customers').insert({
+          full_name: customerSearch.trim(),
+          user_id: user.id
+        }).select('id').single();
+        
+        if (!custErr && newCust) {
+           finalCustomerId = newCust.id;
+           success(`Novo cliente cadastrado: ${customerSearch.trim()}`);
+        }
+      }
+
       for (const item of cart) {
         const unitPrice = item.product.sale_price || item.product.price;
         const totalPrice = unitPrice * item.quantity;
@@ -216,8 +245,8 @@ export default function SalesPage() {
           quantity: item.quantity,
           total_price: totalPrice,
           unit_cost_at_sale: unitCost,
-          customer_id: selectedCustomerId || null,
-          customer_name: customerSearch || null,
+          customer_id: finalCustomerId || null,
+          customer_name: finalCustomerName || null,
           lead_source: leadSource || null,
           user_id: user.id,
         }]);
@@ -466,10 +495,17 @@ export default function SalesPage() {
                         <button
                           key={c.id}
                           onClick={() => selectCustomer(c)}
-                          className="w-full text-left px-3 py-2 text-[11px] hover:bg-primary/10 rounded-lg transition-colors flex items-center gap-2 group"
+                          className="w-full text-left px-3 py-2 text-[11px] hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-between group"
                         >
-                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary">{c.full_name[0]}</div>
-                          <span className="font-bold flex-1 truncate">{c.full_name}</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary shrink-0">{c.full_name[0]}</div>
+                            <span className="font-bold truncate">{c.full_name}</span>
+                          </div>
+                          {(c.total_spent || 0) > 0 && (
+                             <span className="text-[10px] bg-emerald-500/10 text-emerald-600 font-black px-1.5 py-0.5 rounded ml-2 shrink-0">
+                               LTV: {fmt(c.total_spent || 0)}
+                             </span>
+                          )}
                         </button>
                       ))}
                     </div>

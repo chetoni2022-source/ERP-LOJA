@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BadgeDollarSign, Plus, Loader2, CheckCircle2, 
   UserCircle2, Trash2, Minus, History as HistoryIcon,
-  ShoppingCart, Package, TrendingUp, X, Search, Edit
+  ShoppingCart, Package, TrendingUp, X, Search, Edit, ShoppingBag
 } from 'lucide-react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
@@ -35,6 +35,9 @@ interface Sale {
   customer_name?: string;
   customer_id?: string;
   lead_source?: string;
+  origin?: 'erp' | 'shopee';
+  shopee_fee_pct?: number;
+  shopee_order_id?: string;
   products?: { name: string, stock_quantity: number };
 }
 
@@ -636,11 +639,19 @@ export default function SalesPage() {
                       <tr key={sale.id} className="text-[11px] group">
                         <td className="px-2 py-3">
                            <span className="font-bold block truncate max-w-[120px]">{sale.products?.name || 'Item Excluído'}</span>
-                           <span className="text-[9px] text-muted-foreground block md:hidden">{sale.customer_name || 'Balcão'} • {sale.lead_source}</span>
+                           {sale.origin === 'shopee' ? (
+                             <span className="text-[9px] text-[#f53d2d] flex flex-row items-center gap-1 font-bold md:hidden"><ShoppingBag size={10} /> SHOPEE</span>
+                           ) : (
+                             <span className="text-[9px] text-muted-foreground block md:hidden">{sale.customer_name || 'Balcão'} • {sale.lead_source}</span>
+                           )}
                         </td>
                         <td className="px-2 py-3 hidden md:table-cell">
                            <span className="font-semibold">{sale.customer_name || 'Balcão'}</span>
-                           <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-tighter">{sale.lead_source}</span>
+                           {sale.origin === 'shopee' ? (
+                             <span className="text-[9px] text-[#f53d2d] bg-[#f53d2d]/10 px-1 py-0.5 rounded w-fit flex items-center gap-1 mt-1 uppercase font-black tracking-widest"><ShoppingBag size={10} /> Shopee (-{sale.shopee_fee_pct}%)</span>
+                           ) : (
+                             <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-tighter mt-0.5">{sale.lead_source}</span>
+                           )}
                         </td>
                         <td className="px-2 py-3 text-center opacity-40 font-black">×{sale.quantity}</td>
                         <td className="px-2 py-3 text-right font-black text-foreground">

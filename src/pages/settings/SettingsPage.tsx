@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Link as LinkIcon, Blocks } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const { user } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const { success, error: toastError } = useToast();
+  const [activeTab, setActiveTab] = useState<'geral' | 'marca' | 'integracoes'>('geral');
   const [inviteEmail, setInviteEmail] = useState('');
   
   // White-label State
@@ -230,16 +231,39 @@ export default function SettingsPage() {
   const faviconImg = faviconPreview || currentFaviconUrl;
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300 pb-20">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Avançadas</h1>
-        <p className="text-muted-foreground">Gerencie as preferências da loja, convide a equipe e personalize a identidade visual.</p>
+        <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
+        <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-6">
-          
-          {/* Aparência */}
+      {/* Menu de Abas Premium */}
+      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <button 
+          onClick={() => setActiveTab('geral')}
+          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+        >
+          <Settings2 size={16} /> Geral & Equipe
+        </button>
+        <button 
+          onClick={() => setActiveTab('marca')}
+          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+        >
+          <Palette size={16} /> Identidade Visual
+        </button>
+        <button 
+          onClick={() => setActiveTab('integracoes')}
+          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'integracoes' ? 'bg-[#f53d2d] text-white border-[#f53d2d]/80 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-[#f53d2d]/10 hover:text-[#f53d2d]'}`}
+        >
+          <Blocks size={16} /> Integrações Omnichannel
+        </button>
+      </div>
+
+      <div className="mt-4">
+        {/* TAB 1: GERAL E EQUIPE */}
+        {activeTab === 'geral' && (
+          <div className="grid gap-6 lg:grid-cols-2 animate-in slide-in-from-bottom-2 duration-300">
+            {/* Aparência */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-4 flex items-center text-foreground gap-2"><Palette className="w-5 h-5 text-primary" /> Aparência do Painel</h2>
             <Label className="mb-3 block text-foreground font-semibold">Tema do Sistema ERP</Label>
@@ -302,53 +326,15 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-          
-          {/* Shopee Hub */}
-          <div className="bg-card border-2 border-[#f53d2d]/30 overflow-hidden rounded-xl shadow-sm relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#f53d2d]/10 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl" />
-            <div className="p-6 relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                 <ShoppingBag className="h-6 w-6 text-[#f53d2d]" />
-                 <h2 className="text-lg font-black text-foreground">Hub Shopee Open Platform</h2>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">Insira suas credenciais de parceiro da Shopee para sincronização passiva de catálogo e preços.</p>
-              
-              <form onSubmit={handleSaveShopee} className="space-y-4">
-                <div className="space-y-1.5">
-                   <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">App ID / Partner ID</Label>
-                   <Input value={shopeeAppId} onChange={e=>setShopeeAppId(e.target.value)} placeholder="Aguardando liberação Shopee..." className="bg-background shadow-sm h-11 font-mono text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                   <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">App Secret / Partner Key</Label>
-                   <Input type="password" value={shopeeSecret} onChange={e=>setShopeeSecret(e.target.value)} placeholder="********************" className="bg-background shadow-sm h-11 font-mono text-sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">Shop ID na Shopee</Label>
-                     <Input value={shopeeShopId} onChange={e=>setShopeeShopId(e.target.value)} placeholder="0000000" className="bg-background shadow-sm h-11 font-mono text-sm" />
-                  </div>
-                  <div className="space-y-1.5">
-                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block">Markup/Lucro (%)</Label>
-                     <div className="relative">
-                       <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-primary text-xs">%</span>
-                       <Input type="number" value={shopeeMarkup} onChange={e=>setShopeeMarkup(e.target.value)} placeholder="15" className="bg-background shadow-sm h-11 pl-8 font-black font-mono text-sm" />
-                     </div>
-                     <p className="text-[9px] text-[#f53d2d] font-bold">Acréscimo automático nos envios.</p>
-                  </div>
-                </div>
-                <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-12 shadow-md">
-                   {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                   Aplicar Chaves
-                </Button>
-              </form>
-            </div>
           </div>
-          
-        </div>
+        )}
 
-        <div className="space-y-6">
-          {/* Identidade visual */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm border-t-4 border-t-primary">
+        {/* TAB 2: MARCA E PLATAFORMA */}
+        {activeTab === 'marca' && (
+          <div className="grid gap-6 lg:grid-cols-2 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="space-y-6">
+              {/* Identidade visual */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm border-t-4 border-t-primary">
             <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Store className="w-5 h-5 text-primary"/> Identidade Visual (White-label)</h2>
             <p className="text-sm text-muted-foreground mb-5">Personalize o sistema com a sua marca.</p>
 
@@ -412,7 +398,9 @@ export default function SettingsPage() {
               </Button>
             </form>
           </div>
+          </div>
 
+          <div className="space-y-6">
           {/* ── LOGO DISPLAY SETTINGS ── */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-1 flex items-center gap-2 text-foreground"><Crop className="w-5 h-5 text-primary"/> Exibição da Logo no Painel e Catálogo</h2>
@@ -499,7 +487,69 @@ export default function SettingsPage() {
               </Button>
             </div>
           </div>
-        </div>
+          </div>
+          </div>
+        )}
+
+        {/* TAB 3: INTEGRACOES OMNICHANNEL */}
+        {activeTab === 'integracoes' && (
+          <div className="grid gap-6 lg:grid-cols-2 animate-in slide-in-from-bottom-2 duration-300">
+             {/* Shopee Hub */}
+             <div className="bg-card border-2 border-[#f53d2d]/30 overflow-hidden rounded-2xl shadow-lg relative h-fit group">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#f53d2d]/10 rounded-full -mr-20 -mt-20 pointer-events-none blur-3xl group-hover:bg-[#f53d2d]/20 transition-all" />
+                <div className="p-6 md:p-8 relative z-10 w-full h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                     <div className="h-12 w-12 rounded-xl bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shadow-sm border border-[#f53d2d]/20">
+                       <ShoppingBag className="h-6 w-6 text-[#f53d2d]" />
+                     </div>
+                     <div>
+                       <h2 className="text-xl md:text-2xl font-black text-foreground">Shopee Open Platform</h2>
+                       <p className="text-[10px] uppercase font-bold text-[#f53d2d] tracking-widest bg-[#f53d2d]/10 w-fit px-2 py-0.5 rounded-md mt-0.5">App Conector Ativo</p>
+                     </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6 font-medium">Insira suas chaves matrizes de desenvolvedor. Todos os anúncios criados aqui serão refletidos como mágica lá com a nova margem de impostos calculada e aplicada.</p>
+                  
+                  <form onSubmit={handleSaveShopee} className="space-y-5">
+                    <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">App ID / Partner ID</Label>
+                       <Input value={shopeeAppId} onChange={e=>setShopeeAppId(e.target.value)} placeholder="00000000000" className="bg-background shadow-sm h-12 font-mono text-sm border-none shadow-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
+                    </div>
+                    <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">App Secret / Partner Key</Label>
+                       <Input type="password" value={shopeeSecret} onChange={e=>setShopeeSecret(e.target.value)} placeholder="********************************" className="bg-background shadow-sm h-12 font-mono text-sm border-none shadow-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Shop ID</Label>
+                         <Input value={shopeeShopId} onChange={e=>setShopeeShopId(e.target.value)} placeholder="000000" className="bg-background shadow-sm h-12 font-mono text-sm border-none shadow-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
+                      </div>
+                      <div className="space-y-1.5 bg-[#f53d2d]/5 p-2 rounded-xl border border-[#f53d2d]/20 relative overflow-hidden">
+                         <Label className="font-bold text-[10px] uppercase text-[#f53d2d] tracking-widest block ml-1 z-10 relative">Mark-up Automático</Label>
+                         <div className="relative z-10">
+                           <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#f53d2d] text-sm">+</span>
+                           <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-sm">%</span>
+                           <Input type="number" value={shopeeMarkup} onChange={e=>setShopeeMarkup(e.target.value)} placeholder="20" className="bg-transparent shadow-none h-12 pl-7 pr-7 font-black font-mono text-xl border-none focus-visible:ring-0 text-[#f53d2d]" />
+                         </div>
+                      </div>
+                    </div>
+                    <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl mt-2 transition-transform active:scale-95">
+                       {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+                       Ativar Refletor Shopee
+                    </Button>
+                  </form>
+                </div>
+             </div>
+             
+             {/* Mercado Livre Preview */}
+             <div className="bg-muted/10 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center p-8 text-center h-fit opacity-50 cursor-not-allowed">
+               <div className="h-16 w-16 mb-4 bg-muted text-muted-foreground/50 rounded-2xl flex items-center justify-center">
+                 <Store size={32} />
+               </div>
+               <h3 className="font-bold text-lg text-foreground uppercase tracking-widest mb-1">Mercado Livre</h3>
+               <p className="text-xs text-muted-foreground max-w-[250px] font-medium">Conector em desenvolvimento. Será liberado nas próximas ondas de atualização.</p>
+             </div>
+          </div>
+        )}
       </div>
     </div>
   );

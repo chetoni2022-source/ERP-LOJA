@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BadgeDollarSign, Plus, Loader2, CheckCircle2, 
   UserCircle2, Trash2, Minus, History as HistoryIcon,
-  ShoppingCart, Package, TrendingUp, X, Search, Edit, ShoppingBag
+  ShoppingCart, Package, TrendingUp, X, Search, Edit, ShoppingBag, MessageCircle
 } from 'lucide-react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +19,7 @@ interface Product {
   image_url?: string | null;
   images?: string[];
   sku?: string;
+  ean?: string;
 }
 
 interface CartItem {
@@ -100,6 +101,69 @@ export default function SalesPage() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [user]);
+
+  // --- PDV Scanner Listener (Modo Supermercado) ---
+  const barcodeBuffer = useRef('');
+  const lastKeyTime = useRef(Date.now());
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent intercepting normal user typing
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+         return; 
+      }
+
+      const currentTime = Date.now();
+      
+      // If time between keystrokes is > 50ms, it's a human typing, reset buffer
+      if (currentTime - lastKeyTime.current > 50) {
+        barcodeBuffer.current = '';
+      }
+      lastKeyTime.current = currentTime;
+
+      if (e.key === 'Enter') {
+        const scannedCode = barcodeBuffer.current.trim();
+        if (scannedCode.length >= 4) { // Minimum length for EAN or SKU
+           const matchedProduct = products.find(p => 
+             (p.ean && p.ean === scannedCode) || 
+             (p.sku && p.sku.toLowerCase() === scannedCode.toLowerCase())
+           );
+           
+           if (matchedProduct) {
+             if (matchedProduct.stock_quantity > 0) {
+               setCart(prev => {
+                 const existing = prev.find(item => item.product.id === matchedProduct.id);
+                 if (existing) {
+                   if (existing.quantity >= matchedProduct.stock_quantity) {
+                     toastError(`Estoque insuficiente de ${matchedProduct.name}`);
+                     return prev;
+                   }
+                   success(`+1 ${matchedProduct.name} bipado!`);
+                   return prev.map(item => item.product.id === matchedProduct.id ? { ...item, quantity: item.quantity + 1 } : item);
+                 }
+                 success(`${matchedProduct.name} rápido adicionado!`);
+                 return [{ product: matchedProduct, quantity: 1 }, ...prev];
+               });
+             } else {
+               toastError(`Atenção: Peça Esgotada (${matchedProduct.name})`);
+             }
+           } else {
+             toastError(`Código EAN/SKU não encontrado: ${scannedCode}`);
+           }
+        }
+        barcodeBuffer.current = '';
+        return;
+      }
+
+      // Add to buffer if single char
+      if (e.key.length === 1) {
+        barcodeBuffer.current += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [products, toastError, success]);
 
   async function fetchStoreSettings() {
     try {
@@ -371,7 +435,18 @@ export default function SalesPage() {
     } finally {
       setSaving(false);
     }
-  }
+  };
+
+  const handleSendReceipt = (sale: Sale) => {
+    let text = `Olá${sale.customer_name ? ` ${sale.customer_name}` : ''}! Tudo bem?\n\n`;
+    text += `Vim avisar que o seu pedido no valor de *${fmt(sale.total_price)}* já está com a gente.\n`;
+    text += `Peça: *${sale.products?.name || 'Item'}* (Qtd: ${sale.quantity})\n\n`;
+    text += `Assim que for despachado, avisaremos. Muito obrigado por escolher a Laris Acessórios! 💎`;
+    
+    const encoded = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  };
+
 
   if (loading) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -657,6 +732,13 @@ export default function SalesPage() {
                         <td className="px-2 py-3 text-right font-black text-foreground">
                            <div className="flex items-center justify-end gap-1.5 uppercase tracking-tighter">
                              <span className="mr-1">{fmt(sale.total_price)}</span>
+                             <button 
+                               onClick={() => handleSendReceipt(sale)}
+                               title="Enviar Recibo WhatsApp"
+                               className="h-7 w-7 flex items-center justify-center text-green-600 hover:bg-green-600/10 rounded-md transition-all"
+                             >
+                               <MessageCircle size={12} />
+                             </button>
                              <button 
                                onClick={() => openEditSale(sale)}
                                className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-md transition-all"

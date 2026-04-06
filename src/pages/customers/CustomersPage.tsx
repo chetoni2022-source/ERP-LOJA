@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
-import { UserCircle2, Plus, Trash2, Edit2, Loader2, Search, Phone, Mail, ShoppingBag, X, ChevronRight } from 'lucide-react';
+import { UserCircle2, Plus, Trash2, Edit2, Loader2, Search, Phone, Mail, ShoppingBag, X, ChevronRight, MessageCircle } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -189,7 +189,20 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                {selectedCustomer.phone && (
+                  <Button 
+                    onClick={() => {
+                        const tel = selectedCustomer.phone?.replace(/\D/g, '');
+                        const msg = encodeURIComponent(`Olá ${selectedCustomer.full_name}! Vim te avisar que chegou novidades Laris Acessórios e separei um mimo de 5% off para você.`);
+                        window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
+                    }}
+                    className="h-8 px-2.5 flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20b858] text-white border-none shadow-md transition-all active:scale-95"
+                    title="Disparar Oferta de Revenda"
+                  >
+                     <MessageCircle className="h-3.5 w-3.5" /> <span className="text-[10px] uppercase font-black tracking-widest hidden sm:inline">Zap Oferta</span>
+                  </Button>
+                )}
                 <Button onClick={() => openEdit(selectedCustomer)} className="h-8 w-8 px-0 bg-muted border border-border text-foreground hover:bg-teal-500/10 hover:text-teal-600 transition-colors">
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>

@@ -55,10 +55,7 @@ export default function SettingsPage() {
   const [shopeeFixedFee, setShopeeFixedFee] = useState('4');
   const [shopeeCap, setShopeeCap] = useState('100');
   
-  // TikTok Integration State
-  const [tiktokCommission, setTiktokCommission] = useState('15');
-  const [tiktokFixedFee, setTiktokFixedFee] = useState('4');
-  const [tiktokCap, setTiktokCap] = useState('100');
+
   
   const [savingShopee, setSavingShopee] = useState(false);
 
@@ -85,6 +82,7 @@ export default function SettingsPage() {
           if (data.shopee_app_secret) setShopeeSecret(data.shopee_app_secret);
           if (data.shopee_shop_id) setShopeeShopId(data.shopee_shop_id);
           if (data.shopee_markup_pct !== null) setShopeeMarkup(data.shopee_markup_pct.toString());
+          if (data.tiktok_markup_pct !== null) setTiktokMarkup(data.tiktok_markup_pct.toString());
           if (data.shopee_commission_pct !== null) setShopeeCommission(data.shopee_commission_pct.toString());
           if (data.shopee_fixed_fee !== null) setShopeeFixedFee(data.shopee_fixed_fee.toString());
           if (data.shopee_commission_cap !== null) setShopeeCap(data.shopee_commission_cap.toString());
@@ -198,6 +196,7 @@ export default function SettingsPage() {
         shopee_app_secret: shopeeSecret || null, 
         shopee_shop_id: shopeeShopId || null, 
         shopee_markup_pct: parseFloat(shopeeMarkup) || 0,
+        tiktok_markup_pct: parseFloat(tiktokMarkup) || 0,
         shopee_commission_pct: parseFloat(shopeeCommission) || 20,
         shopee_fixed_fee: parseFloat(shopeeFixedFee) || 4,
         shopee_commission_cap: parseFloat(shopeeCap) || 100,
@@ -602,9 +601,19 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border mb-4">
-                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Teto Máximo Comissão (R$)</Label>
-                     <Input value={tiktokCap} onChange={e=>setTiktokCap(e.target.value)} placeholder="100.00" className="bg-background shadow-sm h-10 font-bold" />
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Teto Máximo Comissão (R$)</Label>
+                       <Input value={tiktokCap} onChange={e=>setTiktokCap(e.target.value)} placeholder="100.00" className="bg-background shadow-sm h-10 font-bold" />
+                    </div>
+                    <div className="space-y-1.5 bg-zinc-950 p-2 rounded-xl border border-zinc-800 relative overflow-hidden">
+                       <Label className="font-bold text-[10px] uppercase text-white tracking-widest block ml-1 z-10 relative">Mark-up Automático</Label>
+                       <div className="relative z-10">
+                         <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-white text-sm">+</span>
+                         <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-sm">%</span>
+                         <Input type="number" value={tiktokMarkup} onChange={e=>setTiktokMarkup(e.target.value)} placeholder="15" className="bg-transparent shadow-none h-12 pl-7 pr-7 font-black font-mono text-xl border-none focus-visible:ring-0 text-white" />
+                       </div>
+                    </div>
                   </div>
 
                   <Button onClick={handleSaveShopee} disabled={savingShopee} className="w-full bg-black hover:bg-zinc-800 text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-black/10 rounded-xl transition-transform active:scale-95">

@@ -112,9 +112,11 @@ export default function InventoryPage() {
         shopee_comm: data.shopee_commission_pct ?? 20,
         shopee_fee: data.shopee_fixed_fee ?? 4,
         shopee_cap: data.shopee_commission_cap ?? 100,
+        shopee_markup: data.shopee_markup_pct ?? 20,
         tiktok_comm: data.tiktok_commission_pct ?? 15,
         tiktok_fee: data.tiktok_fixed_fee ?? 4,
-        tiktok_cap: data.tiktok_commission_cap ?? 100
+        tiktok_cap: data.tiktok_commission_cap ?? 100,
+        tiktok_markup: data.tiktok_markup_pct ?? 15
       });
     }
   }
@@ -1107,7 +1109,56 @@ export default function InventoryPage() {
                       </div>
                     </div>
 
-                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60">
+                    {/* ── SUGGESTED PRICE CALCULATOR ── */}
+                    <div className="mt-4 pt-4 border-t border-border/40">
+                       <Label className="font-black text-[10px] uppercase text-primary tracking-widest mb-3 block">Calculadora de Preço Sugerido</Label>
+                       
+                       <div className="grid grid-cols-1 gap-3">
+                          {/* Shopee Recommendation */}
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-[#f53d2d]/5 border border-[#f53d2d]/10">
+                             <div className="flex flex-col">
+                                <span className="text-[9px] font-black uppercase text-[#f53d2d]">Preço Sugerido Shopee</span>
+                                <span className="text-[10px] text-muted-foreground font-medium">Cobre taxas + Mark-up de {taxSettings.shopee_markup}%</span>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-lg font-black text-foreground">
+                                  R$ {( () => {
+                                    const base = parseFloat(salePrice || price || '0');
+                                    const recomposed = (base + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm/100));
+                                    const suggested = Math.max(recomposed, base * (1 + taxSettings.shopee_markup/100));
+                                    return suggested.toFixed(2).replace('.', ',');
+                                  })() }
+                                </p>
+                             </div>
+                          </div>
+
+                          {/* TikTok Recommendation */}
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-black/5 border border-black/10">
+                             <div className="flex flex-col">
+                                <span className="text-[9px] font-black uppercase text-foreground">Preço Sugerido TikTok</span>
+                                <span className="text-[10px] text-muted-foreground font-medium">Cobre taxas + Mark-up de {taxSettings.tiktok_markup}%</span>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-lg font-black text-foreground">
+                                  R$ {( () => {
+                                    const base = parseFloat(salePrice || price || '0');
+                                    const recomposed = (base + taxSettings.tiktok_fee) / (1 - (taxSettings.tiktok_comm/100));
+                                    const suggested = Math.max(recomposed, base * (1 + taxSettings.tiktok_markup/100));
+                                    return suggested.toFixed(2).replace('.', ',');
+                                  })() }
+                                </p>
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                          <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight text-center">
+                            💡 Dica: Venda mais caro nos Marketplaces para garantir o mesmo lucro do seu site.
+                          </p>
+                       </div>
+                    </div>
+
+                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60 mt-4">
                       * Tarifas base configuadas em <strong>Ajustes &gt; Integrações</strong>. <br />
                       Passe o mouse nos cards para detalhamento.
                     </p>

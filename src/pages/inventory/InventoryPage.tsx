@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -47,6 +47,7 @@ export default function InventoryPage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'logistics' | 'media'>('basic');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const [name, setName] = useState('');
@@ -156,6 +157,7 @@ export default function InventoryPage() {
     setReelsVideo('');
     resetForm();
     setIsModalOpen(true);
+    setActiveTab('basic');
   };
 
   const openEditModal = (p: Product) => {
@@ -188,6 +190,7 @@ export default function InventoryPage() {
     setReelsVideo(p.media_assets?.reels_video || '');
     
     setIsModalOpen(true);
+    setActiveTab('basic');
   };
 
   const handleClone = (p: Product) => {
@@ -219,6 +222,7 @@ export default function InventoryPage() {
     setReelsVideo(p.media_assets?.reels_video || '');
     
     setIsModalOpen(true);
+    setActiveTab('basic');
   };
 
   const handleDelete = async (p: Product) => {
@@ -646,215 +650,252 @@ export default function InventoryPage() {
             </div>
             
             <div className="p-5 md:p-6 overflow-y-auto bg-muted/5 flex-1 custom-scrollbar">
+              <div className="flex flex-wrap gap-1 bg-muted/30 p-1.5 rounded-xl mb-6 border border-border/50">
+                 {['basic', 'pricing', 'logistics', 'media'].map(tab => (
+                   <button
+                     key={tab}
+                     type="button"
+                     onClick={() => setActiveTab(tab as any)}
+                     className={cn(
+                       "flex-1 text-[10px] md:text-xs uppercase font-black tracking-widest py-2.5 rounded-lg transition-all whitespace-nowrap min-w-[80px]",
+                       activeTab === tab ? "bg-background text-primary shadow-sm border border-border/50" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                     )}
+                   >
+                     {tab === 'basic' && 'Info 📝'}
+                     {tab === 'pricing' && 'Lucros 💸'}
+                     {tab === 'logistics' && 'Frete 📦'}
+                     {tab === 'media' && 'Mídia 🎥'}
+                   </button>
+                 ))}
+              </div>
+
               <form id="productForm" onSubmit={handleSaveProduct} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5 md:col-span-1">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Título do Acessório</Label>
-                    <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 text-sm font-bold bg-background shadow-sm transition-colors" />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-1">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Coleção/Categoria (Opcional)</Label>
-                    <select 
-                      value={categoryId}
-                      onChange={(e) => setCategoryId(e.target.value)}
-                      className="flex h-11 w-full rounded-md border border-border bg-background text-foreground px-3 py-1 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm"
-                    >
-                      <option value="">Não classificado</option>
-                      {categories.map(cat => (
-                         <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5 md:col-span-1">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Código GTIN/EAN (Opcional)</Label>
-                    <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="Ex: 7891234567890" className="h-11 text-sm font-mono bg-background shadow-sm border-primary/20" />
-                    <p className="text-[10px] text-[#f53d2d] font-bold">Importante para a Shopee</p>
-                  </div>
-                  <div className="space-y-1.5 md:col-span-1">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência (Opcional)</Label>
-                    <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Ex: LAR-2024-001" className="h-11 text-sm font-mono bg-background shadow-sm" />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
-                    <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande. Tudo o que escrever aqui aparece no catálogo.</p>
-                    <div className="flex gap-1 mb-1.5">
-                      {(['bold','big'] as const).map(fmtTag => (
-                        <button key={fmtTag} type="button"
-                          className="h-7 px-2.5 text-xs font-bold border border-border rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
-                          onClick={() => { const ref = { current: document.getElementById('descTextarea') as HTMLTextAreaElement }; const el = ref.current; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); }}
-                        >{fmtTag === 'bold' ? 'N (Negrito)' : 'G (Grande)'}</button>
-                      ))}
-                    </div>
-                    <textarea
-                      id="descTextarea"
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k. Resistente ao suor e agua. Acompanha embalagem presente..."
-                      rows={4}
-                      className="w-full px-3 py-2 text-sm font-medium rounded-md border border-border bg-background text-foreground outline-none focus:ring-1 focus:ring-primary resize-y shadow-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-1">
-                  <div className="space-y-1.5">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Original</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xs">R$</span>
-                      <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <Label className="font-bold text-xs uppercase text-primary/80 tracking-widest block flex items-center gap-1">Promo <span className="font-normal text-[9px]">(opcional)</span></Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-xs">R$</span>
-                      <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 shadow-sm focus:border-primary text-primary" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Estoque</Label>
-                    <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 text-base font-black bg-background shadow-sm text-center" />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
-                    <div>
-                      <Label className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Estrutura de Custos</Label>
-                      <p className="text-[9px] text-muted-foreground/60 font-medium">Cadastre insumos, fretes e embalagens.</p>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setCosts([...costs, { label: '', value: '' }])} 
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
-                    >
-                      <Plus className="h-3 w-3" /> Adicionar Custo
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {costs.map((c, idx) => (
-                      <div key={idx} className="flex gap-2 items-center bg-card border border-border/50 p-2 rounded-xl shadow-sm hover:border-primary/30 transition-all group/cost">
-                        <div className="flex-1 space-y-1">
-                          <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Descrição</span>
-                          <Input 
-                            value={c.label} 
-                            onChange={e => { const nc = [...costs]; nc[idx].label = e.target.value; setCosts(nc); }} 
-                            placeholder="Ex: Embalagem..." 
-                            className="h-9 text-xs font-bold bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
-                          />
-                        </div>
-                        <div className="w-24 space-y-1">
-                           <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Valor</span>
-                           <div className="relative">
-                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-muted-foreground/60">R$</span>
-                             <Input 
-                                type="number" 
-                                step="0.01" 
-                                value={c.value} 
-                                onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
-                                placeholder="0,00" 
-                                className="h-9 pl-6 text-xs font-black bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
-                             />
-                           </div>
-                        </div>
-                        {costs.length > 1 && (
-                          <button 
-                            type="button" 
-                            onClick={() => setCosts(costs.filter((_, i) => i !== idx))} 
-                            className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 pt-2">
-                  <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
-                  <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
-                    R$ {profitPerSale.toFixed(2).replace('.', ',')}
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 mt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                     <div>
-                       <Label className="font-bold text-xs uppercase text-[#f53d2d] tracking-widest block">Logística (Correios/Shopee)</Label>
-                       <p className="text-[10px] text-muted-foreground">Obrigatório preencher para exportar anúncios online usando frete Correios.</p>
-                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
-                    <div className="space-y-1">
-                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Peso (g)</Label>
-                       <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 text-sm font-black text-center" />
-                    </div>
-                    <div className="space-y-1">
-                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Comp. (cm)</Label>
-                       <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 text-sm font-black text-center" />
-                    </div>
-                    <div className="space-y-1">
-                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Larg. (cm)</Label>
-                       <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 text-sm font-black text-center" />
-                    </div>
-                    <div className="space-y-1">
-                       <Label className="text-[9px] font-black uppercase text-muted-foreground">Alt. (cm)</Label>
-                       <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 text-sm font-black text-center" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 mt-2 border-t border-border">
-                  <div>
-                    <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">🎥 Mídias p/ Redes & 🏭 Fornecedores</Label>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Registre a origem e estruture os links dos vídeos para que sua equipe não os perca nunca mais.</p>
-                  </div>
-                  
+                
+                {/* --- TAB: BÁSICOS --- */}
+                <div className={cn("space-y-5", activeTab !== 'basic' && "hidden")}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="space-y-1.5 md:col-span-2">
-                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Nome do Fornecedor / Fábrica (Opcional)</Label>
-                       <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 text-sm font-bold bg-background shadow-sm" />
-                     </div>
-
-                     <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-[#f53d2d]/20 transition-all" />
-                       <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (Quadrado 1:1)</Label>
-                       <Input value={shopeeVideo} onChange={e => setShopeeVideo(e.target.value)} placeholder="Link Drive/Canva..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
-                       <p className="text-[9px] font-bold text-muted-foreground opacity-60">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
-                     </div>
-
-                     <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-purple-500/20 transition-all" />
-                       <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (Vertical 9:16)</Label>
-                       <Input value={reelsVideo} onChange={e => setReelsVideo(e.target.value)} placeholder="Link Drive/CapCut..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500" />
-                       <p className="text-[9px] font-bold text-muted-foreground opacity-60">Qualidade total para Redes Sociais.</p>
-                     </div>
+                    <div className="space-y-1.5 md:col-span-1">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Título do Acessório</Label>
+                      <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 text-sm font-bold bg-background shadow-sm transition-colors" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-1">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Coleção/Categoria (Opcional)</Label>
+                      <select 
+                        value={categoryId}
+                        onChange={(e) => setCategoryId(e.target.value)}
+                        className="flex h-11 w-full rounded-md border border-border bg-background text-foreground px-3 py-1 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm"
+                      >
+                        <option value="">Não classificado</option>
+                        {categories.map(cat => (
+                           <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-1">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Código GTIN/EAN (Opcional)</Label>
+                      <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="Ex: 7891234567890" className="h-11 text-sm font-mono bg-background shadow-sm border-primary/20" />
+                      <p className="text-[10px] text-[#f53d2d] font-bold">Importante para a Shopee</p>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-1">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência (Opcional)</Label>
+                      <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Ex: LAR-2024-001" className="h-11 text-sm font-mono bg-background shadow-sm" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
+                      <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande. Tudo o que escrever aqui aparece no catálogo.</p>
+                      <div className="flex gap-1 mb-1.5">
+                        {(['bold','big'] as const).map(fmtTag => (
+                          <button key={fmtTag} type="button"
+                            className="h-7 px-2.5 text-xs font-bold border border-border rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
+                            onClick={() => { const ref = { current: document.getElementById('descTextarea') as HTMLTextAreaElement }; const el = ref.current; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); }}
+                          >{fmtTag === 'bold' ? 'N (Negrito)' : 'G (Grande)'}</button>
+                        ))}
+                      </div>
+                      <textarea
+                        id="descTextarea"
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k. Resistente ao suor e agua. Acompanha embalagem presente..."
+                        rows={6}
+                        className="w-full px-3 py-3 text-sm font-medium rounded-md border border-border bg-background text-foreground outline-none focus:ring-1 focus:ring-primary resize-y shadow-sm"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-4 mt-2 border-t border-border">
-                  <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Galeria da Peça (Arraste p/ Ordenar Capa)</Label>
-                  
-                  <div className="border-2 border-dashed border-border rounded-xl p-5 md:p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors relative cursor-pointer group shadow-inner">
-                    <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground group-hover:text-primary transition-colors pointer-events-none">
-                      <ImageIcon className="h-8 w-8 opacity-80" />
-                      <div>
-                        <span className="text-sm md:text-base font-bold block text-foreground">Aperte para subir fotos</span>
+                {/* --- TAB: PRICING --- */}
+                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'pricing' && "hidden")}>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Original</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xs">R$</span>
+                        <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm" />
                       </div>
                     </div>
-                    <Input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple 
-                      onChange={handleImageSelect} 
-                      className="absolute inset-0 opacity-0 cursor-pointer h-full w-full" 
-                    />
+                    
+                    <div className="space-y-1.5">
+                      <Label className="font-bold text-xs uppercase text-primary/80 tracking-widest block flex items-center gap-1">Promo <span className="font-normal text-[9px]">(opcional)</span></Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-xs">R$</span>
+                        <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 shadow-sm focus:border-primary text-primary" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Estoque</Label>
+                      <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 text-base font-black bg-background shadow-sm text-center" />
+                    </div>
                   </div>
+
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                      <div>
+                        <Label className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Estrutura de Custos</Label>
+                        <p className="text-[9px] text-muted-foreground/60 font-medium">Cadastre insumos, fretes e embalagens.</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setCosts([...costs, { label: '', value: '' }])} 
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
+                      >
+                        <Plus className="h-3 w-3" /> Adicionar Custo
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {costs.map((c, idx) => (
+                        <div key={idx} className="flex gap-2 items-center bg-card border border-border/50 p-2 rounded-xl shadow-sm hover:border-primary/30 transition-all group/cost">
+                          <div className="flex-1 space-y-1">
+                            <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Descrição</span>
+                            <Input 
+                              value={c.label} 
+                              onChange={e => { const nc = [...costs]; nc[idx].label = e.target.value; setCosts(nc); }} 
+                              placeholder="Ex: Embalagem..." 
+                              className="h-9 text-xs font-bold bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
+                            />
+                          </div>
+                          <div className="w-24 space-y-1">
+                             <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Valor</span>
+                             <div className="relative">
+                               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-muted-foreground/60">R$</span>
+                               <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  value={c.value} 
+                                  onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
+                                  placeholder="0,00" 
+                                  className="h-9 pl-6 text-xs font-black bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
+                               />
+                             </div>
+                          </div>
+                          {costs.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => setCosts(costs.filter((_, i) => i !== idx))} 
+                              className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
+                    <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
+                      R$ {profitPerSale.toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- TAB: LOGISTIC --- */}
+                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'logistics' && "hidden")}>
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between">
+                       <div>
+                         <Label className="font-bold text-xs uppercase text-[#f53d2d] tracking-widest block">Logística (Correios/Shopee)</Label>
+                         <p className="text-[10px] text-muted-foreground">Obrigatório preencher para exportar anúncios online usando frete Correios.</p>
+                       </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
+                      <div className="space-y-1">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Peso (g)</Label>
+                         <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      </div>
+                      <div className="space-y-1">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Comp. (cm)</Label>
+                         <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      </div>
+                      <div className="space-y-1">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Larg. (cm)</Label>
+                         <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      </div>
+                      <div className="space-y-1">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Alt. (cm)</Label>
+                         <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      </div>
+                    </div>
+                    
+                    {/* Ghost box to give tab a bit more content so it doesn't look empty */}
+                    <div className="bg-muted/30 p-4 rounded-xl opacity-60 flex items-center gap-3 border border-dashed border-border/60">
+                       <Package className="h-6 w-6 text-muted-foreground/60" />
+                       <p className="text-xs font-medium text-muted-foreground">Atentar-se às tabelas oficiais dos Correios para evitar multas de cubagem e reingresso.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- TAB: MEDIA --- */}
+                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'media' && "hidden")}>
+                  <div>
+                    <div>
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">🎥 Mídias p/ Redes & 🏭 Fornecedores</Label>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Registre a origem e estruture os links dos vídeos para sua equipe não os perder jamais.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                       <div className="space-y-1.5 md:col-span-2">
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Nome do Fornecedor / Fábrica (Opcional)</Label>
+                         <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 text-sm font-bold bg-background shadow-sm" />
+                       </div>
+
+                       <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-[#f53d2d]/20 transition-all" />
+                         <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (Quadrado 1:1)</Label>
+                         <Input value={shopeeVideo} onChange={e => setShopeeVideo(e.target.value)} placeholder="Link Drive/Canva..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
+                         <p className="text-[9px] font-bold text-muted-foreground opacity-60">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
+                       </div>
+
+                       <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-purple-500/20 transition-all" />
+                         <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (Vertical 9:16)</Label>
+                         <Input value={reelsVideo} onChange={e => setReelsVideo(e.target.value)} placeholder="Link Drive/CapCut..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500" />
+                         <p className="text-[9px] font-bold text-muted-foreground opacity-60">Qualidade total para Redes Sociais.</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-6 mt-4 border-t border-border/80">
+                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Galeria da Peça (Arraste p/ Ordenar Capa)</Label>
+                    
+                    <div className="border-2 border-dashed border-border rounded-xl p-5 md:p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors relative cursor-pointer group shadow-inner">
+                      <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground group-hover:text-primary transition-colors pointer-events-none">
+                        <ImageIcon className="h-8 w-8 opacity-80" />
+                        <div>
+                          <span className="text-sm md:text-base font-bold block text-foreground">Aperte para subir fotos</span>
+                        </div>
+                      </div>
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple 
+                        onChange={handleImageSelect} 
+                        className="absolute inset-0 opacity-0 cursor-pointer h-full w-full" 
+                      />
+                    </div>
 
                   {images.length > 0 && (
                     <div className="bg-card border border-border rounded-xl p-6 mt-4 shadow-sm">
@@ -892,6 +933,7 @@ export default function InventoryPage() {
                       </div>
                     </div>
                   )}
+                </div>
                 </div>
               </form>
             </div>

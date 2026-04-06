@@ -738,7 +738,7 @@ export default function InventoryPage() {
                   >
                     <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
-                        <img src={displayImage} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
+                        <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
                       ) : (
                         <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
                       )}
@@ -821,7 +821,7 @@ export default function InventoryPage() {
                     >
                        <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
                            {displayImage ? (
-                             <img src={displayImage} alt={product.name} className="object-cover w-full h-full" />
+                             <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
                            ) : (
                              <ImageIcon className="absolute inset-0 m-auto text-muted-foreground/30 h-6 w-6" />
                            )}

@@ -517,25 +517,51 @@ export default function InventoryPage() {
         }
       };
 
+      // Stage 1: Try with all fields (including new marketplace prices)
       let { error } = await trySave(payload);
 
-      // If save failed (columns may not exist in DB yet), retry without new marketplace price fields
+      // Stage 2: If failed, strip only marketplace price fields and retry
       if (error) {
-        const { shopee_price: _sp, tiktok_price: _tp, ...payloadWithoutPrices } = payload;
-        const retry = await trySave(payloadWithoutPrices);
-        if (!retry.error) {
-          success(editingProduct ? 'Produto salvo! (Execute a migração SQL para salvar preços por canal)' : 'Produto cadastrado! (Execute a migração SQL para salvar preços por canal)');
-          setIsModalOpen(false);
-          resetForm();
-          fetchProducts();
+        const { shopee_price: _sp, tiktok_price: _tp, ...payloadNoMarketplace } = payload;
+        const retry2 = await trySave(payloadNoMarketplace);
+        if (!retry2.error) {
+          success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
+          setIsModalOpen(false); resetForm(); fetchProducts();
           return;
         }
-        // If retry also failed, throw the original error
-        throw retry.error;
+
+        // Stage 3: If still failing (schema cache issue), use only core stable fields
+        if (retry2.error) {
+          const corePayload: any = {
+            name,
+            sku: sku || null,
+            description: description || null,
+            price: parseFloat(price),
+            sale_price: salePrice ? parseFloat(salePrice) : null,
+            cost_price: costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0),
+            additional_costs: costs.map(c => ({ label: c.label, value: parseFloat(c.value) || 0 })),
+            stock_quantity: parseInt(stock, 10),
+            ean: ean || null,
+            weight_g: parseInt(weight) || 0,
+            length_cm: parseInt(length) || 0,
+            width_cm: parseInt(width) || 0,
+            height_cm: parseInt(height) || 0,
+            images: payload.images,
+            image_url: payload.images[0] || null,
+            category_id: categoryId || null,
+            user_id: user.id
+          };
+          const retry3 = await trySave(corePayload);
+          if (!retry3.error) {
+            success(editingProduct ? 'Produto salvo! (Recarregue o Schema Cache no Supabase para salvar todos os campos)' : 'Produto cadastrado!');
+            setIsModalOpen(false); resetForm(); fetchProducts();
+            return;
+          }
+          throw retry3.error;
+        }
       }
 
       success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
-
       setIsModalOpen(false);
       resetForm();
       fetchProducts();

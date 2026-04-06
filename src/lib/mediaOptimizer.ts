@@ -1,27 +1,45 @@
 import imageCompression from 'browser-image-compression';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import heic2any from 'heic2any';
 
 // Singleton instance to avoid multiple downloads
 let ffmpeg: FFmpeg | null = null;
 
 export const MediaOptimizer = {
   /**
-   * Optimizes an image file using browser-image-compression.
-   * Targets a max size and standard resolution.
+   * Optimizes an image file. Converts HEIC to JPEG if needed.
    */
   async optimizeImage(file: File): Promise<File> {
+    let processedFile = file;
+
+    // Handle HEIC from iPhone
+    if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        processedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+      } catch (err) {
+        console.error("HEIC conversion failed:", err);
+      }
+    }
+
     const options = {
-      maxSizeMB: 1, // Target max 1MB per image for ERP speed
+      maxSizeMB: 1,
       maxWidthOrHeight: 1920,
       useWebWorker: true,
       initialQuality: 0.8
     };
+
     try {
-      return await imageCompression(file, options);
+      return await imageCompression(processedFile, options);
     } catch (error) {
       console.error("Image compression failed:", error);
-      return file;
+      return processedFile;
     }
   },
 
@@ -48,13 +66,15 @@ export const MediaOptimizer = {
 
   /**
    * Compresses a video targeting a specific file size (e.g. 10MB for Shopee).
+   * Supports MP4 and MOV (Apple).
    */
   async optimizeVideo(
     file: File, 
     onProgress: (percent: number) => void
   ): Promise<File> {
     const ff = await this.loadFFmpeg();
-    const inputName = 'input.mp4';
+    const isMov = file.name.toLowerCase().endsWith('.mov');
+    const inputName = isMov ? 'input.mov' : 'input.mp4';
     const outputName = 'output.mp4';
     
     onProgress(0);

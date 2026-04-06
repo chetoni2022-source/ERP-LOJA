@@ -1049,7 +1049,7 @@ export default function InventoryPage() {
                              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 p-6 rounded-xl bg-background/50 hover:border-primary/40 transition-all cursor-pointer relative">
                                <input 
                                  type="file" 
-                                 accept="video/*" 
+                                 accept="video/*,.mov,.mp4" 
                                  className="absolute inset-0 opacity-0 cursor-pointer" 
                                  onChange={e => setVideoToOptimize(e.target.files?.[0] || null)}
                                />
@@ -1162,7 +1162,7 @@ export default function InventoryPage() {
                       </div>
                       <Input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,.heic,.heif" 
                         multiple 
                         onChange={handleImageSelect} 
                         className="absolute inset-0 opacity-0 cursor-pointer h-full w-full" 

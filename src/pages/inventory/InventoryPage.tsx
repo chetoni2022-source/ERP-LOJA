@@ -20,6 +20,7 @@ interface Product {
   image_url: string | null;
   images: string[] | null;
   created_at: string;
+  updated_at?: string | null;
   category_id?: string | null;
   ean?: string | null;
   weight_g?: number;
@@ -27,6 +28,8 @@ interface Product {
   width_cm?: number;
   height_cm?: number;
   shopee_item_id?: string | null;
+  shopee_price?: number | null;
+  tiktok_price?: number | null;
   supplier_name?: string | null;
   supplier_link?: string | null;
   media_assets?: {
@@ -88,14 +91,20 @@ export default function InventoryPage() {
   const [optimizedVideoUrl, setOptimizedVideoUrl] = useState<string | null>(null);
   const [optimizedVideoSize, setOptimizedVideoSize] = useState<number | null>(null);
 
+  // Marketplace prices
+  const [shopeePrice, setShopeePrice] = useState('');
+  const [tiktokPrice, setTiktokPrice] = useState('');
+
   // Store settings for tax simulation
   const [taxSettings, setTaxSettings] = useState({
     shopee_comm: 20,
     shopee_fee: 4,
     shopee_cap: 100,
+    shopee_markup: 20,
     tiktok_comm: 15,
     tiktok_fee: 4,
-    tiktok_cap: 100
+    tiktok_cap: 100,
+    tiktok_markup: 15
   });
 
   useEffect(() => {
@@ -202,6 +211,8 @@ export default function InventoryPage() {
     setSupplierName('');
     setShopeeVideo('');
     setReelsVideo('');
+    setShopeePrice('');
+    setTiktokPrice('');
     resetForm();
     setIsModalOpen(true);
     setActiveTab('basic');
@@ -237,6 +248,8 @@ export default function InventoryPage() {
     setShopeeVideo(p.media_assets?.shopee_video || '');
     setReelsVideo(p.media_assets?.reels_video || '');
     setExtraVideos(p.media_assets?.extra_videos || []);
+    setShopeePrice(p.shopee_price ? p.shopee_price.toString() : '');
+    setTiktokPrice(p.tiktok_price ? p.tiktok_price.toString() : '');
     
     setIsModalOpen(true);
     setActiveTab('basic');
@@ -486,6 +499,8 @@ export default function InventoryPage() {
         category_id: categoryId || null,
         supplier_name: supplierName || null,
         supplier_link: supplierLink || null,
+        shopee_price: shopeePrice ? parseFloat(shopeePrice) : null,
+        tiktok_price: tiktokPrice ? parseFloat(tiktokPrice) : null,
         media_assets: {
           shopee_video: shopeeVideo || null,
           reels_video: reelsVideo || null,
@@ -534,6 +549,8 @@ export default function InventoryPage() {
     setShopeeVideo('');
     setReelsVideo('');
     setExtraVideos([]);
+    setShopeePrice('');
+    setTiktokPrice('');
     setDraggedIdx(null);
   }
 
@@ -815,22 +832,40 @@ export default function InventoryPage() {
           <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={() => {setIsModalOpen(false); resetForm();}}></div>
           
           <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col z-10 max-h-[90vh] md:max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 border-b border-border bg-card/50 backdrop-blur-md flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+            <div className="px-6 py-5 border-b border-border bg-card/50 backdrop-blur-md flex justify-between items-start shrink-0">
+              <div className="flex items-start gap-4 min-w-0">
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0">
                   <Package size={24} />
                 </div>
-                <div>
-                  <h3 className="text-xl font-black tracking-tight text-foreground">{editingProduct ? 'Editar Peça' : 'Nova Peça'}</h3>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                       Gestão de Ativos & Lucratividade
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <h3 className="text-xl font-black tracking-tight text-foreground truncate max-w-[300px] md:max-w-[420px]">
+                    {editingProduct ? editingProduct.name : 'Nova Peça'}
+                  </h3>
+                  {editingProduct ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                        Criado: {new Date(editingProduct.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      {editingProduct.updated_at && (
+                        <>
+                          <span className="text-muted-foreground/30 text-[8px]">•</span>
+                          <span className="text-[9px] font-bold text-primary/70 uppercase tracking-widest">
+                            Editado: {new Date(editingProduct.updated_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        Gestão de Ativos &amp; Lucratividade
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-10 w-10 flex items-center justify-center hover:bg-muted rounded-xl transition-all border border-border group">
+              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-10 w-10 flex items-center justify-center hover:bg-muted rounded-xl transition-all border border-border group shrink-0 ml-3">
                 <X size={20} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
@@ -941,44 +976,8 @@ export default function InventoryPage() {
                 </div>
 
                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'pricing' && "hidden")}>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                        <Coins size={20} />
-                      </div>
-                      <div>
-                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Gestão de Lucros</Label>
-                        <p className="text-[10px] text-muted-foreground font-medium">Preços de venda e ofertas limitadas</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
-                        <div className="relative group/input">
-                          <Coins className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
-                          <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-12 pl-10 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary focus-visible:bg-background transition-all" />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço de Oferta</Label>
-                        <div className="relative group/input">
-                          <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
-                          <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-12 pl-10 text-base font-black border-primary/30 bg-primary/5 shadow-none focus:border-primary text-primary transition-all" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 md:col-span-2">
-                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
-                        <div className="relative group/input">
-                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
-                          <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all text-center md:text-left" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
+                  
+                  {/* ── COST STRUCTURE ── */}
                   <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-border/40 pb-4">
                       <div className="flex items-center gap-3">
@@ -995,7 +994,7 @@ export default function InventoryPage() {
                         onClick={() => setCosts([...costs, { label: '', value: '' }])} 
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
                       >
-                        <Plus className="h-3 w-3" /> Adicionar Custo
+                        <Plus className="h-3 w-3" /> Adicionar
                       </button>
                     </div>
                     
@@ -1016,9 +1015,7 @@ export default function InventoryPage() {
                              <div className="relative">
                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-muted-foreground/60">R$</span>
                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  value={c.value} 
+                                  type="number" step="0.01" value={c.value} 
                                   onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
                                   placeholder="0,00" 
                                   className="h-9 pl-6 text-xs font-black bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
@@ -1026,11 +1023,7 @@ export default function InventoryPage() {
                              </div>
                           </div>
                           {costs.length > 1 && (
-                            <button 
-                              type="button" 
-                              onClick={() => setCosts(costs.filter((_, i) => i !== idx))} 
-                              className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                            >
+                            <button type="button" onClick={() => setCosts(costs.filter((_, i) => i !== idx))} className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
                               <Trash2 size={14} />
                             </button>
                           )}
@@ -1039,128 +1032,166 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                    <div className="space-y-1.5 pt-2">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado (Catálogo)</Label>
-                      <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
-                        R$ {profitPerSale.toFixed(2).replace('.', ',')}
-                      </div>
+                  {/* ── ESTOQUE ── */}
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm">
+                    <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
+                    <div className="relative group/input">
+                      <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
+                      <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
                     </div>
-                  {/* Marketplace Multi-Channel Profits moved inside the tab */}
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4 mt-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                  </div>
+
+                  {/* ── PREÇOS POR CANAL ── */}
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
                     <div className="flex items-center gap-3 border-b border-border/40 pb-4">
                       <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <Monitor size={20} />
                       </div>
                       <div>
-                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Simulador Omnichannel</Label>
-                        <p className="text-[10px] text-muted-foreground font-medium">Margem líquida em outros canais de venda</p>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Preços por Canal de Venda</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Define o preço em cada plataforma e veja o lucro em tempo real</p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Shopee Profit Card */}
-                      <div className="p-4 rounded-2xl border-2 border-[#f53d2d]/20 bg-[#f53d2d]/5 relative group cursor-help transition-all hover:bg-[#f53d2d]/10" 
-                           title={`Shopee: ${taxSettings.shopee_comm}% de comissão (máx R$${taxSettings.shopee_cap}) + R$${taxSettings.shopee_fee} de taxa fixa.`}>
-                        <div className="flex justify-between items-start mb-2">
-                           <span className="text-[9px] font-black uppercase tracking-widest text-[#f53d2d]">Shopee</span>
-                           <ShoppingBag size={14} className="text-[#f53d2d] opacity-40" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-xl font-black text-foreground tabular-nums">
-                            R$ {( () => {
-                              const p = parseFloat(salePrice || price || '0');
-                              const cost = parseFloat(costs[0].value || '0');
-                              const extra = costs.slice(1).reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                              const comm = Math.min(p * (taxSettings.shopee_comm/100), taxSettings.shopee_cap);
-                              const res = p - cost - extra - comm - taxSettings.shopee_fee;
-                              return Math.max(0, res).toFixed(2).replace('.', ',');
-                            })() }
-                          </p>
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Lucro Líquido</p>
-                        </div>
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <div className="bg-foreground text-background text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter shadow-lg">Info</div>
-                        </div>
-                      </div>
-
-                      {/* TikTok Profit Card */}
-                      <div className="p-4 rounded-2xl border-2 border-black/20 bg-black/5 relative group cursor-help transition-all hover:bg-black/10"
-                           title={`TikTok Shop: ${taxSettings.tiktok_comm}% de comissão (máx R$${taxSettings.tiktok_cap}) + R$${taxSettings.tiktok_fee} de taxa fixa.`}>
-                        <div className="flex justify-between items-start mb-2">
-                           <span className="text-[9px] font-black uppercase tracking-widest text-foreground">TikTok Shop</span>
-                           <svg className="h-3.5 w-3.5 text-foreground opacity-40" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-xl font-black text-foreground tabular-nums">
-                            R$ {( () => {
-                              const p = parseFloat(salePrice || price || '0');
-                              const cost = parseFloat(costs[0].value || '0');
-                              const extra = costs.slice(1).reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                              const comm = Math.min(p * (taxSettings.tiktok_comm/100), taxSettings.tiktok_cap);
-                              const res = p - cost - extra - comm - taxSettings.tiktok_fee;
-                              return Math.max(0, res).toFixed(2).replace('.', ',');
-                            })() }
-                          </p>
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Lucro Líquido</p>
-                        </div>
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <div className="bg-foreground text-background text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter shadow-lg">Info</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ── SUGGESTED PRICE CALCULATOR ── */}
-                    <div className="mt-4 pt-4 border-t border-border/40">
-                       <Label className="font-black text-[10px] uppercase text-primary tracking-widest mb-3 block">Calculadora de Preço Sugerido</Label>
-                       
-                       <div className="grid grid-cols-1 gap-3">
-                          {/* Shopee Recommendation */}
-                          <div className="flex items-center justify-between p-3 rounded-xl bg-[#f53d2d]/5 border border-[#f53d2d]/10">
-                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black uppercase text-[#f53d2d]">Preço Sugerido Shopee</span>
-                                <span className="text-[10px] text-muted-foreground font-medium">Cobre taxas + Mark-up de {taxSettings.shopee_markup}%</span>
-                             </div>
-                             <div className="text-right">
-                                <p className="text-lg font-black text-foreground">
-                                  R$ {( () => {
-                                    const base = parseFloat(salePrice || price || '0');
-                                    const recomposed = (base + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm/100));
-                                    const suggested = Math.max(recomposed, base * (1 + taxSettings.shopee_markup/100));
-                                    return suggested.toFixed(2).replace('.', ',');
-                                  })() }
-                                </p>
-                             </div>
+                    {/* ── SITE (Site price = public price or promo) ── */}
+                    {(() => {
+                      const siteP = parseFloat(salePrice || price || '0');
+                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                      const siteProfit = siteP - siteCost;
+                      const siteColor = siteProfit > 0 ? 'text-emerald-500' : siteProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      return (
+                        <div className="p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Monitor size={14} className="text-primary" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-primary tracking-widest">Site / Catálogo</span>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-lg font-black tabular-nums ${siteColor}`}>
+                                {siteProfit >= 0 ? '+' : ''}R$ {siteProfit.toFixed(2).replace('.', ',')}
+                              </p>
+                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            </div>
                           </div>
-
-                          {/* TikTok Recommendation */}
-                          <div className="flex items-center justify-between p-3 rounded-xl bg-black/5 border border-black/10">
-                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black uppercase text-foreground">Preço Sugerido TikTok</span>
-                                <span className="text-[10px] text-muted-foreground font-medium">Cobre taxas + Mark-up de {taxSettings.tiktok_markup}%</span>
-                             </div>
-                             <div className="text-right">
-                                <p className="text-lg font-black text-foreground">
-                                  R$ {( () => {
-                                    const base = parseFloat(salePrice || price || '0');
-                                    const recomposed = (base + taxSettings.tiktok_fee) / (1 - (taxSettings.tiktok_comm/100));
-                                    const suggested = Math.max(recomposed, base * (1 + taxSettings.tiktok_markup/100));
-                                    return suggested.toFixed(2).replace('.', ',');
-                                  })() }
-                                </p>
-                             </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">R$</span>
+                                <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background border-border/60 focus-visible:ring-primary" />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço Promoção</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-primary/50">R$</span>
+                                <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 focus-visible:ring-primary text-primary" />
+                              </div>
+                            </div>
                           </div>
-                       </div>
+                          {salePrice && parseFloat(salePrice) > 0 && parseFloat(salePrice) < parseFloat(price || '0') && (
+                            <p className="text-[9px] text-primary font-bold mt-2 ml-1">
+                              Desconto de {Math.round(((parseFloat(price) - parseFloat(salePrice)) / parseFloat(price)) * 100)}% ativo ✓
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
 
-                       <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-                          <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight text-center">
-                            💡 Dica: Venda mais caro nos Marketplaces para garantir o mesmo lucro do seu site.
-                          </p>
-                       </div>
-                    </div>
+                    {/* ── SHOPEE ── */}
+                    {(() => {
+                      const baseP = parseFloat(salePrice || price || '0');
+                      const suggestedShopee = parseFloat(shopeePrice || '') || (() => {
+                        const r = (baseP + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm / 100));
+                        return Math.max(r, baseP * (1 + taxSettings.shopee_markup / 100));
+                      })();
+                      const shopeeP = parseFloat(shopeePrice || suggestedShopee.toFixed(2));
+                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                      const comm = Math.min(shopeeP * (taxSettings.shopee_comm / 100), taxSettings.shopee_cap);
+                      const shopeeProfit = shopeeP - siteCost - comm - taxSettings.shopee_fee;
+                      const shopeeColor = shopeeProfit > 0 ? 'text-emerald-500' : shopeeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      const autoSugg = (baseP + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm / 100));
+                      const suggestedDisplay = Math.max(autoSugg, baseP * (1 + taxSettings.shopee_markup / 100));
+                      return (
+                        <div className="p-4 rounded-2xl bg-[#f53d2d]/5 border-2 border-[#f53d2d]/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-[#f53d2d]/10 flex items-center justify-center">
+                                <ShoppingBag size={14} className="text-[#f53d2d]" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-[#f53d2d] tracking-widest">Shopee</span>
+                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-lg font-black tabular-nums ${shopeeColor}`}>
+                                {shopeeProfit >= 0 ? '+' : ''}R$ {shopeeProfit.toFixed(2).replace('.', ',')}
+                              </p>
+                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between ml-1">
+                              <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
+                              <button type="button" onClick={() => setShopeePrice(suggestedDisplay.toFixed(2))} className="text-[8px] font-black text-[#f53d2d]/60 hover:text-[#f53d2d] underline underline-offset-2">
+                                Usar sugestão: R$ {suggestedDisplay.toFixed(2).replace('.', ',')}
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
+                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={suggestedDisplay.toFixed(2)} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60 mt-4">
-                      * Tarifas base configuadas em <strong>Ajustes &gt; Integrações</strong>. <br />
-                      Passe o mouse nos cards para detalhamento.
+                    {/* ── TIKTOK ── */}
+                    {(() => {
+                      const baseP = parseFloat(salePrice || price || '0');
+                      const autoSugg = (baseP + taxSettings.tiktok_fee) / (1 - (taxSettings.tiktok_comm / 100));
+                      const suggestedTiktok = Math.max(autoSugg, baseP * (1 + taxSettings.tiktok_markup / 100));
+                      const tiktokP = parseFloat(tiktokPrice || suggestedTiktok.toFixed(2));
+                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                      const comm = Math.min(tiktokP * (taxSettings.tiktok_comm / 100), taxSettings.tiktok_cap);
+                      const tiktokProfit = tiktokP - siteCost - comm - taxSettings.tiktok_fee;
+                      const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      return (
+                        <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-black/10 flex items-center justify-center">
+                                <svg className="h-3.5 w-3.5 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
+                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-lg font-black tabular-nums ${tiktokColor}`}>
+                                {tiktokProfit >= 0 ? '+' : ''}R$ {tiktokProfit.toFixed(2).replace('.', ',')}
+                              </p>
+                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between ml-1">
+                              <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>
+                              <button type="button" onClick={() => setTiktokPrice(suggestedTiktok.toFixed(2))} className="text-[8px] font-black text-foreground/40 hover:text-foreground underline underline-offset-2">
+                                Usar sugestão: R$ {suggestedTiktok.toFixed(2).replace('.', ',')}
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
+                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={suggestedTiktok.toFixed(2)} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60">
+                      * Taxas configuradas em <strong>Ajustes &gt; Integrações</strong>. Lucro = Preço − Custos − Taxas da plataforma.
                     </p>
                   </div>
                 </div>

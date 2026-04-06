@@ -17,7 +17,7 @@ const CustomStockTooltip = ({ active, payload }: any) => {
     return (
       <div className="bg-card border border-border shadow-2xl rounded-xl p-3 max-w-[200px] backdrop-blur-md">
         {displayImg ? (
-          <img src={displayImg} alt={data.name} className="w-full h-28 object-cover rounded-lg mb-3 border border-border" />
+          <img src={displayImg} alt={data.name} crossOrigin="anonymous" className="w-full h-28 object-cover rounded-lg mb-3 border border-border" />
         ) : (
           <div className="w-full h-28 bg-muted rounded-lg mb-3 flex items-center justify-center border border-border">
             <PackageSearch className="h-8 w-8 text-muted-foreground/30" />
@@ -54,7 +54,7 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
               <div key={i} className="flex items-center gap-3 bg-muted/30 p-2 rounded-xl border border-border/30 hover:bg-muted/50 transition-colors group">
                 <div className="h-12 w-12 rounded-lg bg-card overflow-hidden flex-shrink-0 border border-border relative">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    <img src={item.image} alt={item.name} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                   ) : (
                     <PackageSearch className="w-full h-full p-2 text-muted-foreground/40" />
                   )}

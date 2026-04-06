@@ -151,6 +151,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <img 
               src={brand.logo} 
               alt="Logo" 
+              crossOrigin="anonymous"
               style={{
                 height: 'auto',
                 maxHeight: 32, // Fixed height for top bar
@@ -192,6 +193,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <img 
                     src={brand.logo} 
                     alt="Logo" 
+                    crossOrigin="anonymous"
                     style={{
                       height: 'auto',
                       maxHeight: brand.logoH,

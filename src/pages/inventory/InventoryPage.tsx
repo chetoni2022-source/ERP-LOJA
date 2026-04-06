@@ -571,7 +571,7 @@ export default function InventoryPage() {
                   >
                     <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
-                        <img src={displayImage} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
+                        <img src={displayImage} alt={product.name} crossOrigin="anonymous" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
                       ) : (
                         <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
                       )}
@@ -653,7 +653,7 @@ export default function InventoryPage() {
                     >
                        <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
                            {displayImage ? (
-                             <img src={displayImage} alt={product.name} className="object-cover w-full h-full" />
+                             <img src={displayImage} alt={product.name} crossOrigin="anonymous" className="object-cover w-full h-full" />
                            ) : (
                              <ImageIcon className="absolute inset-0 m-auto text-muted-foreground/30 h-6 w-6" />
                            )}
@@ -1184,7 +1184,7 @@ export default function InventoryPage() {
                               draggedIdx === idx ? "opacity-40 border-primary border-dashed scale-95" : "border-border hover:border-primary/50"
                             )}
                           >
-                            <img src={img.preview} alt="preview" className="object-cover w-full h-full pointer-events-none" />
+                            <img src={img.preview} alt="preview" crossOrigin="anonymous" className="object-cover w-full h-full pointer-events-none" />
                             
                             {idx === 0 && Array.isArray(images) && (
                               <div className="absolute top-0 left-0 right-0 bg-primary/95 backdrop-blur-sm text-primary-foreground text-[11px] text-center font-black py-1.5 z-10 shadow-sm uppercase tracking-widest pointer-events-none">Capa</div>

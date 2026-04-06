@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { MediaOptimizer } from '../../lib/mediaOptimizer';
 
 interface Product {
   id: string;
@@ -78,6 +79,12 @@ export default function InventoryPage() {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
 
+  // Video Optimizer States
+  const [videoToOptimize, setVideoToOptimize] = useState<File | null>(null);
+  const [isOptimizingVideo, setIsOptimizingVideo] = useState(false);
+  const [optProgress, setOptProgress] = useState(0);
+  const [optimizedVideoUrl, setOptimizedVideoUrl] = useState<string | null>(null);
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
@@ -85,7 +92,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (!isModalOpen) return;
-    const handlePaste = (e: ClipboardEvent) => {
+    const handlePaste = async (e: ClipboardEvent) => {
       if (!e.clipboardData) return;
       const items = e.clipboardData.items;
       const newFiles: {file: File | null, preview: string, isExisting: boolean}[] = [];
@@ -95,18 +102,20 @@ export default function InventoryPage() {
         if (item.type.indexOf('image') !== -1) {
           const file = item.getAsFile();
           if (file) {
-            if (file.size > MAX_FILE_SIZE_INVENTORY) {
-              toastError('Uma imagem colada é muito grande (>3MB) e foi descartada.');
-            } else {
-              newFiles.push({ file, preview: URL.createObjectURL(file), isExisting: false });
-            }
+             // AUTO-OPTIMIZATION STRATEGY
+             try {
+               const optimized = await MediaOptimizer.optimizeImage(file);
+               newFiles.push({ file: optimized, preview: URL.createObjectURL(optimized), isExisting: false });
+             } catch (err) {
+               newFiles.push({ file, preview: URL.createObjectURL(file), isExisting: false });
+             }
           }
         }
       }
       
       if (newFiles.length > 0) {
         setImages(prev => [...prev, ...newFiles]);
-        success(`${newFiles.length} foto(s) importada(s) da área de transferência!`);
+        success(`${newFiles.length} foto(s) otimizada(s) e importada(s)!`);
       }
     };
     window.addEventListener('paste', handlePaste);
@@ -248,22 +257,47 @@ export default function InventoryPage() {
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const rawFiles = Array.from(e.target.files);
-      const validFiles = rawFiles.filter(file => {
-         if (file.size > MAX_FILE_SIZE_INVENTORY) {
-            toastError(`"${file.name}" é maior que 3MB e foi descartada.`);
-            return false;
-         }
-         return true;
-      }).map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        isExisting: false
-      }));
-      setImages(prev => [...prev, ...validFiles]);
-      e.target.value = '';
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    
+    setSaving(true); // Temporary block UI for optimization
+    const newFiles: {file: File | null, preview: string, isExisting: boolean}[] = [];
+    
+    for (const file of files) {
+      try {
+        const optimized = await MediaOptimizer.optimizeImage(file);
+        newFiles.push({ file: optimized, preview: URL.createObjectURL(optimized), isExisting: false });
+      } catch (err) {
+        newFiles.push({ file, preview: URL.createObjectURL(file), isExisting: false });
+      }
+    }
+    
+    setImages(prev => [...prev, ...newFiles]);
+    setSaving(false);
+    success(`${newFiles.length} foto(s) preparadas.`);
+  };
+
+  const handleOptimizeVideo = async () => {
+    if (!videoToOptimize) return;
+    setIsOptimizingVideo(true);
+    setOptProgress(0);
+    try {
+      const optimized = await MediaOptimizer.optimizeVideo(videoToOptimize, (p) => setOptProgress(p));
+      const url = URL.createObjectURL(optimized);
+      setOptimizedVideoUrl(url);
+      success("Vídeo renderizado com sucesso!");
+
+      // Auto-download to help user
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = optimized.name;
+      a.click();
+    } catch (err) {
+      console.error(err);
+      toastError("Falha na renderização. Verifique se o vídeo é compatível.");
+    } finally {
+      setIsOptimizingVideo(false);
     }
   };
 
@@ -1001,17 +1035,75 @@ export default function InventoryPage() {
                           <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Qualidade total para Redes Sociais.</p>
                         </div>
                         
-                        <div className="space-y-3 pt-6 mt-4 border-t border-border/80 md:col-span-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Links & Vídeos Adicionais</Label>
-                            <button 
-                              type="button" 
-                              onClick={() => setExtraVideos([...extraVideos, ''])}
-                              className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1.5"
-                            >
-                              <Plus size={14} /> Adicionar Link
-                            </button>
-                          </div>
+                        <div className="space-y-4 pt-4 md:col-span-2 border-t border-border/60 mt-4 bg-muted/20 p-5 rounded-2xl relative overflow-hidden group/renderer">
+                           <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover/renderer:bg-primary/10 transition-all" />
+                           
+                           <div>
+                             <Label className="font-black text-xs uppercase text-foreground tracking-widest block flex items-center gap-2">
+                               <PlayCircle size={14} className="text-primary" /> Renderizador de Vídeos (Shopee Mode)
+                             </Label>
+                             <p className="text-[10px] text-muted-foreground mt-1">Garante que seus vídeos fiquem abaixo de 10MB sem travar o seu ERP.</p>
+                           </div>
+
+                           {!isOptimizingVideo && !optimizedVideoUrl && (
+                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 p-6 rounded-xl bg-background/50 hover:border-primary/40 transition-all cursor-pointer relative">
+                               <input 
+                                 type="file" 
+                                 accept="video/*" 
+                                 className="absolute inset-0 opacity-0 cursor-pointer" 
+                                 onChange={e => setVideoToOptimize(e.target.files?.[0] || null)}
+                               />
+                               {videoToOptimize ? (
+                                 <div className="text-center font-black">
+                                   <p className="text-xs text-primary">{videoToOptimize.name}</p>
+                                   <p className="text-[10px] text-muted-foreground">Original: {(videoToOptimize.size / (1024*1024)).toFixed(1)}MB</p>
+                                   <Button 
+                                      variant="outline" 
+                                      className="mt-3 h-8 text-[10px] uppercase font-black"
+                                      onClick={(e) => { e.stopPropagation(); handleOptimizeVideo(); }}
+                                   >Começar Renderização</Button>
+                                 </div>
+                               ) : (
+                                 <div className="text-center">
+                                   <ImageIcon className="h-6 w-6 text-muted-foreground/40 mx-auto" />
+                                   <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">Arraste o vídeo pesado aqui</p>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+
+                           {isOptimizingVideo && (
+                             <div className="space-y-4 py-4">
+                               <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                 <span className="flex items-center gap-2 anime-pulse"><Loader2 className="h-3 w-3 animate-spin text-primary" /> Processando...</span>
+                                 <span>{optProgress}%</span>
+                               </div>
+                               <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                                 <div 
+                                   className="h-full bg-primary transition-all duration-300" 
+                                   style={{ width: `${optProgress}%` }}
+                                 />
+                               </div>
+                               <p className="text-[9px] text-center text-muted-foreground italic">Isso pode levar alguns segundos dependendo do tamanho.</p>
+                             </div>
+                           )}
+
+                           {optimizedVideoUrl && (
+                             <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 flex flex-col items-center gap-3 animate-in zoom-in duration-300">
+                                <CheckCircle2 className="text-primary h-8 w-8" />
+                                <div className="text-center">
+                                  <p className="text-xs font-black text-foreground">Vídeo Pronto para Shopee!</p>
+                                  <p className="text-[10px] text-muted-foreground">O arquivo foi compactado e o download iniciou.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <a href={optimizedVideoUrl} download="shopee_optimized.mp4" className="h-9 px-4 flex items-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all">
+                                    <ArrowDownToLine size={14} /> Download Manual
+                                  </a>
+                                  <button onClick={() => { setOptimizedVideoUrl(null); setVideoToOptimize(null); }} className="h-9 px-4 text-[10px] font-black uppercase border border-border rounded-lg hover:bg-muted transition-all">Limpar</button>
+                                </div>
+                             </div>
+                           )}
+                        </div>
                           
                           <div className="space-y-2">
                              {extraVideos.map((url, idx) => (
@@ -1113,7 +1205,6 @@ export default function InventoryPage() {
                       </div>
                     </div>
                   )}
-                </div>
                 </div>
               </form>
             </div>

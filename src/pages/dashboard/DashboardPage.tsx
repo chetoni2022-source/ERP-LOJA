@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award } from 'lucide-react';
@@ -13,7 +13,8 @@ const CustomStockTooltip = ({ active, payload }: any) => {
     const qty = data.stock_quantity;
     const status = qty <= 0 ? 'Esgotado' : qty < 5 ? 'Baixo Estoque' : 'Saudável';
     const statusColor = qty <= 0 ? 'text-red-500 bg-red-500/10 border-red-500/20' : qty < 5 ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' : 'text-green-500 bg-green-500/10 border-green-500/20';
-    const displayImg = data.images?.[0] || data.image_url;
+    const rawImg = data.images?.[0] || data.image_url;
+    const displayImg = getProxyUrl(rawImg);
     return (
       <div className="bg-card border border-border shadow-2xl rounded-xl p-3 max-w-[200px] backdrop-blur-md">
         {displayImg ? (
@@ -54,7 +55,7 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
               <div key={i} className="flex items-center gap-3 bg-muted/30 p-2 rounded-xl border border-border/30 hover:bg-muted/50 transition-colors group">
                 <div className="h-12 w-12 rounded-lg bg-card overflow-hidden flex-shrink-0 border border-border relative">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} crossOrigin="anonymous" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    <img src={getProxyUrl(item.image) || ''} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                   ) : (
                     <PackageSearch className="w-full h-full p-2 text-muted-foreground/40" />
                   )}

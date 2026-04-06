@@ -11,6 +11,10 @@
   ],
   "rewrites": [
     {
+      "source": "/storage-proxy/(.*)",
+      "destination": "https://tcgwkazgelkonnuyebls.supabase.co/storage/v1/object/public/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

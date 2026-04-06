@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 
@@ -75,7 +75,7 @@ export default function InventoryPage() {
   const [extraVideos, setExtraVideos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   
-  const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean}[]>([]);
+  const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean, processing?: boolean}[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
 
@@ -261,21 +261,47 @@ export default function InventoryPage() {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
     
-    setSaving(true); // Temporary block UI for optimization
-    const newFiles: {file: File | null, preview: string, isExisting: boolean}[] = [];
+    // Initial placeholders to show immediate feedback
+    const placeholders = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isExisting: false,
+      processing: true
+    }));
     
-    for (const file of files) {
-      try {
-        const optimized = await MediaOptimizer.optimizeImage(file);
-        newFiles.push({ file: optimized, preview: URL.createObjectURL(optimized), isExisting: false });
-      } catch (err) {
-        newFiles.push({ file, preview: URL.createObjectURL(file), isExisting: false });
-      }
+    setImages(prev => [...prev, ...placeholders]);
+    
+    // Process each one
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+            const optimized = await MediaOptimizer.optimizeImage(file);
+            setImages(prev => {
+                const next = [...prev];
+                // Find the index of the placeholder we just added
+                const placeholderIdx = prev.length - files.length + i;
+                if (next[placeholderIdx]) {
+                    next[placeholderIdx] = {
+                        file: optimized,
+                        preview: URL.createObjectURL(optimized),
+                        isExisting: false,
+                        processing: false
+                    };
+                }
+                return next;
+            });
+        } catch (err) {
+            console.error("Optimization failed:", err);
+            setImages(prev => {
+                const next = [...prev];
+                const placeholderIdx = prev.length - files.length + i;
+                if (next[placeholderIdx]) next[placeholderIdx].processing = false;
+                return next;
+            });
+        }
     }
     
-    setImages(prev => [...prev, ...newFiles]);
-    setSaving(false);
-    success(`${newFiles.length} foto(s) preparadas.`);
+    success(`${files.length} foto(s) preparadas.`);
   };
 
   const handleOptimizeVideo = async () => {
@@ -560,7 +586,8 @@ export default function InventoryPage() {
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {processedProducts.map(product => {
-                  const displayImage = product.images?.[0] || product.image_url;
+                  const rawImage = product.images?.[0] || product.image_url;
+                  const displayImage = getProxyUrl(rawImage);
                   const currentPrice = product.sale_price || product.price;
                   const isDiscount = !!product.sale_price;
 
@@ -571,7 +598,7 @@ export default function InventoryPage() {
                   >
                     <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
-                        <img src={displayImage} alt={product.name} crossOrigin="anonymous" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
+                        <img src={displayImage} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
                       ) : (
                         <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
                       )}
@@ -643,7 +670,8 @@ export default function InventoryPage() {
             ) : (
               <div className="flex flex-col space-y-3">
                 {processedProducts.map(product => {
-                  const displayImage = product.images?.[0] || product.image_url;
+                  const rawImage = product.images?.[0] || product.image_url;
+                  const displayImage = getProxyUrl(rawImage);
                   const currentPrice = product.sale_price || product.price;
                   
                   return (
@@ -653,7 +681,7 @@ export default function InventoryPage() {
                     >
                        <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
                            {displayImage ? (
-                             <img src={displayImage} alt={product.name} crossOrigin="anonymous" className="object-cover w-full h-full" />
+                             <img src={displayImage} alt={product.name} className="object-cover w-full h-full" />
                            ) : (
                              <ImageIcon className="absolute inset-0 m-auto text-muted-foreground/30 h-6 w-6" />
                            )}
@@ -958,117 +986,140 @@ export default function InventoryPage() {
                       <p className="text-[10px] text-muted-foreground mt-0.5">Registre a origem e estruture os links dos vídeos para sua equipe não os perder jamais.</p>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
-                          <div className="space-y-1.5">
-                            <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Fornecedor / Fabricante</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                        {/* Compact Supplier Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2 bg-muted/20 p-3 rounded-xl border border-border/40">
+                          <div className="space-y-1">
+                            <Label className="font-bold text-[9px] uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-1.5">Fornecedor</Label>
                             <div className="relative">
-                              <Factory className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
-                              <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm border-primary/20" />
+                              <Factory className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                              <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Nome do Fornecedor" className="h-9 pl-8 text-xs font-bold bg-background/50 border-none shadow-none focus-visible:ring-1" />
                             </div>
                           </div>
-                          <div className="space-y-1.5">
-                            <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex justify-between items-center">
-                              <span className="flex items-center gap-1.5"><Link2 size={12} className="text-primary"/> Link do Fornecedor</span>
-                              {supplierLink && (
-                                <a href={supplierLink.startsWith('http') ? supplierLink : `https://${supplierLink}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1">
-                                  Abrir <ExternalLink size={10} />
-                                </a>
-                              )}
+                          <div className="space-y-1">
+                            <Label className="font-bold text-[9px] uppercase text-muted-foreground tracking-widest ml-1 flex justify-between items-center">
+                              Link
+                              {supplierLink && <ExternalLink size={10} className="text-primary" />}
                             </Label>
                             <div className="relative">
-                              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
-                              <Input value={supplierLink} onChange={e => setSupplierLink(e.target.value)} placeholder="https://..." className="h-11 pl-9 text-xs font-mono bg-background shadow-sm border-primary/20" />
+                              <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                              <Input value={supplierLink} onChange={e => setSupplierLink(e.target.value)} placeholder="https://..." className="h-9 pl-8 text-[10px] font-mono bg-background/50 border-none shadow-none focus-visible:ring-1" />
                             </div>
                           </div>
                         </div>
 
-                        <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group/media shadow-sm">
-                          <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover/media:bg-[#f53d2d]/20 transition-all" />
-                          <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (1:1)</Label>
+                        {/* Social Links Row */}
+                        <div className="space-y-1.5 p-3 bg-[#f53d2d]/5 border border-[#f53d2d]/10 rounded-xl relative group/media">
+                          <Label className="font-black text-[9px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee (1:1)</Label>
                           <div className="relative z-10 flex items-center">
-                            <Link2 className="absolute left-3 h-3.5 w-3.5 text-[#f53d2d]/60" />
+                            <Link2 className="absolute left-2.5 h-3 w-3 text-[#f53d2d]/50" />
                             <Input 
                               value={shopeeVideo} 
                               onChange={e => setShopeeVideo(e.target.value)} 
-                              placeholder="Link Drive/Canva..." 
-                              className="h-10 pl-9 pr-10 text-xs font-mono bg-background/80 shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d] w-full" 
+                              placeholder="Link Drive/Vídeo..." 
+                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background/70 border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d] w-full" 
                             />
                             {shopeeVideo && (
-                              <a 
-                                href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="absolute right-2 h-7 w-7 flex items-center justify-center bg-[#f53d2d] text-white rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all"
-                                title="Abrir Preview"
-                              >
-                                <ExternalLink size={12} />
+                              <a href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} target="_blank" rel="noopener noreferrer" className="absolute right-1.5 h-5 w-5 flex items-center justify-center bg-[#f53d2d] text-white rounded-md shadow-sm hover:scale-110 transition-all">
+                                <ExternalLink size={10} />
                               </a>
                             )}
                           </div>
-                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
                         </div>
 
-                        <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group/media shadow-sm">
-                          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover/media:bg-purple-500/20 transition-all" />
-                          <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (9:16)</Label>
+                        <div className="space-y-1.5 p-3 bg-purple-500/5 border border-purple-500/10 rounded-xl relative group/media">
+                          <Label className="font-black text-[9px] uppercase text-purple-600 tracking-widest block relative z-10">Reels (9:16)</Label>
                           <div className="relative z-10 flex items-center">
-                            <PlayCircle className="absolute left-3 h-3.5 w-3.5 text-purple-600/60" />
+                            <PlayCircle className="absolute left-2.5 h-3 w-3 text-purple-600/50" />
                             <Input 
                               value={reelsVideo} 
                               onChange={e => setReelsVideo(e.target.value)} 
-                              placeholder="Link Drive/CapCut..." 
-                              className="h-10 pl-9 pr-10 text-xs font-mono bg-background/80 shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500 w-full" 
+                              placeholder="Link Reels/TikTok..." 
+                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background/70 border-none focus-visible:ring-1 focus-visible:ring-purple-500 w-full" 
                             />
                             {reelsVideo && (
-                              <a 
-                                href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="absolute right-2 h-7 w-7 flex items-center justify-center bg-purple-600 text-white rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all"
-                                title="Ver Vídeo"
-                              >
-                                <PlayCircle size={14} />
+                              <a href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} target="_blank" rel="noopener noreferrer" className="absolute right-1.5 h-5 w-5 flex items-center justify-center bg-purple-600 text-white rounded-md shadow-sm hover:scale-110 transition-all">
+                                <PlayCircle size={10} />
                               </a>
                             )}
                           </div>
-                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Qualidade total para Redes Sociais.</p>
+                        </div>
+
+                        {/* Extra Videos Dynamic List */}
+                        <div className="md:col-span-2 space-y-2">
+                           <div className="flex justify-between items-center">
+                             <Label className="font-black text-[9px] uppercase text-muted-foreground tracking-widest ml-1">Mais Links de Vídeo</Label>
+                             <button type="button" onClick={() => setExtraVideos(prev => [...prev, ''])} className="text-[9px] font-black uppercase text-primary hover:underline">+ Adicionar Link</button>
+                           </div>
+                           <div className="space-y-1.5">
+                             {extraVideos.map((link, idx) => (
+                               <div key={idx} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-200">
+                                 <div className="relative flex-1">
+                                   <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-50" />
+                                   <Input 
+                                      value={link} 
+                                      onChange={e => {
+                                        const next = [...extraVideos];
+                                        next[idx] = e.target.value;
+                                        setExtraVideos(next);
+                                      }}
+                                      placeholder="https://..." 
+                                      className="h-8 pl-8 text-[10px] font-mono bg-muted/20 border-none shadow-none" 
+                                   />
+                                 </div>
+                                 <button type="button" onClick={() => setExtraVideos(prev => prev.filter((_, i) => i !== idx))} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors">
+                                   <X size={14} />
+                                 </button>
+                               </div>
+                             ))}
+                             {extraVideos.length === 0 && <p className="text-[9px] text-muted-foreground italic ml-1">Nenhum link extra adicionado.</p>}
+                           </div>
                         </div>
                         
-                        <div className="space-y-4 pt-4 md:col-span-2 border-t border-border/60 mt-4 bg-muted/20 p-5 rounded-2xl relative overflow-hidden group/renderer">
-                           <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover/renderer:bg-primary/10 transition-all" />
-                           
-                           <div>
-                             <Label className="font-black text-xs uppercase text-foreground tracking-widest block flex items-center gap-2">
-                               <PlayCircle size={14} className="text-primary" /> Renderizador de Vídeos (Shopee Mode)
-                             </Label>
-                             <p className="text-[10px] text-muted-foreground mt-1">Garante que seus vídeos fiquem abaixo de 10MB sem travar o seu ERP.</p>
+                        <div className="space-y-3 pt-3 md:col-span-2 border-t border-border/60 mt-2 bg-muted/40 p-4 rounded-xl relative group/renderer">
+                           <div className="flex items-center justify-between">
+                             <div>
+                               <Label className="font-black text-[10px] uppercase text-foreground tracking-widest block flex items-center gap-1.5">
+                                 <PlayCircle size={12} className="text-primary" /> Renderizador 10MB
+                               </Label>
+                             </div>
+                             <p className="text-[9px] text-muted-foreground italic">Reduz vídeos pesados para a Shopee</p>
                            </div>
 
                            {!isOptimizingVideo && !optimizedVideoUrl && (
                              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 p-6 rounded-xl bg-background/50 hover:border-primary/40 transition-all cursor-pointer relative">
-                               <input 
-                                 type="file" 
-                                 accept="video/*,.mov,.mp4" 
-                                 className="absolute inset-0 opacity-0 cursor-pointer" 
-                                 onChange={e => setVideoToOptimize(e.target.files?.[0] || null)}
-                               />
                                {videoToOptimize ? (
-                                 <div className="text-center font-black">
-                                   <p className="text-xs text-primary">{videoToOptimize.name}</p>
-                                   <p className="text-[10px] text-muted-foreground">Original: {(videoToOptimize.size / (1024*1024)).toFixed(1)}MB</p>
-                                   <Button 
-                                      variant="outline" 
-                                      className="mt-3 h-8 text-[10px] uppercase font-black"
-                                      onClick={(e) => { e.stopPropagation(); handleOptimizeVideo(); }}
-                                   >Começar Renderização</Button>
-                                 </div>
-                               ) : (
-                                 <div className="text-center">
-                                   <ImageIcon className="h-6 w-6 text-muted-foreground/40 mx-auto" />
-                                   <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">Arraste o vídeo pesado aqui</p>
-                                 </div>
-                               )}
+                                  <div className="text-center font-black animate-in fade-in scale-95 duration-200">
+                                    <div className="bg-muted px-4 py-2 rounded-lg mb-2 flex items-center gap-3">
+                                      <PlayCircle className="text-primary h-4 w-4" />
+                                      <div className="text-left">
+                                        <p className="text-[10px] text-foreground truncate max-w-[140px]">{videoToOptimize.name}</p>
+                                        <p className="text-[9px] text-muted-foreground">Original: {(videoToOptimize.size / (1024*1024)).toFixed(1)}MB</p>
+                                      </div>
+                                    </div>
+                                    <Button 
+                                       className="mt-1 h-9 w-full text-[10px] uppercase font-black bg-primary text-primary-foreground shadow-md hover:scale-105 transition-transform"
+                                       onClick={(e) => { e.stopPropagation(); handleOptimizeVideo(); }}
+                                    >Começar Renderização</Button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setVideoToOptimize(null); }} 
+                                      className="mt-2 text-[9px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                    >Escolher outro vídeo</button>
+                                  </div>
+                                ) : (
+                                  <div className="relative w-full h-full flex flex-col items-center justify-center">
+                                    <input 
+                                      type="file" 
+                                      accept="video/*,.mov,.mp4" 
+                                      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                      onChange={e => setVideoToOptimize(e.target.files?.[0] || null)}
+                                    />
+                                    <div className="text-center">
+                                      <ImageIcon className="h-6 w-6 text-muted-foreground/40 mx-auto" />
+                                      <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">Arraste o vídeo pesado aqui</p>
+                                    </div>
+                                  </div>
+                                )}
                              </div>
                            )}
 
@@ -1096,11 +1147,36 @@ export default function InventoryPage() {
                                   <p className="text-[10px] text-muted-foreground">O arquivo foi compactado e o download iniciou.</p>
                                 </div>
                                 <div className="flex gap-2">
-                                  <a href={optimizedVideoUrl} download="shopee_optimized.mp4" className="h-9 px-4 flex items-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all">
-                                    <ArrowDownToLine size={14} /> Download Manual
-                                  </a>
-                                  <button onClick={() => { setOptimizedVideoUrl(null); setVideoToOptimize(null); }} className="h-9 px-4 text-[10px] font-black uppercase border border-border rounded-lg hover:bg-muted transition-all">Limpar</button>
-                                </div>
+                                   <Button 
+                                     onClick={() => {
+                                       const a = document.createElement('a');
+                                       a.href = optimizedVideoUrl;
+                                       a.download = "shopee_optimized.mp4";
+                                       a.click();
+                                     }}
+                                     className="h-9 px-4 flex items-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                   >
+                                     <ArrowDownToLine size={14} /> Baixar
+                                   </Button>
+                                   
+                                   <Button 
+                                     onClick={() => window.open(optimizedVideoUrl, '_blank')}
+                                     variant="outline"
+                                     className="h-9 px-4 flex items-center gap-2 text-[10px] font-black uppercase rounded-lg"
+                                   >
+                                     <ExternalLink size={14} /> Ver Nova Aba
+                                   </Button>
+
+                                   <button 
+                                     onClick={() => { 
+                                       setOptimizedVideoUrl(null); 
+                                       setVideoToOptimize(null); 
+                                     }} 
+                                     className="h-9 px-4 text-[10px] font-black uppercase border border-border rounded-lg hover:bg-muted transition-all"
+                                   >
+                                     Limpar
+                                   </button>
+                                 </div>
                              </div>
                            )}
                         </div>
@@ -1184,16 +1260,64 @@ export default function InventoryPage() {
                               draggedIdx === idx ? "opacity-40 border-primary border-dashed scale-95" : "border-border hover:border-primary/50"
                             )}
                           >
-                            <img src={img.preview} alt="preview" crossOrigin="anonymous" className="object-cover w-full h-full pointer-events-none" />
+                             <img src={getProxyUrl(img.preview) || ''} alt="preview" className="object-cover w-full h-full pointer-events-none" />
+                             
+                             {img.processing && (
+                               <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 animate-in fade-in duration-300">
+                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                 <span className="text-[10px] font-black uppercase mt-2 text-primary tracking-widest">Otimizando...</span>
+                               </div>
+                             )}
                             
                             {idx === 0 && Array.isArray(images) && (
                               <div className="absolute top-0 left-0 right-0 bg-primary/95 backdrop-blur-sm text-primary-foreground text-[11px] text-center font-black py-1.5 z-10 shadow-sm uppercase tracking-widest pointer-events-none">Capa</div>
                             )}
 
                             <div className="absolute inset-x-0 bottom-0 top-0 bg-background/80 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-2 z-20">
-                              <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx); }} className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg z-30">
-                                <X className="h-5 w-5" />
-                              </button>
+                              <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30">
+                                <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx); }} className="h-8 w-8 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg">
+                                  <X className="h-4 w-4" />
+                                </button>
+                                
+                                {!img.processing && (
+                                  <>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        const a = document.createElement('a'); 
+                                        a.href = img.preview; 
+                                        a.download = `foto-${idx+1}.jpg`; 
+                                        a.click(); 
+                                      }} 
+                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        window.open(img.preview, '_blank');
+                                      }} 
+                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        navigator.clipboard.writeText(img.preview);
+                                        success("Link da imagem copiado!");
+                                      }} 
+                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                               
                               <div className="text-foreground flex flex-col items-center gap-2 pointer-events-none">
                                 <GripHorizontal className="h-10 w-10 opacity-80" />

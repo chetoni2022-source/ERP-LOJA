@@ -6,7 +6,7 @@ import {
   Users, UserCircle2
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Button } from '../ui';
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -72,9 +72,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     };
 
     const applySettings = (data: any) => {
+      const proxyLogo = getProxyUrl(data.logo_url);
+      const proxyFavicon = getProxyUrl(data.favicon_url);
+
       setBrand({ 
         name: data.store_name || 'Laris ERP', 
-        logo: data.logo_url,
+        logo: proxyLogo,
         logoW: data.logo_width || 200,
         logoH: data.logo_height || 80,
         logoFit: data.logo_fit || 'contain',
@@ -82,11 +85,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         isDefault: !data.logo_url && (data.store_name === 'Laris Acessórios' || !data.store_name)
       });
 
-      if (data.favicon_url) {
+      if (proxyFavicon) {
         let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
         if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
         link.crossOrigin = "anonymous";
-        link.href = `${data.favicon_url}?v=${Date.now()}`;
+        link.href = `${proxyFavicon}?v=${Date.now()}`;
       }
       if (data.store_name) {
         document.title = data.store_name + ' | Laris ERP';

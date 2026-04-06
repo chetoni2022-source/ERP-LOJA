@@ -480,7 +480,7 @@ export default function InventoryPage() {
 
       const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
-      const payload = {
+      const payload: any = {
         name,
         sku: sku || null,
         description: description || null,
@@ -509,15 +509,32 @@ export default function InventoryPage() {
         user_id: user.id
       };
 
-      if (editingProduct) {
-        const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
-        if (error) throw error;
-        success('Produto atualizado!');
-      } else {
-        const { error } = await supabase.from('products').insert([payload]);
-        if (error) throw error;
-        success('Produto cadastrado!');
+      const trySave = async (data: any) => {
+        if (editingProduct) {
+          return supabase.from('products').update(data).eq('id', editingProduct.id);
+        } else {
+          return supabase.from('products').insert([data]);
+        }
+      };
+
+      let { error } = await trySave(payload);
+
+      // If 400 error (columns don't exist in DB yet), retry without new price fields
+      if (error && (error.code === '42703' || error.message?.includes('shopee_price') || error.message?.includes('tiktok_price') || (error as any).status === 400)) {
+        const { shopee_price: _sp, tiktok_price: _tp, ...payloadWithoutPrices } = payload;
+        const retry = await trySave(payloadWithoutPrices);
+        error = retry.error;
+        if (!error) {
+          success(editingProduct ? 'Produto salvo! ⚠️ Execute a migração SQL para salvar preços por canal.' : 'Produto cadastrado! ⚠️ Execute a migração SQL para salvar preços por canal.');
+          setIsModalOpen(false);
+          resetForm();
+          fetchProducts();
+          return;
+        }
       }
+
+      if (error) throw error;
+      success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
 
       setIsModalOpen(false);
       resetForm();
@@ -1665,7 +1682,7 @@ export default function InventoryPage() {
               )}
               <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto" disabled={saving || (!name && images.length === 0)}>
                 {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                {editingProduct ? 'Gravar Alterações' : 'Cadastrar'}
+                {editingProduct ? 'Salvar' : 'Cadastrar'}
               </Button>
             </div>
           </div>

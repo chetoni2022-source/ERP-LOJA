@@ -553,7 +553,7 @@ export default function InventoryPage() {
           };
           const retry3 = await trySave(corePayload);
           if (!retry3.error) {
-            success(editingProduct ? 'Produto salvo! (Recarregue o Schema Cache no Supabase para salvar todos os campos)' : 'Produto cadastrado!');
+            success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
             setIsModalOpen(false); resetForm(); fetchProducts();
             return;
           }

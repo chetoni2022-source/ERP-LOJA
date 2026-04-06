@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -668,15 +668,17 @@ export default function InventoryPage() {
             </div>
             
             <div className="p-5 md:p-6 overflow-y-auto bg-muted/5 flex-1 custom-scrollbar">
-              <div className="sticky top-0 z-50 flex flex-wrap gap-1 bg-background/70 backdrop-blur-xl p-1.5 rounded-xl mb-6 border border-border/60 shadow-sm mx-[-4px]">
+              <div className="sticky top-0 z-50 flex flex-wrap gap-1 bg-background/80 backdrop-blur-xl p-1.5 rounded-xl mb-6 border border-border/60 shadow-lg mx-[-4px]">
                  {['basic', 'pricing', 'logistics', 'media'].map(tab => (
                    <button
                      key={tab}
                      type="button"
                      onClick={() => setActiveTab(tab as any)}
                      className={cn(
-                       "flex-1 text-[10px] md:text-xs uppercase font-black tracking-widest py-2.5 rounded-lg transition-all whitespace-nowrap min-w-[80px]",
-                       activeTab === tab ? "bg-foreground text-background shadow-md border-transparent scale-[1.02]" : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                       "flex-1 text-[10px] md:text-xs uppercase font-black tracking-widest py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap min-w-[80px]",
+                       activeTab === tab 
+                         ? "bg-foreground text-background shadow-[0_0_15px_rgba(0,0,0,0.1)] border-transparent scale-[1.02] ring-1 ring-foreground/10" 
+                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95"
                      )}
                    >
                      {tab === 'basic' && 'Info 📝'}
@@ -731,24 +733,26 @@ export default function InventoryPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-1.5 md:col-span-2">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto</Label>
-                      <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito. Ficará exposto na vitrine.</p>
+                    <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40 group/desc">
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex items-center gap-2">
+                        <List size={14} className="text-muted-foreground" /> Descrição do Produto
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground mb-1">Destaque os diferenciais e use formatação para converter vendas.</p>
                       <div className="flex gap-1 mb-1.5">
                         {(['bold','big'] as const).map(fmtTag => (
                           <button key={fmtTag} type="button"
-                            className="h-7 px-2.5 text-xs font-bold border border-border rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
-                            onClick={() => { const ref = { current: document.getElementById('descTextarea') as HTMLTextAreaElement }; const el = ref.current; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); }}
-                          >{fmtTag === 'bold' ? 'N (Negrito)' : 'G (Grande)'}</button>
+                            className="h-7 px-3 text-[10px] uppercase font-black tracking-tighter border border-border/60 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                            onClick={() => { const el = document.getElementById('descTextarea') as HTMLTextAreaElement; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); el.focus(); }}
+                          >{fmtTag === 'bold' ? 'Negrito' : 'Texto Grande'}</button>
                         ))}
                       </div>
                       <textarea
                         id="descTextarea"
                         value={description}
                         onChange={e => setDescription(e.target.value)}
-                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k. Resistente ao suor e agua. Acompanha embalagem presente..."
-                        rows={6}
-                        className="w-full px-3 py-3 text-sm font-medium rounded-md border border-border bg-background text-foreground outline-none focus:ring-1 focus:ring-primary resize-y shadow-sm"
+                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
+                        rows={5}
+                        className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all"
                       />
                     </div>
                   </div>
@@ -756,26 +760,29 @@ export default function InventoryPage() {
 
                 {/* --- TAB: PRICING --- */}
                 <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'pricing' && "hidden")}>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Original <span className="text-[#f53d2d]">*</span></Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 border border-border/40 p-4 rounded-xl bg-card/40">
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Preço Original <span className="text-[#f53d2d]">*</span></Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xs">R$</span>
-                        <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm" />
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm border-primary/20" />
                       </div>
                     </div>
                     
-                    <div className="space-y-1.5">
-                      <Label className="font-bold text-xs uppercase text-primary/80 tracking-widest block flex items-center gap-1">Promo <span className="font-normal text-[9px]">(opcional)</span></Label>
+                    <div className="space-y-1.5 border border-border/40 p-4 rounded-xl bg-card/40">
+                      <Label className="font-bold text-xs uppercase text-primary/80 tracking-widest block flex items-center gap-1">Preço Promo <span className="font-normal text-[9px]">(opcional)</span></Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-xs">R$</span>
+                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
                         <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 shadow-sm focus:border-primary text-primary" />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Estoque <span className="text-[#f53d2d]">*</span></Label>
-                      <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 text-base font-black bg-background shadow-sm text-center" />
+                    <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Quantidade em Estoque <span className="text-[#f53d2d]">*</span></Label>
+                      <div className="relative">
+                        <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
+                        <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 pl-11 text-base font-black bg-background shadow-sm text-center md:text-left" />
+                      </div>
                     </div>
                   </div>
 
@@ -847,27 +854,39 @@ export default function InventoryPage() {
                   <div className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
                        <div>
-                         <Label className="font-bold text-xs uppercase text-[#f53d2d] tracking-widest block">Logística (Correios/Shopee)</Label>
-                         <p className="text-[10px] text-muted-foreground">Obrigatório preencher para exportar anúncios online usando frete Correios.</p>
+                         <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex items-center gap-2"><Scale size={14} className="text-primary"/> Logística e Frete</Label>
+                         <p className="text-[10px] text-muted-foreground mt-0.5">Essenciais para cálculo automático de frete Shopee/Correios.</p>
                        </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
-                      <div className="space-y-1">
-                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Peso (g)</Label>
-                         <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card/40 border border-border/40 p-4 rounded-xl shadow-sm">
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Peso (g)</Label>
+                         <div className="relative">
+                           <Scale className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" />
+                           <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                         </div>
                       </div>
-                      <div className="space-y-1">
-                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Comp. (cm)</Label>
-                         <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Comp. (cm)</Label>
+                         <div className="relative">
+                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" rotate={90} />
+                           <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                         </div>
                       </div>
-                      <div className="space-y-1">
-                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Larg. (cm)</Label>
-                         <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Larg. (cm)</Label>
+                         <div className="relative">
+                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" />
+                           <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                         </div>
                       </div>
-                      <div className="space-y-1">
-                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Alt. (cm)</Label>
-                         <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 text-sm font-black text-center" />
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Alt. (cm)</Label>
+                         <div className="relative">
+                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" rotate={-90} />
+                           <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                         </div>
                       </div>
                     </div>
                     
@@ -888,38 +907,65 @@ export default function InventoryPage() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                       <div className="space-y-1.5 md:col-span-2">
-                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Nome do Fornecedor / Fábrica</Label>
-                         <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 text-sm font-bold bg-background shadow-sm" />
+                       <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
+                         <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Fornecedor / Fabricante</Label>
+                         <div className="relative">
+                           <Factory className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
+                           <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm border-primary/20" />
+                         </div>
                        </div>
 
-                       <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-[#f53d2d]/20 transition-all" />
-                         <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10 flex justify-between items-center">
-                           <span>Shopee Vídeo / Foto (1:1)</span>
-                           {shopeeVideo && (
-                             <a href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[9px] bg-[#f53d2d]/10 text-[#f53d2d] px-2 py-0.5 rounded-full hover:bg-[#f53d2d]/20 transition-colors">
-                               Acessar <ExternalLink size={10} />
-                             </a>
-                           )}
-                         </Label>
-                         <Input value={shopeeVideo} onChange={e => setShopeeVideo(e.target.value)} placeholder="Link Drive/Canva..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
-                         <p className="text-[9px] font-bold text-muted-foreground opacity-60">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
-                       </div>
+                        <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group/media shadow-sm">
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover/media:bg-[#f53d2d]/20 transition-all" />
+                          <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (1:1)</Label>
+                          <div className="relative z-10 flex items-center">
+                            <Link2 className="absolute left-3 h-3.5 w-3.5 text-[#f53d2d]/60" />
+                            <Input 
+                              value={shopeeVideo} 
+                              onChange={e => setShopeeVideo(e.target.value)} 
+                              placeholder="Link Drive/Canva..." 
+                              className="h-10 pl-9 pr-10 text-xs font-mono bg-background/80 shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d] w-full" 
+                            />
+                            {shopeeVideo && (
+                              <a 
+                                href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="absolute right-2 h-7 w-7 flex items-center justify-center bg-[#f53d2d] text-white rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all"
+                                title="Abrir Preview"
+                              >
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
+                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
+                        </div>
 
-                       <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-purple-500/20 transition-all" />
-                         <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10 flex justify-between items-center">
-                           <span>TikTok / Reels (9:16)</span>
-                           {reelsVideo && (
-                             <a href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[9px] bg-purple-500/10 text-purple-600 px-2 py-0.5 rounded-full hover:bg-purple-500/20 transition-colors">
-                               Assistir <PlayCircle size={10} />
-                             </a>
-                           )}
-                         </Label>
-                         <Input value={reelsVideo} onChange={e => setReelsVideo(e.target.value)} placeholder="Link Drive/CapCut..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500" />
-                         <p className="text-[9px] font-bold text-muted-foreground opacity-60">Qualidade total para Redes Sociais.</p>
-                       </div>
+                        <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group/media shadow-sm">
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover/media:bg-purple-500/20 transition-all" />
+                          <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (9:16)</Label>
+                          <div className="relative z-10 flex items-center">
+                            <PlayCircle className="absolute left-3 h-3.5 w-3.5 text-purple-600/60" />
+                            <Input 
+                              value={reelsVideo} 
+                              onChange={e => setReelsVideo(e.target.value)} 
+                              placeholder="Link Drive/CapCut..." 
+                              className="h-10 pl-9 pr-10 text-xs font-mono bg-background/80 shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500 w-full" 
+                            />
+                            {reelsVideo && (
+                              <a 
+                                href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="absolute right-2 h-7 w-7 flex items-center justify-center bg-purple-600 text-white rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all"
+                                title="Ver Vídeo"
+                              >
+                                <PlayCircle size={14} />
+                              </a>
+                            )}
+                          </div>
+                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Qualidade total para Redes Sociais.</p>
+                        </div>
                     </div>
                   </div>
 

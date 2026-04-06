@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { LayoutDashboard, Loader2, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,17 +27,20 @@ export default function AuthPage() {
           .maybeSingle();
         
         if (data && !error) {
+          const proxyLogo = getProxyUrl(data.logo_url);
+          const proxyFavicon = getProxyUrl(data.favicon_url);
+
           setBrand({
             name: data.store_name || 'Laris ERP',
-            logo: data.logo_url
+            logo: proxyLogo
           });
           
-          if (data.favicon_url) {
-             const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+          if (proxyFavicon) {
+             let link: HTMLLinkElement = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+             if (!link) { link = document.createElement('link'); link.rel = 'shortcut icon'; document.head.appendChild(link); }
              link.type = 'image/x-icon';
-             link.rel = 'shortcut icon';
-             link.href = data.favicon_url;
-             document.getElementsByTagName('head')[0].appendChild(link);
+             link.crossOrigin = "anonymous";
+             link.href = `${proxyFavicon}?v=${Date.now()}`;
           }
         }
       } catch (e) {
@@ -73,7 +76,12 @@ export default function AuthPage() {
       <div className="w-full max-w-sm bg-background border border-border rounded-xl shadow-lg p-8 animate-in zoom-in-95 duration-500">
         <div className="flex flex-col items-center mb-8">
           {brand.logo ? (
-            <img src={brand.logo} alt="Logo" className="h-16 w-16 object-contain mb-4 drop-shadow-sm" />
+            <img 
+              src={brand.logo} 
+              alt="Logo" 
+              crossOrigin="anonymous" 
+              className="h-16 w-16 object-contain mb-4 drop-shadow-sm" 
+            />
           ) : (
             <div className="h-14 w-14 bg-primary text-primary-foreground rounded-xl flex items-center justify-center mb-4 shadow-sm">
               <Store size={28} />

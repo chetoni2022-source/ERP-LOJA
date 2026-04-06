@@ -4,7 +4,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
 import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Link as LinkIcon, Blocks } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
   { value: 'top left',    label: '↖', title: 'Superior Esquerda' },
@@ -248,8 +248,8 @@ export default function SettingsPage() {
     }
   };
 
-  const previewImg = logoPreview || currentLogoUrl;
-  const faviconImg = faviconPreview || currentFaviconUrl;
+  const previewImg = logoPreview || getProxyUrl(currentLogoUrl);
+  const faviconImg = faviconPreview || getProxyUrl(currentFaviconUrl);
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
@@ -386,7 +386,7 @@ export default function SettingsPage() {
                   <Label className="font-semibold text-foreground text-sm">Logotipo Principal</Label>
                   <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
                     {previewImg
-                      ? <img src={previewImg} alt="Logo" className="w-full h-full object-contain z-10 drop-shadow-sm p-3" />
+                      ? <img src={previewImg} alt="Logo" crossOrigin="anonymous" className="w-full h-full object-contain z-10 drop-shadow-sm p-3" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Logo</span>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
                   <Label className="font-semibold text-foreground text-sm">Ícone da Aba (Favicon)</Label>
                   <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
                     {faviconImg
-                      ? <img src={faviconImg} alt="Favicon" className="h-14 w-14 object-contain z-10" />
+                      ? <img src={faviconImg} alt="Favicon" crossOrigin="anonymous" className="h-14 w-14 object-contain z-10" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Favicon</span>
@@ -433,7 +433,7 @@ export default function SettingsPage() {
                 <p className="text-[9px] font-bold tracking-widest uppercase text-white/30 mb-2">Preview do catálogo</p>
                 <div style={{width:'100%',height:logoHeight+24,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
                   {previewImg
-                    ? <img src={previewImg} alt="preview" style={{width:logoWidth,height:logoHeight,objectFit:logoFit,objectPosition:logoPosition,display:'block'}}/>
+                    ? <img src={previewImg} alt="preview" crossOrigin="anonymous" style={{width:logoWidth,height:logoHeight,objectFit:logoFit,objectPosition:logoPosition,display:'block'}}/>
                     : <div style={{width:logoWidth,height:logoHeight,display:'flex',alignItems:'center',justifyContent:'center',border:'1px dashed rgba(255,255,255,0.2)',borderRadius:6}}>
                         <ImageIcon style={{width:24,height:24,color:'rgba(255,255,255,0.2)'}}/>
                       </div>

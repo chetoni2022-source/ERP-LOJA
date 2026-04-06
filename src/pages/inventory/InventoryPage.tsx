@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
+import JSZip from 'jszip';
 
 interface Product {
   id: string;
@@ -78,17 +79,45 @@ export default function InventoryPage() {
   const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean, processing?: boolean}[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
+  const [isZipping, setIsZipping] = useState(false);
 
   // Video Optimizer States
   const [videoToOptimize, setVideoToOptimize] = useState<File | null>(null);
   const [isOptimizingVideo, setIsOptimizingVideo] = useState(false);
   const [optProgress, setOptProgress] = useState(0);
   const [optimizedVideoUrl, setOptimizedVideoUrl] = useState<string | null>(null);
+  const [optimizedVideoSize, setOptimizedVideoSize] = useState<number | null>(null);
+
+  // Store settings for tax simulation
+  const [taxSettings, setTaxSettings] = useState({
+    shopee_comm: 20,
+    shopee_fee: 4,
+    shopee_cap: 100,
+    tiktok_comm: 15,
+    tiktok_fee: 4,
+    tiktok_cap: 100
+  });
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchTaxSettings();
   }, [user]);
+
+  async function fetchTaxSettings() {
+    if (!user) return;
+    const { data } = await supabase.from('store_settings').select('*').eq('user_id', user.id).maybeSingle();
+    if (data) {
+      setTaxSettings({
+        shopee_comm: data.shopee_commission_pct ?? 20,
+        shopee_fee: data.shopee_fixed_fee ?? 4,
+        shopee_cap: data.shopee_commission_cap ?? 100,
+        tiktok_comm: data.tiktok_commission_pct ?? 15,
+        tiktok_fee: data.tiktok_fixed_fee ?? 4,
+        tiktok_cap: data.tiktok_commission_cap ?? 100
+      });
+    }
+  }
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -312,6 +341,7 @@ export default function InventoryPage() {
       const optimized = await MediaOptimizer.optimizeVideo(videoToOptimize, (p) => setOptProgress(p));
       const url = URL.createObjectURL(optimized);
       setOptimizedVideoUrl(url);
+      setOptimizedVideoSize(optimized.size);
       success("Vídeo renderizado com sucesso!");
 
       // Auto-download to help user
@@ -319,11 +349,59 @@ export default function InventoryPage() {
       a.href = url;
       a.download = optimized.name;
       a.click();
-    } catch (err) {
-      console.error(err);
-      toastError("Falha na renderização. Verifique se o vídeo é compatível.");
+    } catch (err: any) {
+      // If it was cancelled, we don't treat it as a scary error
+      if (err.message && (err.message.includes('terminate') || err.message.includes('aborted'))) {
+        console.log("Renderização interrompida pelo usuário.");
+      } else {
+        console.error(err);
+        toastError("Falha na renderização. Verifique se o vídeo é compatível.");
+      }
     } finally {
       setIsOptimizingVideo(false);
+    }
+  };
+
+  const handleCancelVideoOptimization = async () => {
+    if (!isOptimizingVideo) return;
+    try {
+      await MediaOptimizer.terminateFFmpeg();
+      setIsOptimizingVideo(false);
+      setOptProgress(0);
+      success("Renderização cancelada!");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (images.length === 0) return;
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      const folderName = `fotos-${name || 'produto'}`.toLowerCase().replace(/\s+/g, '-');
+      
+      // Download all images and add to zip
+      const promises = images.map(async (img, idx) => {
+        const response = await fetch(img.preview);
+        const blob = await response.blob();
+        const extension = img.file?.name.split('.').pop() || 'jpg';
+        zip.file(`${folderName}-${idx + 1}.${extension}`, blob);
+      });
+
+      await Promise.all(promises);
+      const content = await zip.generateAsync({ type: "blob" });
+      
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = `${folderName}.zip`;
+      link.click();
+      success("ZIP gerado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      toastError("Erro ao gerar o ZIP.");
+    } finally {
+      setIsZipping(false);
     }
   };
 
@@ -734,21 +812,30 @@ export default function InventoryPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:py-8">
           <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={() => {setIsModalOpen(false); resetForm();}}></div>
           
-          <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col z-10 max-h-[90vh] md:max-h-[85vh] overflow-hidden">
-            <div className="px-6 py-5 border-b border-border bg-card flex justify-between items-center shrink-0">
-              <div>
-                <h3 className="text-xl font-black tracking-tight text-foreground">{editingProduct ? 'Editar Peça' : 'Nova Peça'}</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Gestão de Preço, Estoque e Custos Reais
-                </p>
+          <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col z-10 max-h-[90vh] md:max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="px-6 py-5 border-b border-border bg-card/50 backdrop-blur-md flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                  <Package size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight text-foreground">{editingProduct ? 'Editar Peça' : 'Nova Peça'}</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                       Gestão de Ativos & Lucratividade
+                    </p>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="p-2 hover:bg-muted rounded-full transition-colors">
-                <X size={20} className="text-muted-foreground" />
+              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-10 w-10 flex items-center justify-center hover:bg-muted rounded-xl transition-all border border-border group">
+                <X size={20} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
             
-            <div className="p-5 md:p-6 overflow-y-auto bg-muted/5 flex-1 custom-scrollbar">
-              <div className="sticky top-0 z-50 flex flex-wrap gap-1 bg-background/80 backdrop-blur-xl p-1.5 rounded-xl mb-6 border border-border/60 shadow-lg mx-[-4px]">
+            <div className="overflow-y-auto bg-muted/5 flex-1 custom-scrollbar relative">
+              <div className="sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-5 md:px-6 py-3 mb-6 opacity-100">
+                 <div className="flex flex-nowrap overflow-x-auto custom-scrollbar gap-1 bg-muted/30 p-1 rounded-xl">
                  {['basic', 'pricing', 'logistics', 'media'].map(tab => (
                    <button
                      key={tab}
@@ -767,28 +854,39 @@ export default function InventoryPage() {
                      {tab === 'media' && 'Mídia 🎥'}
                    </button>
                  ))}
+                 </div>
               </div>
 
-              <form id="productForm" onSubmit={handleSaveProduct} className="space-y-4 md:space-y-5" noValidate>
+              <form id="productForm" onSubmit={handleSaveProduct} className="space-y-4 md:space-y-5 px-5 md:px-6 pb-8" noValidate>
                 
-                {/* --- TAB: BÁSICOS --- */}
-                <div className={cn("space-y-5", activeTab !== 'basic' && "hidden")}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5 md:col-span-1 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
-                      <div className="relative">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm transition-colors border-primary/20 focus-visible:ring-primary" />
+                <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'basic' && "hidden")}>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500">
+                        <Tag size={20} />
+                      </div>
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Informações Essenciais</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Nome, categoria e identificadores únicos</p>
                       </div>
                     </div>
-                    <div className="space-y-1.5 md:col-span-1 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">Coleção/Categoria</Label>
-                      <div className="relative">
-                        <List className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block flex gap-1 ml-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
+                        <div className="relative group/input">
+                          <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
+                          <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-12 pl-10 text-sm font-bold bg-background/50 shadow-none border-border/60 focus-visible:ring-primary focus-visible:bg-background transition-all" />
+                        </div>
+                      </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Categoria / Coleção</Label>
+                      <div className="relative group/input">
+                        <List className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
                         <select 
                           value={categoryId}
                           onChange={(e) => setCategoryId(e.target.value)}
-                          className="flex h-11 w-full rounded-md border border-border bg-background text-foreground pl-9 pr-3 py-1 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm"
+                          className="flex h-12 w-full rounded-md border border-border/60 bg-background/50 text-foreground pl-10 pr-3 py-1 shadow-none focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm focus:bg-background transition-all"
                         >
                           <option value="">Não classificado</option>
                           {categories.map(cat => (
@@ -797,27 +895,29 @@ export default function InventoryPage() {
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <div className="space-y-1.5">
-                        <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">GTIN/EAN</Label>
+                    <div className="grid grid-cols-2 gap-3 md:col-span-2 rounded-xl">
+                      <div className="space-y-1">
+                        <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">GTIN / EAN</Label>
                         <div className="relative">
-                          <Barcode className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
-                          <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="789... (Opcional)" className="h-11 pl-8 text-xs md:text-sm font-mono bg-background shadow-sm border-primary/20" />
+                          <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                          <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="000... (Opcional)" className="h-10 pl-9 text-xs font-mono bg-background/50 border-border/40 shadow-none focus-visible:ring-border transition-all" />
                         </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência</Label>
+                      <div className="space-y-1">
+                        <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Referência (SKU)</Label>
                         <div className="relative">
-                          <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
-                          <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-11 pl-8 text-xs md:text-sm font-mono bg-background shadow-sm" />
+                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                          <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-10 pl-9 text-xs font-mono bg-background/50 border-border/40 shadow-none focus-visible:ring-border transition-all" />
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40 group/desc">
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex items-center gap-2">
-                        <List size={14} className="text-muted-foreground" /> Descrição do Produto
-                      </Label>
-                      <p className="text-[10px] text-muted-foreground mb-1">Destaque os diferenciais e use formatação para converter vendas.</p>
+                  </div>
+
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-3 group/desc">
+                    <Label className="font-black text-[10px] uppercase text-foreground/80 tracking-widest block flex items-center gap-2">
+                       Descrição da Peça
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground font-medium">Destaque os diferenciais e materiais do produto.</p>
                       <div className="flex gap-1 mb-1.5">
                         {(['bold','big'] as const).map(fmtTag => (
                           <button key={fmtTag} type="button"
@@ -838,44 +938,60 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                {/* --- TAB: PRICING --- */}
-                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'pricing' && "hidden")}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Preço Original <span className="text-[#f53d2d]">*</span></Label>
-                      <div className="relative">
-                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm border-primary/20" />
+                <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'pricing' && "hidden")}>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <Coins size={20} />
                       </div>
-                    </div>
-                    
-                    <div className="space-y-1.5 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <Label className="font-bold text-xs uppercase text-primary/80 tracking-widest block flex items-center gap-1">Preço Promo <span className="font-normal text-[9px]">(opcional)</span></Label>
-                      <div className="relative">
-                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
-                        <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 shadow-sm focus:border-primary text-primary" />
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Gestão de Lucros</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Preços de venda e ofertas limitadas</p>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Quantidade em Estoque <span className="text-[#f53d2d]">*</span></Label>
-                      <div className="relative">
-                        <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
-                        <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 pl-11 text-base font-black bg-background shadow-sm text-center md:text-left" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
+                        <div className="relative group/input">
+                          <Coins className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
+                          <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-12 pl-10 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary focus-visible:bg-background transition-all" />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço de Oferta</Label>
+                        <div className="relative group/input">
+                          <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
+                          <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-12 pl-10 text-base font-black border-primary/30 bg-primary/5 shadow-none focus:border-primary text-primary transition-all" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
+                        <div className="relative group/input">
+                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
+                          <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all text-center md:text-left" />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-2">
-                    <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
-                      <div>
-                        <Label className="font-extrabold text-[10px] uppercase text-muted-foreground tracking-widest">Estrutura de Custos</Label>
-                        <p className="text-[9px] text-muted-foreground/60 font-medium">Cadastre insumos, fretes e embalagens.</p>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                          <Scale size={20} />
+                        </div>
+                        <div>
+                          <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Estrutura de Custos</Label>
+                          <p className="text-[10px] text-muted-foreground font-medium">Insumos, impostos e taxas</p>
+                        </div>
                       </div>
                       <button 
                         type="button" 
                         onClick={() => setCosts([...costs, { label: '', value: '' }])} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
                       >
                         <Plus className="h-3 w-3" /> Adicionar Custo
                       </button>
@@ -921,22 +1037,94 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 pt-2">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado</Label>
-                    <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
-                      R$ {profitPerSale.toFixed(2).replace('.', ',')}
+                    <div className="space-y-1.5 pt-2">
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Lucro Real Estimado (Catálogo)</Label>
+                      <div className={cn("h-14 flex items-center justify-center border rounded-xl font-black text-2xl transition-colors duration-300 shadow-inner", profitColor)}>
+                        R$ {profitPerSale.toFixed(2).replace('.', ',')}
+                      </div>
                     </div>
+                  {/* Marketplace Multi-Channel Profits moved inside the tab */}
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4 mt-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Monitor size={20} />
+                      </div>
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Simulador Omnichannel</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Margem líquida em outros canais de venda</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Shopee Profit Card */}
+                      <div className="p-4 rounded-2xl border-2 border-[#f53d2d]/20 bg-[#f53d2d]/5 relative group cursor-help transition-all hover:bg-[#f53d2d]/10" 
+                           title={`Shopee: ${taxSettings.shopee_comm}% de comissão (máx R$${taxSettings.shopee_cap}) + R$${taxSettings.shopee_fee} de taxa fixa.`}>
+                        <div className="flex justify-between items-start mb-2">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-[#f53d2d]">Shopee</span>
+                           <ShoppingBag size={14} className="text-[#f53d2d] opacity-40" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xl font-black text-foreground tabular-nums">
+                            R$ {( () => {
+                              const p = parseFloat(salePrice || price || '0');
+                              const cost = parseFloat(costs[0].value || '0');
+                              const extra = costs.slice(1).reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                              const comm = Math.min(p * (taxSettings.shopee_comm/100), taxSettings.shopee_cap);
+                              const res = p - cost - extra - comm - taxSettings.shopee_fee;
+                              return Math.max(0, res).toFixed(2).replace('.', ',');
+                            })() }
+                          </p>
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Lucro Líquido</p>
+                        </div>
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <div className="bg-foreground text-background text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter shadow-lg">Info</div>
+                        </div>
+                      </div>
+
+                      {/* TikTok Profit Card */}
+                      <div className="p-4 rounded-2xl border-2 border-black/20 bg-black/5 relative group cursor-help transition-all hover:bg-black/10"
+                           title={`TikTok Shop: ${taxSettings.tiktok_comm}% de comissão (máx R$${taxSettings.tiktok_cap}) + R$${taxSettings.tiktok_fee} de taxa fixa.`}>
+                        <div className="flex justify-between items-start mb-2">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-foreground">TikTok Shop</span>
+                           <svg className="h-3.5 w-3.5 text-foreground opacity-40" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xl font-black text-foreground tabular-nums">
+                            R$ {( () => {
+                              const p = parseFloat(salePrice || price || '0');
+                              const cost = parseFloat(costs[0].value || '0');
+                              const extra = costs.slice(1).reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                              const comm = Math.min(p * (taxSettings.tiktok_comm/100), taxSettings.tiktok_cap);
+                              const res = p - cost - extra - comm - taxSettings.tiktok_fee;
+                              return Math.max(0, res).toFixed(2).replace('.', ',');
+                            })() }
+                          </p>
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Lucro Líquido</p>
+                        </div>
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <div className="bg-foreground text-background text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter shadow-lg">Info</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60">
+                      * Tarifas base configuadas em <strong>Ajustes &gt; Integrações</strong>. <br />
+                      Passe o mouse nos cards para detalhamento.
+                    </p>
                   </div>
                 </div>
 
                 {/* --- TAB: LOGISTIC --- */}
-                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'logistics' && "hidden")}>
-                  <div className="space-y-4 pt-2">
-                    <div className="flex items-center justify-between">
-                       <div>
-                         <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex items-center gap-2"><Scale size={14} className="text-primary"/> Logística e Frete</Label>
-                         <p className="text-[10px] text-muted-foreground mt-0.5">Essenciais para cálculo automático de frete Shopee/Correios.</p>
-                       </div>
+                <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'logistics' && "hidden")}>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <Ruler size={20} />
+                      </div>
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Dimensões & Frete</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Cálculos automáticos de logística</p>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card/40 border border-border/40 p-4 rounded-xl shadow-sm">
@@ -978,12 +1166,16 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                {/* --- TAB: MEDIA --- */}
-                <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'media' && "hidden")}>
-                  <div>
-                    <div>
-                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">🎥 Mídias p/ Redes & 🏭 Fornecedores</Label>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Registre a origem e estruture os links dos vídeos para sua equipe não os perder jamais.</p>
+                <div className={cn("space-y-4 animate-in fade-in zoom-in duration-300", activeTab !== 'media' && "hidden")}>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <PlayCircle size={24} />
+                      </div>
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Mídias & Ativos Premium</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Gestão de vídeos e links de fabricação</p>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
@@ -1127,7 +1319,16 @@ export default function InventoryPage() {
                              <div className="space-y-4 py-4">
                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                  <span className="flex items-center gap-2 anime-pulse"><Loader2 className="h-3 w-3 animate-spin text-primary" /> Processando...</span>
-                                 <span>{optProgress}%</span>
+                                 <div className="flex items-center gap-3">
+                                   <span>{optProgress}%</span>
+                                   <button 
+                                     type="button"
+                                     onClick={handleCancelVideoOptimization}
+                                     className="h-5 px-2 flex items-center justify-center bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-[8px] font-black uppercase rounded-md transition-all shadow-sm"
+                                   >
+                                     Cancelar
+                                   </button>
+                                 </div>
                                </div>
                                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                                  <div 
@@ -1140,44 +1341,60 @@ export default function InventoryPage() {
                            )}
 
                            {optimizedVideoUrl && (
-                             <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 flex flex-col items-center gap-3 animate-in zoom-in duration-300">
-                                <CheckCircle2 className="text-primary h-8 w-8" />
-                                <div className="text-center">
-                                  <p className="text-xs font-black text-foreground">Vídeo Pronto para Shopee!</p>
-                                  <p className="text-[10px] text-muted-foreground">O arquivo foi compactado e o download iniciou.</p>
-                                </div>
-                                <div className="flex gap-2">
-                                   <Button 
-                                     onClick={() => {
-                                       const a = document.createElement('a');
-                                       a.href = optimizedVideoUrl;
-                                       a.download = "shopee_optimized.mp4";
-                                       a.click();
-                                     }}
-                                     className="h-9 px-4 flex items-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
-                                   >
-                                     <ArrowDownToLine size={14} /> Baixar
-                                   </Button>
-                                   
-                                   <Button 
-                                     onClick={() => window.open(optimizedVideoUrl, '_blank')}
-                                     variant="outline"
-                                     className="h-9 px-4 flex items-center gap-2 text-[10px] font-black uppercase rounded-lg"
-                                   >
-                                     <ExternalLink size={14} /> Ver Nova Aba
-                                   </Button>
+                              <div className="bg-primary/5 p-5 rounded-2xl border border-primary/20 flex flex-col items-center gap-4 animate-in zoom-in duration-300 shadow-sm relative overflow-hidden">
+                                 {/* Reduction Badge */}
+                                 {videoToOptimize && optimizedVideoSize && (
+                                   <div className="absolute top-2 -right-12 bg-primary rotate-45 px-12 py-1 shadow-md">
+                                     <span className="text-[9px] font-black text-white uppercase tracking-tighter">
+                                       -{Math.round((1 - (optimizedVideoSize / videoToOptimize.size)) * 100)}% Economia
+                                     </span>
+                                   </div>
+                                 )}
 
-                                   <button 
-                                     onClick={() => { 
-                                       setOptimizedVideoUrl(null); 
-                                       setVideoToOptimize(null); 
-                                     }} 
-                                     className="h-9 px-4 text-[10px] font-black uppercase border border-border rounded-lg hover:bg-muted transition-all"
-                                   >
-                                     Limpar
-                                   </button>
+                                 <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                   <CheckCircle2 className="text-primary h-6 w-6" />
                                  </div>
-                             </div>
+
+                                 <div className="text-center space-y-1">
+                                   <p className="text-xs font-black text-foreground uppercase tracking-widest">Vídeo Shopee Pronto!</p>
+                                   <div className="flex items-center justify-center gap-2 mt-2">
+                                     <div className="px-2 py-1 bg-muted rounded-md border border-border/40">
+                                       <p className="text-[8px] uppercase text-muted-foreground font-bold">Antes</p>
+                                       <p className="text-[10px] font-mono text-muted-foreground line-through">{(videoToOptimize?.size || 0 / (1024*1024)).toFixed(1)}MB</p>
+                                     </div>
+                                     <div className="h-4 w-4 flex items-center justify-center text-primary/40">→</div>
+                                     <div className="px-2 py-1 bg-primary/10 rounded-md border border-primary/20">
+                                       <p className="text-[8px] uppercase text-primary font-bold">Agora</p>
+                                       <p className="text-[10px] font-mono font-black text-primary">{( (optimizedVideoSize || 0) / (1024*1024)).toFixed(1)}MB</p>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 <div className="flex gap-2 w-full">
+                                    <Button 
+                                      onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = optimizedVideoUrl;
+                                        a.download = videoToOptimize?.name.replace(/\.[^/.]+$/, "_otimizado.mp4") || "shopee_optimized.mp4";
+                                        a.click();
+                                      }}
+                                      className="flex-1 h-9 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                                    >
+                                      <ArrowDownToLine size={14} /> Baixar
+                                    </Button>
+                                    
+                                    <button 
+                                      onClick={() => { 
+                                        setOptimizedVideoUrl(null); 
+                                        setVideoToOptimize(null); 
+                                        setOptimizedVideoSize(null);
+                                      }} 
+                                      className="h-9 px-4 text-[10px] font-black uppercase border border-border rounded-lg hover:bg-muted transition-all active:scale-95"
+                                    >
+                                      Limpar
+                                    </button>
+                                 </div>
+                              </div>
                            )}
                         </div>
                           
@@ -1226,8 +1443,27 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-6 mt-4 border-t border-border/80">
-                    <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Galeria da Peça (Arraste p/ Ordenar Capa)</Label>
+                  <div className="space-y-4 pt-6 mt-4 border-t border-border/80">
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <Label className="font-black text-[11px] uppercase text-foreground tracking-widest block flex items-center gap-2">
+                          <Layers size={14} className="text-primary" /> Galeria da Peça
+                        </Label>
+                        <p className="text-[10px] text-muted-foreground">Arraste as fotos para definir a capa principal.</p>
+                      </div>
+                      {images.length > 0 && (
+                        <Button 
+                          type="button" 
+                          onClick={handleDownloadAll} 
+                          disabled={isZipping}
+                          variant="outline" 
+                          className="h-8 px-3 text-[10px] font-black uppercase flex items-center gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                        >
+                          {isZipping ? <Loader2 size={12} className="animate-spin" /> : <FolderArchive size={14} />}
+                          {isZipping ? "Gerando..." : "Baixar Tudo (.zip)"}
+                        </Button>
+                      )}
+                    </div>
                     
                     <div className="border-2 border-dashed border-border rounded-xl p-5 md:p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors relative cursor-pointer group shadow-inner">
                       <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground group-hover:text-primary transition-colors pointer-events-none">

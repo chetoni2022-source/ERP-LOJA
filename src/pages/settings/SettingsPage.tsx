@@ -51,6 +51,15 @@ export default function SettingsPage() {
   const [shopeeSecret, setShopeeSecret] = useState('');
   const [shopeeShopId, setShopeeShopId] = useState('');
   const [shopeeMarkup, setShopeeMarkup] = useState('0');
+  const [shopeeCommission, setShopeeCommission] = useState('20');
+  const [shopeeFixedFee, setShopeeFixedFee] = useState('4');
+  const [shopeeCap, setShopeeCap] = useState('100');
+  
+  // TikTok Integration State
+  const [tiktokCommission, setTiktokCommission] = useState('15');
+  const [tiktokFixedFee, setTiktokFixedFee] = useState('4');
+  const [tiktokCap, setTiktokCap] = useState('100');
+  
   const [savingShopee, setSavingShopee] = useState(false);
 
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
@@ -58,9 +67,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     supabase.from('store_settings')
-      .select('store_name, monthly_goal, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position, whatsapp_number, lead_sources, shopee_app_id, shopee_app_secret, shopee_shop_id, shopee_markup_pct')
+      .select('*')
       .eq('user_id', user.id)
-      .limit(1).maybeSingle().then(({ data }) => {
+      .limit(1).maybeSingle().then(({ data }: { data: any }) => {
         if (data) {
           if (data.store_name) setStoreName(data.store_name);
           if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
@@ -76,6 +85,12 @@ export default function SettingsPage() {
           if (data.shopee_app_secret) setShopeeSecret(data.shopee_app_secret);
           if (data.shopee_shop_id) setShopeeShopId(data.shopee_shop_id);
           if (data.shopee_markup_pct !== null) setShopeeMarkup(data.shopee_markup_pct.toString());
+          if (data.shopee_commission_pct !== null) setShopeeCommission(data.shopee_commission_pct.toString());
+          if (data.shopee_fixed_fee !== null) setShopeeFixedFee(data.shopee_fixed_fee.toString());
+          if (data.shopee_commission_cap !== null) setShopeeCap(data.shopee_commission_cap.toString());
+          if (data.tiktok_commission_pct !== null) setTiktokCommission(data.tiktok_commission_pct.toString());
+          if (data.tiktok_fixed_fee !== null) setTiktokFixedFee(data.tiktok_fixed_fee.toString());
+          if (data.tiktok_commission_cap !== null) setTiktokCap(data.tiktok_commission_cap.toString());
         }
       });
   }, [user]);
@@ -182,7 +197,13 @@ export default function SettingsPage() {
         shopee_app_id: shopeeAppId || null, 
         shopee_app_secret: shopeeSecret || null, 
         shopee_shop_id: shopeeShopId || null, 
-        shopee_markup_pct: parseFloat(shopeeMarkup) || 0 
+        shopee_markup_pct: parseFloat(shopeeMarkup) || 0,
+        shopee_commission_pct: parseFloat(shopeeCommission) || 20,
+        shopee_fixed_fee: parseFloat(shopeeFixedFee) || 4,
+        shopee_commission_cap: parseFloat(shopeeCap) || 100,
+        tiktok_commission_pct: parseFloat(tiktokCommission) || 15,
+        tiktok_fixed_fee: parseFloat(tiktokFixedFee) || 4,
+        tiktok_commission_cap: parseFloat(tiktokCap) || 100
       };
       
       if (existing) {
@@ -191,7 +212,7 @@ export default function SettingsPage() {
       } else {
          toastError('Erro: Registre sua marca em "Identidade Visual" primeiro.'); return;
       }
-      success('Configurações da Shopee salvas no ERP!');
+      success('Configurações de Marketplaces salvas no ERP!');
     } catch (err: any) { 
       console.error(err);
       toastError('Erro ao salvar Shopee: ' + err.message); 
@@ -510,6 +531,21 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground mb-6 font-medium">Insira suas chaves matrizes de desenvolvedor. Todos os anúncios criados aqui serão refletidos como mágica lá com a nova margem de impostos calculada e aplicada.</p>
                   
                   <form onSubmit={handleSaveShopee} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Shopee Comissão %</Label>
+                         <Input value={shopeeCommission} onChange={e=>setShopeeCommission(e.target.value)} placeholder="20" className="bg-background shadow-sm h-10 font-bold" />
+                      </div>
+                      <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Shopee Taxa Fixa</Label>
+                         <Input value={shopeeFixedFee} onChange={e=>setShopeeFixedFee(e.target.value)} placeholder="4.00" className="bg-background shadow-sm h-10 font-bold" />
+                      </div>
+                      <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border col-span-2">
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Teto Máximo Comissão (R$)</Label>
+                         <Input value={shopeeCap} onChange={e=>setShopeeCap(e.target.value)} placeholder="100.00" className="bg-background shadow-sm h-10 font-bold" />
+                      </div>
+                    </div>
+
                     <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
                        <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">App ID / Partner ID</Label>
                        <Input value={shopeeAppId} onChange={e=>setShopeeAppId(e.target.value)} placeholder="00000000000" className="bg-background shadow-sm h-12 font-mono text-sm border-none shadow-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
@@ -534,19 +570,48 @@ export default function SettingsPage() {
                     </div>
                     <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl mt-2 transition-transform active:scale-95">
                        {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                       Ativar Refletor Shopee
+                       Salvar Marketplace Taxas
                     </Button>
                   </form>
                 </div>
              </div>
              
-             {/* Mercado Livre Preview */}
-             <div className="bg-muted/10 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center p-8 text-center h-fit opacity-50 cursor-not-allowed">
-               <div className="h-16 w-16 mb-4 bg-muted text-muted-foreground/50 rounded-2xl flex items-center justify-center">
-                 <Store size={32} />
-               </div>
-               <h3 className="font-bold text-lg text-foreground uppercase tracking-widest mb-1">Mercado Livre</h3>
-               <p className="text-xs text-muted-foreground max-w-[250px] font-medium">Conector em desenvolvimento. Será liberado nas próximas ondas de atualização.</p>
+             {/* TikTok Shop Hub */}
+             <div className="bg-card border-2 border-black/10 overflow-hidden rounded-2xl shadow-lg relative h-fit group">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-black/5 rounded-full -mr-20 -mt-20 pointer-events-none blur-3xl group-hover:bg-black/10 transition-all" />
+                <div className="p-6 md:p-8 relative z-10 w-full h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                     <div className="h-12 w-12 rounded-xl bg-black flex items-center justify-center shadow-sm border border-black">
+                       <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
+                     </div>
+                     <div>
+                       <h2 className="text-xl md:text-2xl font-black text-foreground">TikTok Shop BR</h2>
+                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest bg-muted w-fit px-2 py-0.5 rounded-md mt-0.5">Calculadora de Lucro</p>
+                     </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6 font-medium">Ajuste as taxas que o TikTok cobra em cada venda. Estes valores serão usados no simulador de lucro real dos seus acessórios.</p>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">TikTok Comissão %</Label>
+                       <Input value={tiktokCommission} onChange={e=>setTiktokCommission(e.target.value)} placeholder="15" className="bg-background shadow-sm h-10 font-bold" />
+                    </div>
+                    <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">TikTok Taxa Fixa</Label>
+                       <Input value={tiktokFixedFee} onChange={e=>setTiktokFixedFee(e.target.value)} placeholder="4.00" className="bg-background shadow-sm h-10 font-bold" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border mb-4">
+                     <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Teto Máximo Comissão (R$)</Label>
+                     <Input value={tiktokCap} onChange={e=>setTiktokCap(e.target.value)} placeholder="100.00" className="bg-background shadow-sm h-10 font-bold" />
+                  </div>
+
+                  <Button onClick={handleSaveShopee} disabled={savingShopee} className="w-full bg-black hover:bg-zinc-800 text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-black/10 rounded-xl transition-transform active:scale-95">
+                     {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+                     Salvar Taxas TikTok
+                  </Button>
+                </div>
              </div>
           </div>
         )}

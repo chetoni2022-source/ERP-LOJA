@@ -65,6 +65,21 @@ export const MediaOptimizer = {
   },
 
   /**
+   * Immediately stops any current FFmpeg process and kills the instance.
+   * Useful for cancelling video optimization without waiting.
+   */
+  async terminateFFmpeg() {
+    if (ffmpeg) {
+      try {
+        await ffmpeg.terminate();
+        ffmpeg = null; // Forces re-loading next time
+      } catch (err) {
+        console.error("Failed to terminate FFmpeg:", err);
+      }
+    }
+  },
+
+  /**
    * Compresses a video targeting a specific file size (e.g. 10MB for Shopee).
    * Supports MP4 and MOV (Apple).
    */
@@ -89,17 +104,22 @@ export const MediaOptimizer = {
 
     // Execute compression: 
     // - Force H264/AAC for compatibility. 
-    // - Use CRF 28 (good balance) or a constant bitrate if size is priority.
-    // - Scale to 720p if needed to guarantee <10MB.
+    // - Use CRF 24 (high quality) with a bitrate cap to ensure <10MB.
+    // Execute compression: 
+    // - Force H264/AAC for compatibility. 
+    // - Use CRF 24 (high quality) with a bitrate cap to ensure <10MB.
+    // - Scale to 720p (Shopee standard) for extreme speed in WASM environment.
     await ff.exec([
       '-i', inputName,
       '-vcodec', 'libx264',
-      '-crf', '28',
-      '-preset', 'veryfast',
-      '-vf', 'scale=-2:720', // Scale to 720p height, preserving aspect ratio
+      '-pix_fmt', 'yuv420p',
+      '-crf', '24', 
+      '-preset', 'ultrafast',
+      '-vf', "scale='if(gt(ih,720),-2,iw)':'if(gt(ih,720),720,ih)'", // Limit to 720p for speed
       '-acodec', 'aac',
-      '-maxrate', '1500k',
-      '-bufsize', '3000k',
+      '-b:a', '128k',
+      '-maxrate', '3000k', 
+      '-bufsize', '6000k',
       outputName
     ]);
 

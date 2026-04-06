@@ -12,14 +12,39 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // White-label state - Keep it generic on login to prevent cross-tenant branding leak
-  const [brand] = useState<{name: string, logo: string | null}>({ 
+  const [brand, setBrand] = useState<{name: string, logo: string | null}>({ 
     name: 'Laris ERP', 
     logo: null 
   });
 
   useEffect(() => {
-    // Branding is applied after login in AppLayout based on the specific user.
+    async function loadBranding() {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('store_name, logo_url, favicon_url')
+          .limit(1)
+          .maybeSingle();
+        
+        if (data && !error) {
+          setBrand({
+            name: data.store_name || 'Laris ERP',
+            logo: data.logo_url
+          });
+          
+          if (data.favicon_url) {
+             const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+             link.type = 'image/x-icon';
+             link.rel = 'shortcut icon';
+             link.href = data.favicon_url;
+             document.getElementsByTagName('head')[0].appendChild(link);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading login branding:", e);
+      }
+    }
+    loadBranding();
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 
 interface Product {
@@ -668,7 +668,7 @@ export default function InventoryPage() {
             </div>
             
             <div className="p-5 md:p-6 overflow-y-auto bg-muted/5 flex-1 custom-scrollbar">
-              <div className="flex flex-wrap gap-1 bg-muted/30 p-1.5 rounded-xl mb-6 border border-border/50">
+              <div className="sticky top-0 z-50 flex flex-wrap gap-1 bg-background/70 backdrop-blur-xl p-1.5 rounded-xl mb-6 border border-border/60 shadow-sm mx-[-4px]">
                  {['basic', 'pricing', 'logistics', 'media'].map(tab => (
                    <button
                      key={tab}
@@ -676,7 +676,7 @@ export default function InventoryPage() {
                      onClick={() => setActiveTab(tab as any)}
                      className={cn(
                        "flex-1 text-[10px] md:text-xs uppercase font-black tracking-widest py-2.5 rounded-lg transition-all whitespace-nowrap min-w-[80px]",
-                       activeTab === tab ? "bg-background text-primary shadow-sm border border-border/50" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                       activeTab === tab ? "bg-foreground text-background shadow-md border-transparent scale-[1.02]" : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                      )}
                    >
                      {tab === 'basic' && 'Info 📝'}
@@ -692,31 +692,43 @@ export default function InventoryPage() {
                 {/* --- TAB: BÁSICOS --- */}
                 <div className={cn("space-y-5", activeTab !== 'basic' && "hidden")}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
-                      <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 text-sm font-bold bg-background shadow-sm transition-colors" />
+                    <div className="space-y-1.5 md:col-span-1 border border-border/40 p-4 rounded-xl bg-card/40">
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block flex gap-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
+                      <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm transition-colors border-primary/20 focus-visible:ring-primary" />
+                      </div>
                     </div>
-                    <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Coleção/Categoria</Label>
-                      <select 
-                        value={categoryId}
-                        onChange={(e) => setCategoryId(e.target.value)}
-                        className="flex h-11 w-full rounded-md border border-border bg-background text-foreground px-3 py-1 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm"
-                      >
-                        <option value="">Não classificado</option>
-                        {categories.map(cat => (
-                           <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </select>
+                    <div className="space-y-1.5 md:col-span-1 border border-border/40 p-4 rounded-xl bg-card/40">
+                      <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">Coleção/Categoria</Label>
+                      <div className="relative">
+                        <List className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <select 
+                          value={categoryId}
+                          onChange={(e) => setCategoryId(e.target.value)}
+                          className="flex h-11 w-full rounded-md border border-border bg-background text-foreground pl-9 pr-3 py-1 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm"
+                        >
+                          <option value="">Não classificado</option>
+                          {categories.map(cat => (
+                             <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                    <div className="grid grid-cols-2 gap-3 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
                       <div className="space-y-1.5">
                         <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">GTIN/EAN</Label>
-                        <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="789... (Opcional)" className="h-11 text-xs md:text-sm font-mono bg-background shadow-sm border-primary/20" />
+                        <div className="relative">
+                          <Barcode className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
+                          <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="789... (Opcional)" className="h-11 pl-8 text-xs md:text-sm font-mono bg-background shadow-sm border-primary/20" />
+                        </div>
                       </div>
                       <div className="space-y-1.5">
                         <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência</Label>
-                        <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-11 text-xs md:text-sm font-mono bg-background shadow-sm" />
+                        <div className="relative">
+                          <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
+                          <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-11 pl-8 text-xs md:text-sm font-mono bg-background shadow-sm" />
+                        </div>
                       </div>
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
@@ -877,20 +889,34 @@ export default function InventoryPage() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                        <div className="space-y-1.5 md:col-span-2">
-                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Nome do Fornecedor / Fábrica (Opcional)</Label>
+                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Nome do Fornecedor / Fábrica</Label>
                          <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 text-sm font-bold bg-background shadow-sm" />
                        </div>
 
                        <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group">
                          <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-[#f53d2d]/20 transition-all" />
-                         <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (Quadrado 1:1)</Label>
+                         <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10 flex justify-between items-center">
+                           <span>Shopee Vídeo / Foto (1:1)</span>
+                           {shopeeVideo && (
+                             <a href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[9px] bg-[#f53d2d]/10 text-[#f53d2d] px-2 py-0.5 rounded-full hover:bg-[#f53d2d]/20 transition-colors">
+                               Acessar <ExternalLink size={10} />
+                             </a>
+                           )}
+                         </Label>
                          <Input value={shopeeVideo} onChange={e => setShopeeVideo(e.target.value)} placeholder="Link Drive/Canva..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
                          <p className="text-[9px] font-bold text-muted-foreground opacity-60">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
                        </div>
 
                        <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group">
                          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-purple-500/20 transition-all" />
-                         <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (Vertical 9:16)</Label>
+                         <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10 flex justify-between items-center">
+                           <span>TikTok / Reels (9:16)</span>
+                           {reelsVideo && (
+                             <a href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[9px] bg-purple-500/10 text-purple-600 px-2 py-0.5 rounded-full hover:bg-purple-500/20 transition-colors">
+                               Assistir <PlayCircle size={10} />
+                             </a>
+                           )}
+                         </Label>
                          <Input value={reelsVideo} onChange={e => setReelsVideo(e.target.value)} placeholder="Link Drive/CapCut..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500" />
                          <p className="text-[9px] font-bold text-muted-foreground opacity-60">Qualidade total para Redes Sociais.</p>
                        </div>

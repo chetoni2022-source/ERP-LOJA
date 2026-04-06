@@ -101,10 +101,10 @@ export default function InventoryPage() {
     shopee_fee: 4,
     shopee_cap: 100,
     shopee_markup: 20,
-    tiktok_comm: 15,
+    tiktok_comm: 6,
     tiktok_fee: 4,
     tiktok_cap: 100,
-    tiktok_markup: 15
+    tiktok_markup: 6
   });
 
   useEffect(() => {
@@ -1146,15 +1146,15 @@ export default function InventoryPage() {
                     {/* ── SHOPEE ── */}
                     {(() => {
                       const baseP = parseFloat(salePrice || price || '0');
-                      const suggestedShopee = parseFloat(shopeePrice || '') || (() => {
-                        const r = (baseP + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm / 100));
-                        return Math.max(r, baseP * (1 + taxSettings.shopee_markup / 100));
-                      })();
-                      const shopeeP = parseFloat(shopeePrice || suggestedShopee.toFixed(2));
-                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      const comm = Math.min(shopeeP * (taxSettings.shopee_comm / 100), taxSettings.shopee_cap);
-                      const shopeeProfit = shopeeP - siteCost - comm - taxSettings.shopee_fee;
+                      const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                      // If user typed a shopee price, use it. Otherwise use site price to show real fee impact.
+                      const shopeeP = shopeePrice && parseFloat(shopeePrice) > 0
+                        ? parseFloat(shopeePrice)
+                        : baseP;
+                      const comm = shopeeP * (taxSettings.shopee_comm / 100);
+                      const shopeeProfit = shopeeP - totalCosts - comm - taxSettings.shopee_fee;
                       const shopeeColor = shopeeProfit > 0 ? 'text-emerald-500' : shopeeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      // Suggested price that yields the same net profit as the site
                       const autoSugg = (baseP + taxSettings.shopee_fee) / (1 - (taxSettings.shopee_comm / 100));
                       const suggestedDisplay = Math.max(autoSugg, baseP * (1 + taxSettings.shopee_markup / 100));
                       return (
@@ -1174,16 +1174,23 @@ export default function InventoryPage() {
                               <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
                             </div>
                           </div>
+                          {/* Deduction breakdown */}
+                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-2">
+                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${shopeeP.toFixed(2)}</span>
+                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
+                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.shopee_fee}</span>
+                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
+                          </div>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
                               <button type="button" onClick={() => setShopeePrice(suggestedDisplay.toFixed(2))} className="text-[8px] font-black text-[#f53d2d]/60 hover:text-[#f53d2d] underline underline-offset-2">
-                                Usar sugestão: R$ {suggestedDisplay.toFixed(2).replace('.', ',')}
+                                Sugestão: R$ {suggestedDisplay.toFixed(2).replace('.', ',')}
                               </button>
                             </div>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
-                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={suggestedDisplay.toFixed(2)} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
+                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
                             </div>
                           </div>
                         </div>
@@ -1193,13 +1200,17 @@ export default function InventoryPage() {
                     {/* ── TIKTOK ── */}
                     {(() => {
                       const baseP = parseFloat(salePrice || price || '0');
+                      const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+                      // If user typed a tiktok price, use it. Otherwise use site price to show real fee impact.
+                      const tiktokP = tiktokPrice && parseFloat(tiktokPrice) > 0
+                        ? parseFloat(tiktokPrice)
+                        : baseP;
+                      const comm = tiktokP * (taxSettings.tiktok_comm / 100);
+                      const tiktokProfit = tiktokP - totalCosts - comm - taxSettings.tiktok_fee;
+                      const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      // Suggested price that yields the same net profit as the site
                       const autoSugg = (baseP + taxSettings.tiktok_fee) / (1 - (taxSettings.tiktok_comm / 100));
                       const suggestedTiktok = Math.max(autoSugg, baseP * (1 + taxSettings.tiktok_markup / 100));
-                      const tiktokP = parseFloat(tiktokPrice || suggestedTiktok.toFixed(2));
-                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      const comm = Math.min(tiktokP * (taxSettings.tiktok_comm / 100), taxSettings.tiktok_cap);
-                      const tiktokProfit = tiktokP - siteCost - comm - taxSettings.tiktok_fee;
-                      const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       return (
                         <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
                           <div className="flex items-center justify-between mb-3">
@@ -1217,16 +1228,23 @@ export default function InventoryPage() {
                               <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
                             </div>
                           </div>
+                          {/* Deduction breakdown */}
+                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-2">
+                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${tiktokP.toFixed(2)}</span>
+                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
+                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.tiktok_fee}</span>
+                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
+                          </div>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>
                               <button type="button" onClick={() => setTiktokPrice(suggestedTiktok.toFixed(2))} className="text-[8px] font-black text-foreground/40 hover:text-foreground underline underline-offset-2">
-                                Usar sugestão: R$ {suggestedTiktok.toFixed(2).replace('.', ',')}
+                                Sugestão: R$ {suggestedTiktok.toFixed(2).replace('.', ',')}
                               </button>
                             </div>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
-                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={suggestedTiktok.toFixed(2)} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
+                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
                             </div>
                           </div>
                         </div>

@@ -25,6 +25,8 @@ interface Product {
   width_cm?: number;
   height_cm?: number;
   shopee_item_id?: string | null;
+  supplier_name?: string | null;
+  media_assets?: any;
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -59,6 +61,9 @@ export default function InventoryPage() {
   const [length, setLength] = useState('16');
   const [width, setWidth] = useState('11');
   const [height, setHeight] = useState('6');
+  const [supplierName, setSupplierName] = useState('');
+  const [shopeeVideo, setShopeeVideo] = useState('');
+  const [reelsVideo, setReelsVideo] = useState('');
   const [saving, setSaving] = useState(false);
   
   const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean}[]>([]);
@@ -146,6 +151,9 @@ export default function InventoryPage() {
 
   const openAddModal = () => {
     setEditingProduct(null);
+    setSupplierName('');
+    setShopeeVideo('');
+    setReelsVideo('');
     resetForm();
     setIsModalOpen(true);
   };
@@ -175,6 +183,9 @@ export default function InventoryPage() {
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
     setCategoryId(p.category_id || '');
+    setSupplierName(p.supplier_name || '');
+    setShopeeVideo(p.media_assets?.shopee_video || '');
+    setReelsVideo(p.media_assets?.reels_video || '');
     
     setIsModalOpen(true);
   };
@@ -203,6 +214,9 @@ export default function InventoryPage() {
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
     setCategoryId(p.category_id || '');
+    setSupplierName(p.supplier_name || '');
+    setShopeeVideo(p.media_assets?.shopee_video || '');
+    setReelsVideo(p.media_assets?.reels_video || '');
     
     setIsModalOpen(true);
   };
@@ -297,6 +311,11 @@ export default function InventoryPage() {
         images: finalImageUrls,
         image_url: finalImageUrls[0] || null,
         category_id: categoryId || null,
+        supplier_name: supplierName || null,
+        media_assets: {
+          shopee_video: shopeeVideo || null,
+          reels_video: reelsVideo || null
+        },
         user_id: user.id
       };
 
@@ -787,6 +806,34 @@ export default function InventoryPage() {
                        <Label className="text-[9px] font-black uppercase text-muted-foreground">Alt. (cm)</Label>
                        <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 text-sm font-black text-center" />
                     </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 mt-2 border-t border-border">
+                  <div>
+                    <Label className="font-bold text-xs uppercase text-foreground tracking-widest block">🎥 Mídias p/ Redes & 🏭 Fornecedores</Label>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Registre a origem e estruture os links dos vídeos para que sua equipe não os perca nunca mais.</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-1.5 md:col-span-2">
+                       <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Nome do Fornecedor / Fábrica (Opcional)</Label>
+                       <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 text-sm font-bold bg-background shadow-sm" />
+                     </div>
+
+                     <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-[#f53d2d]/20 transition-all" />
+                       <Label className="font-black text-[10px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee Vídeo / Foto (Quadrado 1:1)</Label>
+                       <Input value={shopeeVideo} onChange={e => setShopeeVideo(e.target.value)} placeholder="Link Drive/Canva..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d]" />
+                       <p className="text-[9px] font-bold text-muted-foreground opacity-60">Padrão Shopee: 1:1 (Quadrado), no max 10MB.</p>
+                     </div>
+
+                     <div className="space-y-1.5 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover:bg-purple-500/20 transition-all" />
+                       <Label className="font-black text-[10px] uppercase text-purple-600 dark:text-purple-400 tracking-widest block relative z-10">TikTok / Reels (Vertical 9:16)</Label>
+                       <Input value={reelsVideo} onChange={e => setReelsVideo(e.target.value)} placeholder="Link Drive/CapCut..." className="relative z-10 h-10 text-xs font-mono bg-background shadow-sm border-none focus-visible:ring-1 focus-visible:ring-purple-500" />
+                       <p className="text-[9px] font-bold text-muted-foreground opacity-60">Qualidade total para Redes Sociais.</p>
+                     </div>
                   </div>
                 </div>
 

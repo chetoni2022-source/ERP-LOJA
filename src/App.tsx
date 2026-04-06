@@ -1,20 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './components/theme-provider';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
-import AuthPage from './pages/auth/AuthPage';
-
 import { AppLayout } from './components/layout/AppLayout';
-import SettingsPage from './pages/settings/SettingsPage';
-import InventoryPage from './pages/inventory/InventoryPage';
-import CategoriesPage from './pages/categories/CategoriesPage';
-import SalesPage from './pages/sales/SalesPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
-import CatalogBuilderPage from './pages/catalogs/CatalogBuilderPage';
-import CatalogPublicView from './pages/catalogs/CatalogPublicView';
-import TeamPage from './pages/team/TeamPage';
-import CustomersPage from './pages/customers/CustomersPage';
+
+// Lazy load all pages — only downloads what the user needs
+const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
+const SettingsPage = lazy(() => import('./pages/settings/SettingsPage'));
+const InventoryPage = lazy(() => import('./pages/inventory/InventoryPage'));
+const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage'));
+const SalesPage = lazy(() => import('./pages/sales/SalesPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const CatalogBuilderPage = lazy(() => import('./pages/catalogs/CatalogBuilderPage'));
+const CatalogPublicView = lazy(() => import('./pages/catalogs/CatalogPublicView'));
+const TeamPage = lazy(() => import('./pages/team/TeamPage'));
+const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
+
+// Lightweight fallback spinner
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin h-7 w-7 border-[3px] border-primary border-t-transparent rounded-full" />
+  </div>
+);
 
 export default function App() {
   const { user, setUser, loading } = useAuthStore();
@@ -62,19 +70,21 @@ export default function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <HashRouter>
-        <Routes>
-          <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={user ? <AppLayout><DashboardPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/inventory" element={user ? <AppLayout><InventoryPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/categories" element={user ? <AppLayout><CategoriesPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/sales" element={user ? <AppLayout><SalesPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/catalogs" element={user ? <AppLayout><CatalogBuilderPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/settings" element={user ? <AppLayout><SettingsPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/team" element={user ? <AppLayout><TeamPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/customers" element={user ? <AppLayout><CustomersPage /></AppLayout> : <Navigate to="/auth" replace />} />
-          <Route path="/c/:id" element={<CatalogPublicView />} />
-          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={user ? <AppLayout><DashboardPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/inventory" element={user ? <AppLayout><InventoryPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/categories" element={user ? <AppLayout><CategoriesPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/sales" element={user ? <AppLayout><SalesPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/catalogs" element={user ? <AppLayout><CatalogBuilderPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/settings" element={user ? <AppLayout><SettingsPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/team" element={user ? <AppLayout><TeamPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/customers" element={user ? <AppLayout><CustomersPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/c/:id" element={<CatalogPublicView />} />
+            <Route path="*" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
+          </Routes>
+        </Suspense>
       </HashRouter>
     </ThemeProvider>
   );

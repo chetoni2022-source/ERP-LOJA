@@ -76,6 +76,8 @@
 
   * {
     border-color: var(--border);
+    /* Faster tap response on mobile — removes 300ms delay */
+    touch-action: manipulation;
   }
   
   body, html {
@@ -83,5 +85,35 @@
     color: var(--foreground);
     @apply antialiased;
     font-family: var(--font-sans);
+    /* Smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent layout shift from scrollbar */
+    scrollbar-gutter: stable;
+  }
+
+  /* Smooth scrolling for all scrollable containers */
+  .overflow-y-auto, .overflow-x-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* GPU acceleration for animated elements — prevents jank */
+  .animate-spin,
+  .animate-pulse,
+  .transition-all,
+  .transition-colors,
+  .transition-transform {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
+

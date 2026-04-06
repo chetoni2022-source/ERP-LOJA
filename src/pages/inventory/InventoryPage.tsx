@@ -275,6 +275,24 @@ export default function InventoryPage() {
   async function handleSaveProduct(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+
+    // --- Validação Manual Bypass HTML5 ---
+    if (!name.trim()) {
+      toastError('Preencha o Título do Acessório.');
+      setActiveTab('basic');
+      return;
+    }
+    if (!price || parseFloat(price) <= 0) {
+      toastError('Defina o preço original do produto.');
+      setActiveTab('pricing');
+      return;
+    }
+    if (!stock || parseInt(stock, 10) < 0) {
+      toastError('Informe a quantidade em estoque.');
+      setActiveTab('pricing');
+      return;
+    }
+
     setSaving(true);
     
     try {
@@ -669,17 +687,17 @@ export default function InventoryPage() {
                  ))}
               </div>
 
-              <form id="productForm" onSubmit={handleSaveProduct} className="space-y-5">
+              <form id="productForm" onSubmit={handleSaveProduct} className="space-y-4 md:space-y-5" noValidate>
                 
                 {/* --- TAB: BÁSICOS --- */}
                 <div className={cn("space-y-5", activeTab !== 'basic' && "hidden")}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Título do Acessório</Label>
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
                       <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-11 text-sm font-bold bg-background shadow-sm transition-colors" />
                     </div>
                     <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Coleção/Categoria (Opcional)</Label>
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Coleção/Categoria</Label>
                       <select 
                         value={categoryId}
                         onChange={(e) => setCategoryId(e.target.value)}
@@ -691,18 +709,19 @@ export default function InventoryPage() {
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Código GTIN/EAN (Opcional)</Label>
-                      <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="Ex: 7891234567890" className="h-11 text-sm font-mono bg-background shadow-sm border-primary/20" />
-                      <p className="text-[10px] text-[#f53d2d] font-bold">Importante para a Shopee</p>
-                    </div>
-                    <div className="space-y-1.5 md:col-span-1">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência (Opcional)</Label>
-                      <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Ex: LAR-2024-001" className="h-11 text-sm font-mono bg-background shadow-sm" />
+                    <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                      <div className="space-y-1.5">
+                        <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">GTIN/EAN</Label>
+                        <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="789... (Opcional)" className="h-11 text-xs md:text-sm font-mono bg-background shadow-sm border-primary/20" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="font-bold text-[10px] md:text-xs uppercase text-muted-foreground tracking-widest block">SKU / Referência</Label>
+                        <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-11 text-xs md:text-sm font-mono bg-background shadow-sm" />
+                      </div>
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto (Opcional)</Label>
-                      <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito ou <span className="font-bold">G</span> para texto grande. Tudo o que escrever aqui aparece no catálogo.</p>
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Descrição do Produto</Label>
+                      <p className="text-[10px] text-muted-foreground mb-1">Selecione o texto e clique <span className="font-bold">N</span> para negrito. Ficará exposto na vitrine.</p>
                       <div className="flex gap-1 mb-1.5">
                         {(['bold','big'] as const).map(fmtTag => (
                           <button key={fmtTag} type="button"
@@ -727,7 +746,7 @@ export default function InventoryPage() {
                 <div className={cn("space-y-5 animate-in fade-in zoom-in duration-300", activeTab !== 'pricing' && "hidden")}>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Original</Label>
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Original <span className="text-[#f53d2d]">*</span></Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xs">R$</span>
                         <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background shadow-sm" />
@@ -743,7 +762,7 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Estoque</Label>
+                      <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block flex gap-1">Estoque <span className="text-[#f53d2d]">*</span></Label>
                       <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-11 text-base font-black bg-background shadow-sm text-center" />
                     </div>
                   </div>
@@ -821,7 +840,7 @@ export default function InventoryPage() {
                        </div>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card border border-[#f53d2d]/20 p-4 rounded-xl shadow-sm">
                       <div className="space-y-1">
                          <Label className="text-[9px] font-black uppercase text-muted-foreground">Peso (g)</Label>
                          <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 text-sm font-black text-center" />

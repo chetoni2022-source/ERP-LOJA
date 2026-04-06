@@ -519,21 +519,21 @@ export default function InventoryPage() {
 
       let { error } = await trySave(payload);
 
-      // If 400 error (columns don't exist in DB yet), retry without new price fields
-      if (error && (error.code === '42703' || error.message?.includes('shopee_price') || error.message?.includes('tiktok_price') || (error as any).status === 400)) {
+      // If save failed (columns may not exist in DB yet), retry without new marketplace price fields
+      if (error) {
         const { shopee_price: _sp, tiktok_price: _tp, ...payloadWithoutPrices } = payload;
         const retry = await trySave(payloadWithoutPrices);
-        error = retry.error;
-        if (!error) {
-          success(editingProduct ? 'Produto salvo! ⚠️ Execute a migração SQL para salvar preços por canal.' : 'Produto cadastrado! ⚠️ Execute a migração SQL para salvar preços por canal.');
+        if (!retry.error) {
+          success(editingProduct ? 'Produto salvo! (Execute a migração SQL para salvar preços por canal)' : 'Produto cadastrado! (Execute a migração SQL para salvar preços por canal)');
           setIsModalOpen(false);
           resetForm();
           fetchProducts();
           return;
         }
+        // If retry also failed, throw the original error
+        throw retry.error;
       }
 
-      if (error) throw error;
       success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
 
       setIsModalOpen(false);

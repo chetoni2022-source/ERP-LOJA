@@ -26,7 +26,12 @@ interface Product {
   height_cm?: number;
   shopee_item_id?: string | null;
   supplier_name?: string | null;
-  media_assets?: any;
+  supplier_link?: string | null;
+  media_assets?: {
+    shopee_video?: string;
+    reels_video?: string;
+    extra_videos?: string[];
+  };
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -63,8 +68,10 @@ export default function InventoryPage() {
   const [width, setWidth] = useState('11');
   const [height, setHeight] = useState('6');
   const [supplierName, setSupplierName] = useState('');
+  const [supplierLink, setSupplierLink] = useState('');
   const [shopeeVideo, setShopeeVideo] = useState('');
   const [reelsVideo, setReelsVideo] = useState('');
+  const [extraVideos, setExtraVideos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   
   const [images, setImages] = useState<{file: File | null, preview: string, isExisting: boolean}[]>([]);
@@ -186,8 +193,10 @@ export default function InventoryPage() {
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
     setCategoryId(p.category_id || '');
     setSupplierName(p.supplier_name || '');
+    setSupplierLink(p.supplier_link || '');
     setShopeeVideo(p.media_assets?.shopee_video || '');
     setReelsVideo(p.media_assets?.reels_video || '');
+    setExtraVideos(p.media_assets?.extra_videos || []);
     
     setIsModalOpen(true);
     setActiveTab('basic');
@@ -218,8 +227,10 @@ export default function InventoryPage() {
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
     setCategoryId(p.category_id || '');
     setSupplierName(p.supplier_name || '');
+    setSupplierLink(p.supplier_link || '');
     setShopeeVideo(p.media_assets?.shopee_video || '');
     setReelsVideo(p.media_assets?.reels_video || '');
+    setExtraVideos(p.media_assets?.extra_videos || []);
     
     setIsModalOpen(true);
     setActiveTab('basic');
@@ -334,9 +345,11 @@ export default function InventoryPage() {
         image_url: finalImageUrls[0] || null,
         category_id: categoryId || null,
         supplier_name: supplierName || null,
+        supplier_link: supplierLink || null,
         media_assets: {
           shopee_video: shopeeVideo || null,
-          reels_video: reelsVideo || null
+          reels_video: reelsVideo || null,
+          extra_videos: extraVideos.filter(v => v.trim() !== '')
         },
         user_id: user.id
       };
@@ -376,6 +389,11 @@ export default function InventoryPage() {
     setHeight('6');
     setImages([]);
     setCategoryId('');
+    setSupplierName('');
+    setSupplierLink('');
+    setShopeeVideo('');
+    setReelsVideo('');
+    setExtraVideos([]);
     setDraggedIdx(null);
   }
 
@@ -907,13 +925,29 @@ export default function InventoryPage() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                       <div className="space-y-1.5 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
-                         <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Fornecedor / Fabricante</Label>
-                         <div className="relative">
-                           <Factory className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
-                           <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm border-primary/20" />
-                         </div>
-                       </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2 border border-border/40 p-4 rounded-xl bg-card/40">
+                          <div className="space-y-1.5">
+                            <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex items-center gap-1.5"><Factory size={12} className="text-primary"/> Fornecedor / Fabricante</Label>
+                            <div className="relative">
+                              <Factory className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
+                              <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Ex: Galeria do Brás, Fornecedor X..." className="h-11 pl-9 text-sm font-bold bg-background shadow-sm border-primary/20" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="font-bold text-[10px] uppercase text-foreground tracking-widest block ml-1 flex justify-between items-center">
+                              <span className="flex items-center gap-1.5"><Link2 size={12} className="text-primary"/> Link do Fornecedor</span>
+                              {supplierLink && (
+                                <a href={supplierLink.startsWith('http') ? supplierLink : `https://${supplierLink}`} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1">
+                                  Abrir <ExternalLink size={10} />
+                                </a>
+                              )}
+                            </Label>
+                            <div className="relative">
+                              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-60" />
+                              <Input value={supplierLink} onChange={e => setSupplierLink(e.target.value)} placeholder="https://..." className="h-11 pl-9 text-xs font-mono bg-background shadow-sm border-primary/20" />
+                            </div>
+                          </div>
+                        </div>
 
                         <div className="space-y-1.5 p-4 bg-[#f53d2d]/5 border border-[#f53d2d]/20 rounded-xl relative overflow-hidden group/media shadow-sm">
                           <div className="absolute top-0 right-0 w-16 h-16 bg-[#f53d2d]/10 rounded-full -mr-8 -mt-8 pointer-events-none blur-xl group-hover/media:bg-[#f53d2d]/20 transition-all" />
@@ -965,6 +999,61 @@ export default function InventoryPage() {
                             )}
                           </div>
                           <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1.5 italic">Qualidade total para Redes Sociais.</p>
+                        </div>
+                        
+                        <div className="space-y-3 pt-6 mt-4 border-t border-border/80 md:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="font-bold text-xs uppercase text-muted-foreground tracking-widest block">Links & Vídeos Adicionais</Label>
+                            <button 
+                              type="button" 
+                              onClick={() => setExtraVideos([...extraVideos, ''])}
+                              className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all flex items-center gap-1.5"
+                            >
+                              <Plus size={14} /> Adicionar Link
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2">
+                             {extraVideos.map((url, idx) => (
+                               <div key={idx} className="flex gap-2 items-center bg-card/40 p-2 rounded-xl border border-border/40 group/extra animate-in slide-in-from-right-2 duration-300">
+                                 <div className="relative flex-1">
+                                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-60" />
+                                    <Input 
+                                      value={url} 
+                                      onChange={e => {
+                                        const newLinks = [...extraVideos];
+                                        newLinks[idx] = e.target.value;
+                                        setExtraVideos(newLinks);
+                                      }}
+                                      placeholder="https://..."
+                                      className="h-10 pl-9 pr-10 text-xs font-mono bg-background/50 border-none shadow-none focus-visible:ring-1"
+                                    />
+                                    {url && (
+                                       <a 
+                                         href={url.startsWith('http') ? url : `https://${url}`} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center bg-foreground text-background rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all"
+                                       >
+                                         <ExternalLink size={12} />
+                                       </a>
+                                    )}
+                                 </div>
+                                 <button 
+                                   type="button"
+                                   onClick={() => setExtraVideos(extraVideos.filter((_, i) => i !== idx))}
+                                   className="h-10 w-10 flex items-center justify-center text-muted-foreground opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                 >
+                                   <Trash2 size={16} />
+                                 </button>
+                               </div>
+                             ))}
+                             {extraVideos.length === 0 && (
+                               <div className="text-center py-6 border border-dashed border-border/60 rounded-xl opacity-40">
+                                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nenhum link adicional cadastrado</p>
+                               </div>
+                             )}
+                          </div>
                         </div>
                     </div>
                   </div>

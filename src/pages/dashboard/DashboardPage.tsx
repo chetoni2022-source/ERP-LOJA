@@ -427,7 +427,7 @@ export default function DashboardPage() {
               chartData: [
                 { name: 'Site', Venda: totalRev, Lucro: totalProfitSite, color: 'var(--primary)' },
                 { name: 'Shopee', Venda: totalRev, Lucro: totalProfitShopee, color: '#f53d2d' },
-                { name: 'TikTok', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
+                { name: 'TikTok Shop', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
               ]
             }
           });
@@ -490,115 +490,6 @@ export default function DashboardPage() {
         <div className="p-16 flex justify-center"><Loader2 className="animate-spin h-10 w-10 text-primary/50" /></div>
       ) : (
         <>
-          {/* --- INVENTORY POTENTIAL SECTION (MAIN) --- */}
-          <div className="grid gap-6 md:grid-cols-7 mb-2">
-            {/* Main 3D Chart: Potencial por Canal */}
-            <div className="md:col-span-5 bg-card border border-border rounded-2xl shadow-xl p-6 relative overflow-hidden group/pot">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 pointer-events-none blur-3xl" />
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
-                  <h3 className="font-black text-2xl text-foreground flex items-center gap-3 tracking-tight italic">
-                    <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> POTENCIAL DO ESTOQUE
-                  </h3>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1">Previsão de Lucro Omnichannel Baseada no Estoque Atual</p>
-                </div>
-                <div className="flex flex-wrap gap-4 bg-muted/30 p-3 rounded-xl border border-border/50">
-                   <div className="flex items-center gap-2">
-                     <div className="h-3 w-3 rounded-full bg-primary/40 p-[1px]"><div className="w-full h-full bg-primary rounded-full" /></div>
-                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">Site</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                     <div className="h-3 w-3 rounded-full bg-[#f53d2d]/40 p-[1px]"><div className="w-full h-full bg-[#f53d2d] rounded-full" /></div>
-                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">Shopee</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                     <div className="h-3 w-3 rounded-full bg-black/40 p-[1px]"><div className="w-full h-full bg-black rounded-full" /></div>
-                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
-                   </div>
-                </div>
-              </div>
-
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stockProjections.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 'bold' }} 
-                    />
-                    <YAxis 
-                      hide 
-                    />
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-card/95 border border-border shadow-2xl rounded-2xl p-4 backdrop-blur-xl animate-in zoom-in-95">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{payload[0].payload.name}</p>
-                              <div className="space-y-1">
-                                <div className="flex justify-between gap-8">
-                                  <span className="text-xs font-bold text-muted-foreground">Venda Total:</span>
-                                  <span className="text-xs font-black text-foreground">{formatCurrency(payload[0].value as number)}</span>
-                                </div>
-                                <div className="flex justify-between gap-8 pt-1 border-t border-border/50">
-                                  <span className="text-xs font-bold text-emerald-500">Lucro Total:</span>
-                                  <span className="text-xs font-black text-emerald-500">{formatCurrency(payload[1].value as number)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="Venda" shape={<ThreeDCylinder fill="var(--primary)" />} barSize={40} opacity={0.3} />
-                    <Bar dataKey="Lucro" shape={<ThreeDCylinder fill="currentColor" />} barSize={40}>
-                      {stockProjections.chartData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Projection KPI Column */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="bg-emerald-500 border border-emerald-400/50 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-125 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">Lucro Total Disponível</p>
-                  <h4 className="text-2xl font-black italic tracking-tighter">
-                    {formatCurrency(Math.max(stockProjections.profitSite, stockProjections.profitShopee, stockProjections.profitTiktok))}
-                  </h4>
-                  <div className="h-1 w-12 bg-white/30 my-3 rounded-full" />
-                  <p className="text-[9px] font-bold opacity-70 leading-relaxed uppercase">Estimado se todas as peas em estoque forem vendidas no melhor canal.</p>
-                </div>
-              </div>
-
-              <div className="bg-card border border-border p-6 rounded-2xl shadow-sm relative group">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Capital Imobilizado</p>
-                <h4 className="text-2xl font-black text-foreground tracking-tighter">{formatCurrency(stockProjections.investment)}</h4>
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Investimento em estoque</span>
-                </div>
-              </div>
-
-              <div className="bg-primary/5 border border-primary/20 p-5 rounded-2xl flex items-center gap-4">
-                <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                  <BarChart2 size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Volume Total</p>
-                  <p className="text-sm font-black text-foreground">{stockProjections.revenue ? formatCurrency(stockProjections.revenue) : 'R$ 0,00'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Monthly Goal Bar */}
           {monthlyGoal > 0 && (
             <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm">
@@ -652,6 +543,114 @@ export default function DashboardPage() {
                 <p className="text-[10px] md:text-xs font-semibold mt-2 text-muted-foreground leading-tight">{card.sub}</p>
               </div>
             ))}
+          </div>
+
+          {/* --- INVENTORY POTENTIAL SECTION --- */}
+          <div className="grid gap-6 md:grid-cols-7">
+            {/* Main 3D Chart: Potencial por Canal */}
+            <div className="md:col-span-5 bg-card border border-border rounded-2xl shadow-xl p-6 relative overflow-hidden group/pot">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 pointer-events-none blur-3xl opacity-50" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full -ml-16 -mb-16 pointer-events-none blur-3xl opacity-50" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h3 className="font-black text-2xl text-foreground flex items-center gap-3 tracking-tight italic">
+                    <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> POTENCIAL DO ESTOQUE
+                  </h3>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1">Estimativa de Retorno Omnichannel do Estoque Ativo</p>
+                </div>
+                <div className="flex flex-wrap gap-4 bg-muted/30 p-3 rounded-xl border border-border/50 backdrop-blur-sm">
+                   <div className="flex items-center gap-2">
+                     <div className="h-3 w-3 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">Site</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <div className="h-3 w-3 rounded-full bg-[#f53d2d] shadow-[0_0_10px_rgba(245,61,45,0.5)]" />
+                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">Shopee</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <div className="h-3 w-3 rounded-full bg-black shadow-[0_0_10px_rgba(0,0,0,0.5)] dark:bg-white dark:shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                     <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stockProjections.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 'bold' }} 
+                    />
+                    <YAxis hide />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-card/95 border border-border shadow-2xl rounded-2xl p-4 backdrop-blur-xl animate-in zoom-in-95">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{payload[0].payload.name}</p>
+                              <div className="space-y-1">
+                                <div className="flex justify-between gap-8">
+                                  <span className="text-xs font-bold text-muted-foreground">Venda Total:</span>
+                                  <span className="text-xs font-black text-foreground">{formatCurrency(payload[0].value as number)}</span>
+                                </div>
+                                <div className="flex justify-between gap-8 pt-1 border-t border-border/50">
+                                  <span className="text-xs font-bold text-emerald-500">Lucro Total:</span>
+                                  <span className="text-xs font-black text-emerald-500">{formatCurrency(payload[1].value as number)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="Venda" shape={<ThreeDCylinder fill="var(--primary)" />} barSize={40} opacity={0.15} />
+                    <Bar dataKey="Lucro" shape={<ThreeDCylinder fill="currentColor" />} barSize={40}>
+                      {stockProjections.chartData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Projection KPI Column */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="bg-emerald-500 border border-emerald-400/50 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 group-hover:scale-125 transition-transform duration-500" />
+                <div className="relative z-10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">Lucro Total Disponível</p>
+                  <h4 className="text-2xl font-black italic tracking-tighter">
+                    {formatCurrency(Math.max(stockProjections.profitSite, stockProjections.profitShopee, stockProjections.profitTiktok))}
+                  </h4>
+                  <div className="h-1 w-12 bg-white/30 my-3 rounded-full" />
+                  <p className="text-[9px] font-bold opacity-70 leading-relaxed uppercase">Estimado se todas as peças em estoque forem vendidas no melhor canal.</p>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border p-6 rounded-2xl shadow-sm relative group">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Capital Imobilizado</p>
+                <h4 className="text-2xl font-black text-foreground tracking-tighter">{formatCurrency(stockProjections.investment)}</h4>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Investimento em estoque</span>
+                </div>
+              </div>
+
+              <div className="bg-primary/5 border border-primary/20 p-5 rounded-2xl flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <BarChart2 size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Volume Total</p>
+                  <p className="text-sm font-black text-foreground">{stockProjections.revenue ? formatCurrency(stockProjections.revenue) : 'R$ 0,00'}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Charts */}

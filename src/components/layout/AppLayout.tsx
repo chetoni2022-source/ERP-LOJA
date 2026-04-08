@@ -191,34 +191,41 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Branding */}
         <div className="flex items-center justify-center p-4 pt-14 md:pt-4 border-b border-border/40 shrink-0 md:min-h-[88px]">
           {!collapsed ? (
-            <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-700 group">
+            <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-1000 group">
               {brand.logo ? (
-                <div className="relative mb-4">
-                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-2 rounded-2xl border border-border/40 overflow-hidden transform group-hover:scale-105 transition-all duration-500">
-                    <img 
-                      src={brand.logo} 
-                      alt="Logo" 
-                      crossOrigin="anonymous"
-                      style={{
-                        height: 'auto',
-                        maxHeight: brand.logoH,
-                        width: 'auto',
-                        maxWidth: brand.logoW,
-                        objectFit: brand.logoFit as any,
-                        objectPosition: brand.logoPos
-                      }}
-                      className="drop-shadow-sm" 
-                    />
+                <div className="relative">
+                  {/* Subtle glow effect behind logo on hover */}
+                  <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                  
+                  <div className="relative p-1">
+                    <div className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] rounded-[22px] overflow-hidden border border-white p-1.5 transition-all duration-500 group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)] group-hover:-translate-y-1">
+                      <img 
+                        src={brand.logo} 
+                        alt="Logo" 
+                        crossOrigin="anonymous"
+                        style={{
+                          height: 'auto',
+                          maxHeight: Math.min(brand.logoH, 64),
+                          width: 'auto',
+                          maxWidth: Math.min(brand.logoW, 140),
+                          objectFit: brand.logoFit as any,
+                          objectPosition: brand.logoPos
+                        }}
+                        className="rounded-lg"
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-2xl mb-2 transition-transform group-hover:scale-105">
-                  <div className="text-primary"><Store size={26} /></div>
+                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-3xl mb-2 shadow-inner border border-primary/5 transition-all duration-500 group-hover:scale-105 group-hover:bg-primary/15">
+                  <div className="text-primary"><Store size={28} className="drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]" /></div>
                   <span className="font-black text-[18px] tracking-tight truncate text-foreground">{brand.name}</span>
                 </div>
               )}
-              <span className="font-black text-[10px] uppercase tracking-[0.4em] truncate text-muted-foreground/30 ml-1">{brand.name}</span>
+              <div className="mt-4 flex flex-col items-center">
+                <span className="font-black text-[9px] uppercase tracking-[0.25em] truncate text-muted-foreground/50">{brand.name}</span>
+                <div className="h-0.5 w-4 bg-primary/20 rounded-full mt-1.5 transition-all duration-500 group-hover:w-8 group-hover:bg-primary/40" />
+              </div>
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-center w-full">

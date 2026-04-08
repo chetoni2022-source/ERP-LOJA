@@ -191,31 +191,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Branding */}
         <div className="flex items-center justify-center p-4 pt-14 md:pt-4 border-b border-border/40 shrink-0 md:min-h-[88px]">
           {!collapsed ? (
-            <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-500 scale-100 group">
+            <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-700 group">
               {brand.logo ? (
-                <div className="bg-white/40 dark:bg-white/5 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-white/20 mb-3 group-hover:scale-105 transition-transform duration-500">
-                  <img 
-                    src={brand.logo} 
-                    alt="Logo" 
-                    crossOrigin="anonymous"
-                    style={{
-                      height: 'auto',
-                      maxHeight: brand.logoH,
-                      width: 'auto',
-                      maxWidth: brand.logoW,
-                      objectFit: brand.logoFit as any,
-                      objectPosition: brand.logoPos
-                    }}
-                    className="drop-shadow-xl" 
-                  />
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="relative bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-2 rounded-2xl border border-border/40 overflow-hidden transform group-hover:scale-105 transition-all duration-500">
+                    <img 
+                      src={brand.logo} 
+                      alt="Logo" 
+                      crossOrigin="anonymous"
+                      style={{
+                        height: 'auto',
+                        maxHeight: brand.logoH,
+                        width: 'auto',
+                        maxWidth: brand.logoW,
+                        objectFit: brand.logoFit as any,
+                        objectPosition: brand.logoPos
+                      }}
+                      className="drop-shadow-sm" 
+                    />
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-2xl mb-2">
+                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-2xl mb-2 transition-transform group-hover:scale-105">
                   <div className="text-primary"><Store size={26} /></div>
                   <span className="font-black text-[18px] tracking-tight truncate text-foreground">{brand.name}</span>
                 </div>
               )}
-              <span className="font-black text-[10px] uppercase tracking-[0.3em] truncate text-muted-foreground/40">{brand.name}</span>
+              <span className="font-black text-[10px] uppercase tracking-[0.4em] truncate text-muted-foreground/30 ml-1">{brand.name}</span>
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-center w-full">

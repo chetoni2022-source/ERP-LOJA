@@ -69,35 +69,24 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
                 </div>
               </div>
             ))}
-            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tracking-widest uppercase">+ {data.items.length - 3} itens</div>}
-          </div>
-        )}
-      </div>
-    );
-  }
-  return null;
-};
-
-// ─── 3D Cylinder Shape for Charts ───────────────────────────────────────────
-const ThreeDCylinder = (props: any) => {
+            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tr// ─── Rounded Bar Shape for Modern Charts ──────────────────────────────────
+const RoundedBar = (props: any) => {
   const { fill, x, y, width, height } = props;
-  if (!height || isNaN(height) || height <= 0) return null;
-  const barX = x || 0;
-  const barY = y || 0;
-  const barW = width || 0;
-  const barH = height || 0;
-
+  if (!height || isNaN(height) || height === 0) return null;
+  const radius = 6;
   return (
-    <g className="transition-all duration-500 ease-out hover:brightness-110">
-      {/* Side face for 3D effect */}
-      <path
-        d={`M ${barX + barW},${barY} L ${barX + barW + 5},${barY - 5} L ${barX + barW + 5},${barY + barH - 5} L ${barX + barW},${barY + barH} Z`}
-        fill={fill}
-        filter="brightness(0.7)"
-      />
-      {/* Top face for 3D effect */}
-      <path
-        d={`M ${barX},${barY} L ${barX + 5},${barY - 5} L ${barX + barW + 5},${barY - 5} L ${barX + barW},${barY} Z`}
+    <path
+      d={`M${x},${y + height} 
+         L${x},${y + radius} 
+         Q${x},${y} ${x + radius},${y} 
+         L${x + width - radius},${y} 
+         Q${x + width},${y} ${x + width},${y + radius} 
+         L${x + width},${y + height} Z`}
+      fill={fill}
+      className="transition-all duration-300 hover:brightness-110"
+    />
+  );
+}; + 5},${barY - 5} L ${barX + barW},${barY} Z`}
         fill={fill}
         filter="brightness(1.2)"
       />
@@ -576,29 +565,44 @@ export default function DashboardPage() {
 
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stockProjections.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <BarChart data={stockProjections.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={8}>
+                    <defs>
+                      <linearGradient id="siteGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.7} />
+                      </linearGradient>
+                      <linearGradient id="shopeeGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ff4700" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#ff8a00" stopOpacity={0.8} />
+                      </linearGradient>
+                      <linearGradient id="tiktokGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#333333" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#000000" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
                     <XAxis 
                       dataKey="name" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 'bold' }} 
+                      tick={{ fill: 'var(--muted-foreground)', fontSize: 12, fontWeight: '900' }} 
                     />
                     <YAxis hide />
                     <Tooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-card/95 border border-border shadow-2xl rounded-2xl p-4 backdrop-blur-xl animate-in zoom-in-95">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{payload[0].payload.name}</p>
-                              <div className="space-y-1">
-                                <div className="flex justify-between gap-8">
-                                  <span className="text-xs font-bold text-muted-foreground">Venda Total:</span>
-                                  <span className="text-xs font-black text-foreground">{formatCurrency(payload[0].value as number)}</span>
+                            <div className="bg-card border border-border shadow-2xl rounded-2xl p-5 min-w-[200px] backdrop-blur-xl animate-in zoom-in-95">
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3">{payload[0].payload.name}</p>
+                              <div className="space-y-3">
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Potencial de Venda</span>
+                                  <span className="text-sm font-black text-foreground">{formatCurrency(payload[0].value as number)}</span>
                                 </div>
-                                <div className="flex justify-between gap-8 pt-1 border-t border-border/50">
-                                  <span className="text-xs font-bold text-emerald-500">Lucro Total:</span>
-                                  <span className="text-xs font-black text-emerald-500">{formatCurrency(payload[1].value as number)}</span>
+                                <div className="flex flex-col pt-2 border-t border-border/50">
+                                  <span className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Lucro Estimado</span>
+                                  <span className="text-lg font-black text-emerald-500">{formatCurrency(payload[1].value as number)}</span>
                                 </div>
                               </div>
                             </div>
@@ -607,11 +611,15 @@ export default function DashboardPage() {
                         return null;
                       }}
                     />
-                    <Bar dataKey="Venda" shape={<ThreeDCylinder fill="var(--primary)" />} barSize={40} opacity={0.15} />
-                    <Bar dataKey="Lucro" shape={<ThreeDCylinder fill="currentColor" />} barSize={40}>
-                      {stockProjections.chartData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                    <Bar dataKey="Venda" shape={<RoundedBar />} barSize={35} fill="rgba(0,0,0,0.05)" />
+                    <Bar dataKey="Lucro" shape={<RoundedBar />} barSize={35}>
+                      {stockProjections.chartData.map((entry: any, index: number) => {
+                         let fill = 'var(--primary)';
+                         if (entry.name === 'Shopee') fill = 'url(#shopeeGradient)';
+                         if (entry.name === 'TikTok Shop') fill = 'url(#tiktokGradient)';
+                         if (entry.name === 'Site') fill = 'url(#siteGradient)';
+                         return <Cell key={`cell-${index}`} fill={fill} />;
+                      })}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -695,7 +703,7 @@ export default function DashboardPage() {
                       <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} />
                       <Bar 
                         dataKey="profit" 
-                        shape={<ThreeDCylinder />}
+                        shape={<RoundedBar />}
                         maxBarSize={40}
                         animationDuration={1500}
                       >
@@ -776,7 +784,7 @@ export default function DashboardPage() {
                       />
                       <Bar 
                         dataKey="profit" 
-                        shape={<ThreeDCylinder />} 
+                        shape={<RoundedBar />} 
                         maxBarSize={24}
                         animationDuration={1500}
                       >

@@ -69,7 +69,16 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
                 </div>
               </div>
             ))}
-            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tr// ─── Rounded Bar Shape for Modern Charts ──────────────────────────────────
+            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tracking-widest uppercase">+ {data.items.length - 3} itens</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+// ─── Rounded Bar Shape for Modern Charts ──────────────────────────────────
 const RoundedBar = (props: any) => {
   const { fill, x, y, width, height } = props;
   if (!height || isNaN(height) || height === 0) return null;
@@ -85,14 +94,6 @@ const RoundedBar = (props: any) => {
       fill={fill}
       className="transition-all duration-300 hover:brightness-110"
     />
-  );
-}; + 5},${barY - 5} L ${barX + barW},${barY} Z`}
-        fill={fill}
-        filter="brightness(1.2)"
-      />
-      {/* Main Bar */}
-      <rect x={barX} y={barY} width={barW} height={barH} fill={fill} rx={2} />
-    </g>
   );
 };
 const QUICK_RANGES = [

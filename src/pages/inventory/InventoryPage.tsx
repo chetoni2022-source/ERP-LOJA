@@ -41,6 +41,11 @@ interface Product {
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+const calculateROI = (salePrice: number, costPrice: number, platformFee: number = 0, platformCommPct: number = 0) => {
+  const totalCost = costPrice + (salePrice * (platformCommPct / 100)) + platformFee;
+  if (totalCost <= 0) return 0;
+  return ((salePrice - totalCost) / totalCost) * 100;
+};
 const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
 export default function InventoryPage() {
@@ -509,56 +514,13 @@ export default function InventoryPage() {
         user_id: user.id
       };
 
-      const trySave = async (data: any) => {
-        if (editingProduct) {
-          return supabase.from('products').update(data).eq('id', editingProduct.id);
-        } else {
-          return supabase.from('products').insert([data]);
-        }
-      };
-
-      // Stage 1: Try with all fields (including new marketplace prices)
-      let { error } = await trySave(payload);
-
-      // Stage 2: If failed, strip only marketplace price fields and retry
-      if (error) {
-        const { shopee_price: _sp, tiktok_price: _tp, ...payloadNoMarketplace } = payload;
-        const retry2 = await trySave(payloadNoMarketplace);
-        if (!retry2.error) {
-          success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
-          setIsModalOpen(false); resetForm(); fetchProducts();
-          return;
-        }
-
-        // Stage 3: If still failing (schema cache issue), use only core stable fields
-        if (retry2.error) {
-          const corePayload: any = {
-            name,
-            sku: sku || null,
-            description: description || null,
-            price: parseFloat(price),
-            sale_price: salePrice ? parseFloat(salePrice) : null,
-            cost_price: costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0),
-            additional_costs: costs.map(c => ({ label: c.label, value: parseFloat(c.value) || 0 })),
-            stock_quantity: parseInt(stock, 10),
-            ean: ean || null,
-            weight_g: parseInt(weight) || 0,
-            length_cm: parseInt(length) || 0,
-            width_cm: parseInt(width) || 0,
-            height_cm: parseInt(height) || 0,
-            images: payload.images,
-            image_url: payload.images[0] || null,
-            category_id: categoryId || null,
-            user_id: user.id
-          };
-          const retry3 = await trySave(corePayload);
-          if (!retry3.error) {
-            success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
-            setIsModalOpen(false); resetForm(); fetchProducts();
-            return;
-          }
-          throw retry3.error;
-        }
+      // Perform a single, robust save attempt
+      if (editingProduct) {
+        const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('products').insert([payload]);
+        if (error) throw error;
       }
 
       success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
@@ -566,7 +528,8 @@ export default function InventoryPage() {
       resetForm();
       fetchProducts();
     } catch (error: any) {
-      toastError('Erro ao salvar produto: ' + error.message);
+      console.error("Save error:", error);
+      toastError('Erro ao salvar produto: ' + (error.message || 'Verifique sua conexão e os dados inseridos.'));
     } finally {
       setSaving(false);
     }
@@ -794,11 +757,19 @@ export default function InventoryPage() {
                           </span>
                         </div>
                         <div className="flex flex-col items-end">
-                           <div className={cn("px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border", 
-                             (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
-                             {fmt(currentPrice - product.cost_price)}
+                           <div className="flex items-center gap-1.5 mb-1">
+                             <div className={cn("px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border", 
+                               (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
+                               {fmt(currentPrice - product.cost_price)}
+                             </div>
+                             {product.cost_price > 0 && (
+                               <div className={cn("px-1 py-0.5 rounded-[4px] text-[8px] font-black tracking-widest border",
+                                 calculateROI(currentPrice, product.cost_price) > 30 ? "bg-emerald-500 text-white border-emerald-600" : "bg-orange-500 text-white border-orange-600")}>
+                                 {calculateROI(currentPrice, product.cost_price).toFixed(0)}% ROI
+                               </div>
+                             )}
                            </div>
-                           <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
+                           <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest opacity-60">
                              Qtd: {product.stock_quantity}
                            </span>
                         </div>
@@ -839,6 +810,12 @@ export default function InventoryPage() {
                          <span className="font-black text-sm text-foreground tabular-nums">
                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentPrice)}
                          </span>
+                         {product.cost_price > 0 && (
+                            <div className={cn("mt-1 px-1.5 py-0.5 rounded-[4px] text-[8px] font-black tracking-widest border",
+                              calculateROI(currentPrice, product.cost_price) > 30 ? "bg-emerald-500 text-white border-emerald-600" : "bg-orange-500 text-white border-orange-600")}>
+                              {calculateROI(currentPrice, product.cost_price).toFixed(0)}% ROI
+                            </div>
+                         )}
                        </div>
 
                        <div className="flex items-center gap-2 pl-3 border-l border-border/70">
@@ -1111,13 +1088,22 @@ export default function InventoryPage() {
                               </div>
                               <span className="text-[10px] font-black uppercase text-primary tracking-widest">Site / Catálogo</span>
                             </div>
-                            <div className="text-right">
-                              <p className={`text-lg font-black tabular-nums ${siteColor}`}>
-                                {siteProfit >= 0 ? '+' : ''}R$ {siteProfit.toFixed(2).replace('.', ',')}
-                              </p>
-                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`text-[10px] font-black tabular-nums ${siteProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {calculateROI(siteP, siteCost).toFixed(1)}% ROI
+                                </p>
+                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                              </div>
+                              <div className="text-right">
+                                <p className={`text-lg font-black tabular-nums ${siteColor}`}>
+                                  {siteProfit >= 0 ? '+' : ''}R$ {siteProfit.toFixed(2).replace('.', ',')}
+                                </p>
+                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                              </div>
                             </div>
                           </div>
+                          
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
@@ -1134,6 +1120,7 @@ export default function InventoryPage() {
                               </div>
                             </div>
                           </div>
+
                           {salePrice && parseFloat(salePrice) > 0 && parseFloat(salePrice) < parseFloat(price || '0') && (
                             <p className="text-[9px] text-primary font-bold mt-2 ml-1">
                               Desconto de {Math.round(((parseFloat(price) - parseFloat(salePrice)) / parseFloat(price)) * 100)}% ativo ✓
@@ -1167,20 +1154,30 @@ export default function InventoryPage() {
                               <span className="text-[10px] font-black uppercase text-[#f53d2d] tracking-widest">Shopee</span>
                               <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
                             </div>
-                            <div className="text-right">
-                              <p className={`text-lg font-black tabular-nums ${shopeeColor}`}>
-                                {shopeeProfit >= 0 ? '+' : ''}R$ {shopeeProfit.toFixed(2).replace('.', ',')}
-                              </p>
-                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`text-[10px] font-black tabular-nums ${shopeeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {calculateROI(shopeeP, totalCosts, taxSettings.shopee_fee, taxSettings.shopee_comm).toFixed(1)}% ROI
+                                </p>
+                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                              </div>
+                              <div className="text-right">
+                                <p className={`text-lg font-black tabular-nums ${shopeeColor}`}>
+                                  {shopeeProfit >= 0 ? '+' : ''}R$ {shopeeProfit.toFixed(2).replace('.', ',')}
+                                </p>
+                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                              </div>
                             </div>
                           </div>
+                          
                           {/* Deduction breakdown */}
-                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-2">
+                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
                             <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${shopeeP.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.shopee_fee}</span>
                             <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
                           </div>
+
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
@@ -1221,20 +1218,30 @@ export default function InventoryPage() {
                               <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
                               <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
                             </div>
-                            <div className="text-right">
-                              <p className={`text-lg font-black tabular-nums ${tiktokColor}`}>
-                                {tiktokProfit >= 0 ? '+' : ''}R$ {tiktokProfit.toFixed(2).replace('.', ',')}
-                              </p>
-                              <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`text-[10px] font-black tabular-nums ${tiktokProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {calculateROI(tiktokP, totalCosts, taxSettings.tiktok_fee, taxSettings.tiktok_comm).toFixed(1)}% ROI
+                                </p>
+                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                              </div>
+                              <div className="text-right">
+                                <p className={`text-lg font-black tabular-nums ${tiktokColor}`}>
+                                  {tiktokProfit >= 0 ? '+' : ''}R$ {tiktokProfit.toFixed(2).replace('.', ',')}
+                                </p>
+                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                              </div>
                             </div>
                           </div>
+                          
                           {/* Deduction breakdown */}
-                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-2">
+                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
                             <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${tiktokP.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.tiktok_fee}</span>
                             <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
                           </div>
+
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>

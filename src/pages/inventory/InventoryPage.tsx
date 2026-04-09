@@ -38,6 +38,7 @@ interface Product {
     reels_video?: string;
     extra_videos?: string[];
   };
+  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null }[] | null;
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -103,6 +104,11 @@ export default function InventoryPage() {
   // Marketplace prices
   const [shopeePrice, setShopeePrice] = useState('');
   const [tiktokPrice, setTiktokPrice] = useState('');
+
+  // Variations State
+  const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null}[]>([]);
+  const [newVarName, setNewVarName] = useState('');
+  const [newVarType, setNewVarType] = useState<'size'|'color'|'style'>('size');
 
   // Store settings for tax simulation
   const [taxSettings, setTaxSettings] = useState({
@@ -313,6 +319,7 @@ export default function InventoryPage() {
     setExtraVideos(p.media_assets?.extra_videos || []);
     setShopeePrice(p.shopee_price ? p.shopee_price.toString() : '');
     setTiktokPrice(p.tiktok_price ? p.tiktok_price.toString() : '');
+    setVariations(p.variations || []);
     
     setIsModalOpen(true);
     setActiveTab('basic');
@@ -569,6 +576,7 @@ export default function InventoryPage() {
           reels_video: reelsVideo || null,
           extra_videos: extraVideos.filter(v => v.trim() !== '')
         },
+        variations: variations.length > 0 ? variations : null,
         user_id: user.id
       };
 
@@ -627,6 +635,9 @@ export default function InventoryPage() {
     setShopeePrice('');
     setTiktokPrice('');
     setDraggedIdx(null);
+    setVariations([]);
+    setNewVarName('');
+    setNewVarType('size');
   }
 
   function applyFormat(format: 'bold' | 'italic' | 'big', inputId: string = 'descTextarea') {
@@ -1037,7 +1048,7 @@ export default function InventoryPage() {
             <div className="overflow-y-auto bg-muted/5 flex-1 custom-scrollbar relative">
               <div className="sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-5 md:px-6 py-3 mb-6 opacity-100">
                  <div className="flex flex-nowrap overflow-x-auto custom-scrollbar gap-1 bg-muted/30 p-1 rounded-xl">
-                 {['basic', 'pricing', 'logistics', 'media'].map(tab => (
+                 {['basic', 'pricing', 'logistics', 'media', 'variations'].map(tab => (
                    <button
                      key={tab}
                      type="button"
@@ -1053,6 +1064,7 @@ export default function InventoryPage() {
                      {tab === 'pricing' && 'Lucros 💸'}
                      {tab === 'logistics' && 'Frete 📦'}
                      {tab === 'media' && 'Mídia 🎥'}
+                     {tab === 'variations' && 'Opções ✨'}
                    </button>
                  ))}
                  </div>
@@ -1757,6 +1769,91 @@ export default function InventoryPage() {
                         </div>
                     </div>
                   </div>
+
+                <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'variations' && "hidden")}>
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 shadow-inner">
+                        <Tags size={20} />
+                      </div>
+                      <div>
+                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Modelos, Cores e Tamanhos</Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">As variações do produto na vitrine</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-8 gap-3 items-end bg-background/50 p-4 border border-border/40 rounded-xl">
+                       <div className="space-y-1.5 md:col-span-3">
+                         <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground ml-1">Tipo de Variação</Label>
+                         <select 
+                           value={newVarType} 
+                           onChange={e => setNewVarType(e.target.value as any)}
+                           className="h-10 w-full px-3 bg-background border border-border/60 text-foreground rounded-lg text-sm font-bold focus:ring-1 focus:ring-primary shadow-sm outline-none"
+                         >
+                           <option value="size">Tamanho / Aro</option>
+                           <option value="color">Cor / Banho</option>
+                           <option value="style">Modelo / Estilo</option>
+                         </select>
+                       </div>
+                       <div className="space-y-1.5 md:col-span-3">
+                         <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground ml-1">Descrição</Label>
+                         <Input 
+                           value={newVarName} 
+                           onChange={e => setNewVarName(e.target.value)} 
+                           placeholder="Ex: Aro 17, Ouro 18k..." 
+                           onKeyDown={e => {
+                             if(e.key==='Enter') {
+                               e.preventDefault();
+                               if(newVarName.trim()) { setVariations([...variations, {name: newVarName.trim(), type: newVarType}]); setNewVarName(''); }
+                             }
+                           }}
+                           className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 
+                         />
+                       </div>
+                       <div className="md:col-span-2">
+                         <Button 
+                           type="button" 
+                           onClick={() => {
+                             if(newVarName.trim()) {
+                               setVariations([...variations, {name: newVarName.trim(), type: newVarType}]);
+                               setNewVarName('');
+                             }
+                           }}
+                           className="w-full h-10 font-black text-[10px] uppercase tracking-widest bg-foreground text-background shadow-md hover:scale-[1.02] active:scale-95 transition-all"
+                         >
+                           + Inserir
+                         </Button>
+                       </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mt-4 min-h-[100px] border border-dashed border-border/60 rounded-xl p-4 bg-muted/20">
+                      {variations.length === 0 ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 py-4">
+                          <Tags size={24} className="mb-2" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-center">Nenhuma variação adicionada</span>
+                          <span className="text-[9px] font-medium text-center">Adicione opções acima</span>
+                        </div>
+                      ) : (
+                        variations.map((v, i) => (
+                          <div key={i} className="flex items-center rounded-full bg-background border border-border shadow-sm overflow-hidden animate-in zoom-in duration-300">
+                             <span className={cn(
+                               "px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-white h-full flex items-center shadow-inner",
+                               v.type === 'size' ? "bg-blue-500" : v.type === 'color' ? "bg-amber-500" : "bg-violet-500"
+                             )}>
+                               {v.type === 'size' ? 'Taman.' : v.type === 'color' ? 'Cor' : 'Estilo'}
+                             </span>
+                             <span className="px-3 py-1.5 text-xs font-bold text-foreground">
+                               {v.name}
+                             </span>
+                             <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="h-full px-2 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors border-l border-border flex items-center justify-center">
+                               <X size={12} />
+                             </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                   <div className="space-y-4 pt-6 mt-4 border-t border-border/80">
                     <div className="flex justify-between items-end">

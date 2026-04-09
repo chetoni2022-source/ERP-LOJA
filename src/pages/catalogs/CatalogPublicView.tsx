@@ -16,6 +16,7 @@ interface CatalogItem {
   images?: string[] | null;
   category_id?: string | null;
   _categoryName?: string;
+  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null }[] | null;
 }
 
 interface CartItem { item: CatalogItem; qty: number; }
@@ -451,6 +452,11 @@ export default function CatalogPublicView() {
                           <span style={{fontFamily:theme.sans,fontSize:15,fontWeight:700,color:isOnSale?theme.accent:theme.text}}>{fmt(price)}</span>
                           {isOnSale&&<span style={{fontFamily:theme.sans,fontSize:11,color:theme.muted,textDecoration:'line-through',fontWeight:500}}>{fmt(item.price)}</span>}
                         </div>
+                        {item.variations && item.variations.length > 0 && (
+                          <div style={{display:'flex',gap:4,marginBottom:12,flexWrap:'wrap'}}>
+                            <span style={{fontSize:8,fontFamily:theme.sans,fontWeight:800,color:theme.muted,background:`${theme.border}60`,padding:'3px 6px',borderRadius:4,textTransform:'uppercase',letterSpacing:'0.1em'}}>+{item.variations.length} Opções Disp.</span>
+                          </div>
+                        )}
                         {/* Cart button */}
                         {!isSoldOut&&(
                           inCart
@@ -614,6 +620,20 @@ export default function CatalogPublicView() {
                   {detailItem.stock_quantity} {detailItem.stock_quantity===1?'unidade disponível':'unidades disponíveis no estoque'}
                 </span>
               </div>
+              {/* Variations */}
+              {detailItem.variations && detailItem.variations.length > 0 && (
+                <div style={{marginBottom:16}}>
+                  <p style={{fontFamily:theme.sans,fontSize:9,fontWeight:600,letterSpacing:'0.2em',textTransform:'uppercase',color:theme.muted,marginBottom:8}}>Opções Neste Modelo</p>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {detailItem.variations.map((v, i) => (
+                      <div key={i} style={{padding:'4px 10px',background:`${theme.border}40`,border:`1px solid ${theme.border}`,borderRadius:20,fontSize:10,fontFamily:theme.sans,fontWeight:600,color:theme.text,display:'flex',alignItems:'center',gap:5}}>
+                        <span style={{width:6,height:6,borderRadius:'50%',background:v.type==='size'?'#3b82f6':v.type==='color'?'#f59e0b':'#8b5cf6'}}/>
+                        {v.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Description */}
               {detailItem.description&&(
                 <div style={{marginBottom:14}}>

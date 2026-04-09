@@ -108,6 +108,7 @@ export default function InventoryPage() {
   // Variations State
   const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string}[]>([]);
   const [newVarName, setNewVarName] = useState('');
+  const [newVarStock, setNewVarStock] = useState<string>('');
   const [newVarType, setNewVarType] = useState<'size'|'color'|'style'>('size');
   const [isSelectingImageForVar, setIsSelectingImageForVar] = useState<number | null>(null);
 
@@ -1815,17 +1816,30 @@ export default function InventoryPage() {
                                e.preventDefault();
                                if(newVarName.trim()) { setVariations([...variations, {name: newVarName.trim(), type: newVarType}]); setNewVarName(''); }
                              }
+                               if(newVarName.trim()) { setVariations([...variations, {name: newVarName.trim(), type: newVarType, stock: parseInt(newVarStock) || 0}]); setNewVarName(''); setNewVarStock(''); }
+                             }
                            }}
                            className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 
                          />
                        </div>
-                       <div className="md:col-span-2">
+                       <div className="space-y-1.5 md:col-span-1">
+                         <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground ml-1">Estoque</Label>
+                         <Input 
+                           type="number"
+                           value={newVarStock} 
+                           onChange={e => setNewVarStock(e.target.value)} 
+                           placeholder="0" 
+                           className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 
+                         />
+                       </div>
+                       <div className="md:col-span-1">
                          <Button 
                            type="button" 
                            onClick={() => {
                              if(newVarName.trim()) {
-                               setVariations([...variations, {name: newVarName.trim(), type: newVarType}]);
+                               setVariations([...variations, {name: newVarName.trim(), type: newVarType, stock: parseInt(newVarStock) || 0}]);
                                setNewVarName('');
+                               setNewVarStock('');
                              }
                            }}
                            className="w-full h-10 font-black text-[10px] uppercase tracking-widest bg-foreground text-background shadow-md hover:scale-[1.02] active:scale-95 transition-all"

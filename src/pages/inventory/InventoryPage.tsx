@@ -60,6 +60,7 @@ export default function InventoryPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_desc' | 'price_asc'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -248,6 +249,10 @@ export default function InventoryPage() {
     .filter(p => {
       if (stockFilter === 'in_stock') return p.stock_quantity > 0;
       if (stockFilter === 'out_of_stock') return p.stock_quantity <= 0;
+      return true;
+    })
+    .filter(p => {
+      if (categoryFilter !== 'all') return p.category_id === categoryFilter;
       return true;
     })
     .sort((a, b) => {
@@ -752,6 +757,17 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <select
+              className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none min-w-[140px]"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="all">Todas as Categorias</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+
             <select
               className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none min-w-[140px]"
               value={stockFilter}

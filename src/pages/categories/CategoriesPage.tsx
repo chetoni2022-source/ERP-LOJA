@@ -16,6 +16,7 @@ interface Product {
   id: string;
   name: string;
   image_url: string | null;
+  images?: string[] | null;
   category_id: string | null;
 }
 
@@ -38,7 +39,7 @@ export default function CategoriesPage() {
     try {
       const [{ data: cats }, { data: prods }] = await Promise.all([
         supabase.from('categories').select('*').eq('user_id', user.id).order('name', { ascending: true }),
-        supabase.from('products').select('id, name, image_url, category_id').eq('user_id', user.id).order('name'),
+        supabase.from('products').select('id, name, image_url, images, category_id').eq('user_id', user.id).order('name'),
       ]);
 
       const catsWithCount = (cats || []).map(cat => ({
@@ -213,17 +214,20 @@ export default function CategoriesPage() {
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-2">Nesta coleção ({catProducts.length})</p>
                         <div className="flex flex-wrap gap-2">
-                          {catProducts.map(p => (
-                            <button
-                              key={p.id}
-                              onClick={() => toggleProductCategory(p, cat.id)}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-primary/60 bg-primary/10 text-foreground text-xs font-bold hover:bg-red-500/10 hover:border-red-400 hover:text-red-600 transition-colors group"
-                            >
-                              {p.image_url && <img src={p.image_url} alt="" className="w-5 h-5 rounded object-cover" />}
-                              <Check className="h-3 w-3 text-primary group-hover:hidden shrink-0" />
-                              <span className="max-w-[120px] truncate">{p.name}</span>
-                            </button>
-                          ))}
+                          {catProducts.map(p => {
+                            const imgSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            return (
+                              <button
+                                key={p.id}
+                                onClick={() => toggleProductCategory(p, cat.id)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-primary/60 bg-primary/10 text-foreground text-xs font-bold hover:bg-red-500/10 hover:border-red-400 hover:text-red-600 transition-colors group"
+                              >
+                                {imgSource && <img src={imgSource} alt="" className="w-5 h-5 rounded object-cover" />}
+                                <Check className="h-3 w-3 text-primary group-hover:hidden shrink-0" />
+                                <span className="max-w-[120px] truncate">{p.name}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -233,17 +237,20 @@ export default function CategoriesPage() {
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">Disponíveis para adicionar</p>
                         <div className="flex flex-wrap gap-2">
-                          {otherProducts.map(p => (
-                            <button
-                              key={p.id}
-                              onClick={() => toggleProductCategory(p, cat.id)}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground text-xs font-semibold hover:border-primary/50 hover:text-foreground hover:bg-primary/5 transition-colors"
-                            >
-                              {p.image_url && <img src={p.image_url} alt="" className="w-5 h-5 rounded object-cover opacity-70" />}
-                              <Plus className="h-3 w-3 shrink-0" />
-                              <span className="max-w-[120px] truncate">{p.name}</span>
-                            </button>
-                          ))}
+                          {otherProducts.map(p => {
+                            const imgSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            return (
+                              <button
+                                key={p.id}
+                                onClick={() => toggleProductCategory(p, cat.id)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground text-xs font-semibold hover:border-primary/50 hover:text-foreground hover:bg-primary/5 transition-colors"
+                              >
+                                {imgSource && <img src={imgSource} alt="" className="w-5 h-5 rounded object-cover opacity-70" />}
+                                <Plus className="h-3 w-3 shrink-0" />
+                                <span className="max-w-[120px] truncate">{p.name}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

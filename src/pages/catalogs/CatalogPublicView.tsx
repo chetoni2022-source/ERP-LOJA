@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 
 const WA_NUMBER = '5511945421583';
 
@@ -255,14 +255,14 @@ export default function CatalogPublicView() {
           width: 100%;
           position: relative;
           overflow: hidden;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .categories-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          padding: 8px 4px 16px;
+          gap: 12px;
+          padding: 8px 4px 20px;
           width: 100%;
         }
 
@@ -270,27 +270,39 @@ export default function CatalogPublicView() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 10px;
           width: 100%;
-          padding: 10px;
-          margin-top: 4px;
-          background: none;
-          border: none;
+          padding: 12px;
+          margin: 8px 0;
+          background: var(--theme-card-bg);
+          border: 1px solid var(--theme-border);
+          border-radius: 14px;
           cursor: pointer;
           font-family: var(--font-sans);
           font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
+          font-weight: 800;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: var(--theme-muted);
-          transition: color 0.2s;
+          color: var(--theme-text);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+          transition: all 0.3s ease;
         }
-        .menu-trigger:hover { color: var(--theme-accent); }
+        .menu-trigger:active { transform: scale(0.98); }
 
         @media (min-width: 768px) {
+          .menu-trigger { display: none !important; }
+          .categories-wrapper {
+            max-height: none !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            margin-bottom: 12px !important;
+            overflow: visible !important;
+          }
           .categories-grid {
-            grid-template-columns: repeat(auto-fit, minmax(120px, auto));
+            grid-template-columns: repeat(auto-fit, minmax(130px, auto));
             justify-content: center;
+            gap: 16px;
+            padding: 16px 4px;
           }
         }
       `}</style>
@@ -341,18 +353,19 @@ export default function CatalogPublicView() {
                 <button 
                   className="menu-trigger" 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  style={{'--theme-muted': theme.muted, '--theme-accent': theme.accent, '--font-sans': theme.sans} as any}
+                  style={{'--theme-muted': theme.muted, '--theme-accent': theme.accent, '--font-sans': theme.sans, '--theme-card-bg': theme.cardBg, '--theme-border': theme.border, '--theme-text': theme.text} as any}
                 >
-                  {isMenuOpen ? 'Fechar Categorias' : 'Explorar por Categoria'}
-                  {isMenuOpen ? <ChevronUp style={{width:14,height:14}}/> : <ChevronDown style={{width:14,height:14}}/>}
+                  <SlidersHorizontal style={{width:14,height:14,color:theme.accent}}/>
+                  {isMenuOpen ? 'Fechar Categorias' : 'Categorias'}
+                  {isMenuOpen ? <ChevronUp style={{width:14,height:14,opacity:0.5}}/> : <ChevronDown style={{width:14,height:14,opacity:0.5}}/>}
                 </button>
 
                 <div 
                   className="categories-wrapper" 
                   style={{
-                    maxHeight: isMenuOpen ? '600px' : '0',
+                    maxHeight: isMenuOpen ? '800px' : '0',
                     opacity: isMenuOpen ? 1 : 0,
-                    marginBottom: isMenuOpen ? 8 : 0,
+                    marginBottom: isMenuOpen ? 12 : 0,
                     pointerEvents: isMenuOpen ? 'auto' : 'none'
                   }}
                 >
@@ -364,23 +377,21 @@ export default function CatalogPublicView() {
                           key={c.id} 
                           onClick={()=>{
                             setActiveCat(c.id);
-                            // Optional: close menu after selection on mobile? 
-                            // if (window.innerWidth < 768) setIsMenuOpen(false);
                           }} 
                           style={{
-                            padding:'12px 10px',
-                            fontSize:11,
+                            padding:'14px 12px',
+                            fontSize: 11,
                             fontFamily:theme.sans,
                             fontWeight:800,
-                            letterSpacing:'0.08em',
+                            letterSpacing:'0.1em',
                             textTransform:'uppercase',
-                            borderRadius:12,
+                            borderRadius:14,
                             cursor:'pointer',
-                            transition:'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            background:active?theme.accent:theme.cardBg,
-                            color:active?onAccent:theme.muted,
+                            transition:'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            background:active?theme.accent:theme.bg,
+                            color:active?onAccent:theme.text,
                             border:`1px solid ${active?theme.accent:theme.border}`,
-                            boxShadow:active?`0 4px 15px ${theme.accent}60`:'0 2px 8px rgba(0,0,0,0.04)',
+                            boxShadow:active?`0 10px 20px ${theme.accent}40`:'0 2px 10px rgba(0,0,0,0.02)',
                             outline: 'none',
                             display: 'flex',
                             alignItems: 'center',

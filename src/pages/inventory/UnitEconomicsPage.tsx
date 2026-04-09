@@ -18,7 +18,8 @@ import {
   ExternalLink,
   Target,
   TrendingUp,
-  Zap
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 
 interface Product {
@@ -76,6 +77,7 @@ export default function UnitEconomicsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [expandedSimulators, setExpandedSimulators] = useState<Record<string, boolean>>({});
   const [visiblePlatforms, setVisiblePlatforms] = useState({
     site: true,
     shopee: true,
@@ -126,6 +128,11 @@ export default function UnitEconomicsPage() {
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleSimulator = (productId: string, platform: string) => {
+    const key = `${productId}-${platform}`;
+    setExpandedSimulators(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const calculateUnitEconomics = (product: Product, platform: 'site' | 'shopee' | 'tiktok') => {
@@ -221,7 +228,7 @@ export default function UnitEconomicsPage() {
         </div>
       </div>
 
-      <div className="bg-card border border-border/80 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden relative group/table">
+      <div className="bg-card border border-border/80 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-visible relative group/table">
         {/* STICKY HEADER - FIXING STICKINESS & Z-INDEX */}
         <div className={cn(
           "hidden lg:grid gap-2 px-8 py-6 bg-card/95 border-b border-border items-center sticky top-0 md:top-0 z-[60] backdrop-blur-2xl transition-all duration-500 shadow-sm",
@@ -293,22 +300,22 @@ export default function UnitEconomicsPage() {
                     className="group-row cursor-pointer select-none"
                     onClick={() => toggleRow(product.id)}
                   >
-                    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_848px_48px] gap-2 px-8 lg:px-10 py-7 items-center">
+                    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_848px_48px] gap-2 px-8 lg:px-10 py-5 items-center">
                       <div className="flex items-center gap-6 w-full lg:w-auto">
-                          <div className="h-16 w-16 rounded-[1.25rem] bg-muted overflow-hidden shrink-0 border border-border/40 shadow-xl group-hover:scale-110 group-hover:-rotate-2 transition-all duration-700">
+                          <div className="h-14 w-14 rounded-[1.25rem] bg-muted overflow-hidden shrink-0 border border-border/40 shadow-sm group-hover:scale-110 transition-all duration-700">
                              {displayImg ? (
                                <img src={displayImg} alt={product.name} className="w-full h-full object-cover" />
                              ) : (
-                               <div className="w-full h-full flex items-center justify-center text-muted-foreground/30"><Package size={28} /></div>
+                               <div className="w-full h-full flex items-center justify-center text-muted-foreground/30"><Package size={24} /></div>
                              )}
                           </div>
                           <div className="min-w-0">
-                             <h3 className="text-base font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors leading-none mb-1">{product.name}</h3>
+                             <h3 className="text-xs font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors leading-none mb-1">{product.name}</h3>
                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-muted-foreground/50 tracking-[0.2em]">{product.sku || 'N/A'}</span>
-                                <div className="h-1 w-1 rounded-full bg-border" />
-                                <Link to={`/inventory?search=${product.sku || product.name}`} className="text-[9px] font-black text-primary/60 hover:text-primary uppercase tracking-widest flex items-center gap-1 transition-colors" onClick={e=>e.stopPropagation()}>
-                                   <ExternalLink size={10} /> Gerenciar Peça
+                                <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em]">{product.sku || 'N/A'}</span>
+                                <div className="h-0.5 w-0.5 rounded-full bg-border" />
+                                <Link to={`/inventory?search=${product.sku || product.name}`} className="text-[8px] font-black text-primary/60 hover:text-primary uppercase tracking-widest flex items-center gap-1 transition-colors" onClick={e=>e.stopPropagation()}>
+                                   <ExternalLink size={9} /> Gerenciar Peça
                                 </Link>
                              </div>
                           </div>
@@ -316,17 +323,17 @@ export default function UnitEconomicsPage() {
                       
                       <div className="hidden lg:flex items-center justify-end flex-1 gap-10">
                          <div className="flex -space-x-4">
-                            {visiblePlatforms.site && <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center border-4 border-card shadow-2xl relative z-30" title="Site"><Monitor size={16} className="text-primary-foreground" /></div>}
-                            {visiblePlatforms.shopee && <div className="h-10 w-10 rounded-2xl bg-[#f53d2d] flex items-center justify-center border-4 border-card shadow-2xl relative z-20" title="Shopee"><ShoppingBag size={16} className="text-white" /></div>}
-                            {visiblePlatforms.tiktok && <div className="h-10 w-10 rounded-2xl bg-black flex items-center justify-center border-4 border-card shadow-2xl relative z-10" title="TikTok"><div className="w-3 h-3 text-white font-black text-[10px]">T</div></div>}
+                            {visiblePlatforms.site && <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center border-4 border-card shadow-2xl relative z-30" title="Site"><Monitor size={12} className="text-primary-foreground" /></div>}
+                            {visiblePlatforms.shopee && <div className="h-8 w-8 rounded-xl bg-[#f53d2d] flex items-center justify-center border-4 border-card shadow-2xl relative z-20" title="Shopee"><ShoppingBag size={12} className="text-white" /></div>}
+                            {visiblePlatforms.tiktok && <div className="h-8 w-8 rounded-xl bg-black flex items-center justify-center border-4 border-card shadow-2xl relative z-10" title="TikTok"><div className="w-2 h-2 text-white font-black text-[8px]">T</div></div>}
                          </div>
-                         <div className="h-8 w-px bg-border/40" />
-                         <span className="text-[10px] font-black text-primary/40 uppercase tracking-[0.2em] group-hover:tracking-[0.3em] group-hover:text-primary transition-all duration-500">Audit Unitário</span>
+                         <div className="h-6 w-px bg-border/40" />
+                         <span className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] group-hover:tracking-[0.3em] group-hover:text-primary transition-all duration-500">Audit Unitário</span>
                       </div>
 
                       <div className="flex items-center justify-center">
-                         <div className={cn("p-3 rounded-2xl transition-all duration-700 shadow-sm", isExpanded ? "bg-primary text-primary-foreground rotate-180 scale-110 shadow-primary/20" : "bg-muted text-muted-foreground hover:bg-muted/80")}>
-                            <ChevronDown size={20} />
+                         <div className={cn("p-2.5 rounded-2xl transition-all duration-700 shadow-sm", isExpanded ? "bg-primary text-primary-foreground rotate-180 scale-110 shadow-primary/20" : "bg-muted text-muted-foreground hover:bg-muted/80")}>
+                            <ChevronDown size={18} />
                          </div>
                       </div>
                     </div>
@@ -334,36 +341,43 @@ export default function UnitEconomicsPage() {
 
                   {/* Expanded Breakdown */}
                   {isExpanded && (
-                    <div className="px-8 lg:px-10 pb-10 animate-in slide-in-from-top-6 duration-700">
+                    <div className="px-8 lg:px-10 pb-8 animate-in slide-in-from-top-6 duration-700">
                       <div className="bg-background/60 border border-border/40 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl">
                         <div className="divide-y divide-border/20">
                           {(['site', 'shopee', 'tiktok'] as const).map(platform => {
                             if (!visiblePlatforms[platform]) return null;
                             const ecc = calculateUnitEconomics(product, platform);
                             const isNeg = ecc.result < 0;
+                            const isSimOpen = expandedSimulators[`${product.id}-${platform}`];
                             
                             return (
                               <div key={platform}>
-                                <div className={cn("transition-colors hover:bg-muted/10", GRID_CLASSES, "p-5 lg:p-6")}>
+                                <div className={cn("transition-colors hover:bg-muted/10", GRID_CLASSES, "p-4 lg:p-5")}>
                                   {/* Platform Label */}
-                                  <div className="col-span-2 lg:col-span-1 flex items-center gap-5 pl-4 lg:pl-6">
+                                  <div className="col-span-2 lg:col-span-1 flex items-center gap-4 pl-4 lg:pl-6">
                                     <div className={cn(
-                                      "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xl border-2 border-white/10 transition-transform hover:scale-110",
-                                      platform === 'site' ? "bg-primary text-primary-foreground shadow-primary/30" : 
-                                      platform === 'shopee' ? "bg-[#f53d2d] text-white shadow-[#f53d2d]/30" : 
-                                      "bg-black text-white shadow-black/30"
+                                      "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg border-2 border-white/10 transition-transform",
+                                      platform === 'site' ? "bg-primary text-primary-foreground shadow-primary/20" : 
+                                      platform === 'shopee' ? "bg-[#f53d2d] text-white shadow-[#f53d2d]/20" : 
+                                      "bg-black text-white shadow-black/20"
                                     )}>
-                                      {platform === 'site' && <Monitor size={20} />}
-                                      {platform === 'shopee' && <ShoppingBag size={20} />}
-                                      {platform === 'tiktok' && <div className="font-black text-lg">T</div>}
+                                      {platform === 'site' && <Monitor size={18} />}
+                                      {platform === 'shopee' && <ShoppingBag size={18} />}
+                                      {platform === 'tiktok' && <div className="font-black text-base">T</div>}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-[12px] font-black uppercase tracking-[0.2em] leading-none mb-1">
+                                        <span className="text-[11px] font-black uppercase tracking-[0.15em] leading-none mb-1">
                                           {platform === 'site' ? 'Padrão / Site' : platform === 'shopee' ? 'Shopee BR' : 'TikTok Shop'}
                                         </span>
                                         <div className="flex items-center gap-1.5 opacity-40">
-                                           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                           <span className="text-[8px] font-black uppercase tracking-widest">Ativo</span>
+                                           <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                                           <button 
+                                              onClick={() => toggleSimulator(product.id, platform)}
+                                              className="text-[8px] font-black uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-1"
+                                           >
+                                              {isSimOpen ? 'Ocultar Escala' : 'Projetar Escala'}
+                                              {isSimOpen ? <ChevronUp size={8} /> : <Zap size={8} />}
+                                           </button>
                                         </div>
                                     </div>
                                   </div>
@@ -372,38 +386,38 @@ export default function UnitEconomicsPage() {
                                   
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-muted-foreground uppercase mb-1">Total</p>
-                                    <span className="text-sm font-black font-mono tracking-tight">{fmt(ecc.price)}</span>
+                                    <span className="text-xs font-black font-mono tracking-tight">{fmt(ecc.price)}</span>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-muted-foreground uppercase mb-1">Custo</p>
-                                    <span className="text-sm font-bold font-mono text-muted-foreground/80 tracking-tight">{fmt(ecc.cost)}</span>
+                                    <span className="text-xs font-bold font-mono text-muted-foreground/80 tracking-tight">{fmt(ecc.cost)}</span>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-muted-foreground uppercase mb-1">Comis.</p>
-                                    <span className="text-sm font-bold font-mono text-red-500/80 tracking-tight">-{fmt(ecc.commission)}</span>
+                                    <span className="text-xs font-bold font-mono text-red-500/80 tracking-tight">-{fmt(ecc.commission)}</span>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-muted-foreground uppercase mb-1">Taxa</p>
-                                    <span className="text-sm font-bold font-mono text-red-500/80 tracking-tight">-{fmt(ecc.fee)}</span>
+                                    <span className="text-xs font-bold font-mono text-red-500/80 tracking-tight">-{fmt(ecc.fee)}</span>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-muted-foreground uppercase mb-1">Imposto</p>
-                                    <span className="text-sm font-bold font-mono text-amber-600/80 tracking-tight">-{fmt(ecc.tax)}</span>
+                                    <span className="text-xs font-bold font-mono text-amber-600/80 tracking-tight">-{fmt(ecc.tax)}</span>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-primary uppercase mb-1">Repasse</p>
-                                    <div className="bg-primary/5 rounded-xl px-2.5 py-1.5 inline-block">
-                                        <span className="text-sm font-black font-mono text-primary tracking-tight">{fmt(ecc.repasse)}</span>
+                                    <div className="bg-primary/5 rounded-xl px-2 py-1 inline-block">
+                                        <span className="text-xs font-black font-mono text-primary tracking-tight">{fmt(ecc.repasse)}</span>
                                     </div>
                                   </div>
                                   <div className="text-center lg:block">
                                     <p className="lg:hidden text-[9px] font-black text-foreground uppercase mb-1">Resultado</p>
                                     <div className="flex flex-col items-center">
-                                        <span className={cn("text-base font-black font-mono tracking-tighter", isNeg ? "text-red-500" : "text-emerald-500")}>
+                                        <span className={cn("text-sm font-black font-mono tracking-tighter", isNeg ? "text-red-500" : "text-emerald-500")}>
                                           {ecc.result > 0 ? '+' : ''}{fmt(ecc.result)}
                                         </span>
                                         <div className={cn(
-                                          "text-[10px] font-black px-2 py-0.5 rounded-full mt-1 border", 
+                                          "text-[9px] font-black px-1.5 py-0.5 rounded-full mt-0.5 border", 
                                           isNeg ? "bg-red-500/10 text-red-500 border-red-500/20" : 
                                           ecc.margin > 20 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : 
                                           "bg-orange-500/10 text-orange-500 border-orange-500/20"
@@ -415,33 +429,32 @@ export default function UnitEconomicsPage() {
                                   <div className="hidden lg:block w-full" />
                                 </div>
 
-                                {/* SCALABILITY SIMULATOR SECTION */}
-                                {ecc.result !== 0 && (
-                                  <div className="px-6 lg:px-10 pb-6 pt-2">
-                                     <div className="bg-primary/[0.03] border border-primary/10 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all hover:bg-primary/[0.05]">
+                                {/* SCALABILITY SIMULATOR "LEQUE" (ACCORDION) */}
+                                {isSimOpen && ecc.result !== 0 && (
+                                  <div className="px-6 lg:px-10 pb-6 animate-in slide-in-from-top-4 duration-500">
+                                     <div className="bg-primary/[0.04] border border-primary/10 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all hover:bg-primary/[0.06] shadow-inner">
                                         <div className="flex items-center gap-4">
-                                           <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                                           <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
                                               <TrendingUp size={20} />
                                            </div>
                                            <div>
-                                              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Projeção de Escala</h4>
-                                              <p className="text-[10px] text-muted-foreground font-semibold">Quanto você ganha com volume de vendas no {platform === 'site' ? 'SITE' : platform === 'shopee' ? 'SHOPEE' : 'TIKTOK'}:</p>
+                                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Projeção {platform === 'site' ? 'SITE' : platform === 'shopee' ? 'SHOPEE' : 'TIKTOK'}</h4>
+                                              <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Estimativa baseada em volume</p>
                                            </div>
                                         </div>
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 max-w-2xl">
                                            {[50, 100, 500, 1000].map(qty => (
-                                             <div key={qty} className="bg-card border border-border/60 p-3 rounded-2xl text-center shadow-sm group/card hover:border-primary/40 transition-all">
-                                                <div className="text-[8px] font-black text-muted-foreground uppercase mb-0.5 tracking-widest">{qty} Vendas</div>
+                                             <div key={qty} className="bg-card border border-border/80 p-3 rounded-2xl text-center shadow-sm hover:border-primary/40 transition-all">
+                                                <div className="text-[8px] font-black text-muted-foreground uppercase mb-0.5 tracking-[0.15em]">{qty} Unid.</div>
                                                 <div className={cn("text-[13px] font-black font-mono", isNeg ? "text-red-500" : "text-emerald-500")}>
                                                    {fmt(ecc.result * qty)}
                                                 </div>
                                              </div>
                                            ))}
                                         </div>
-                                        <div className="hidden xl:flex flex-col items-center gap-1 opacity-20">
-                                           <Zap size={24} className="text-primary animate-pulse" />
-                                           <span className="text-[8px] font-black uppercase tracking-widest">Escalável</span>
-                                        </div>
+                                        <button onClick={() => toggleSimulator(product.id, platform)} className="p-2 text-muted-foreground hover:text-primary transition-colors">
+                                            <X size={16} />
+                                        </button>
                                      </div>
                                   </div>
                                 )}
@@ -460,7 +473,7 @@ export default function UnitEconomicsPage() {
       </div>
 
       {/* Info Card - Final Redesign */}
-      <div className="bg-card/60 backdrop-blur-md border-t-4 border-t-primary border-border p-10 rounded-[3rem] relative shadow-2xl overflow-hidden group/info">
+      <div className="bg-card/60 backdrop-blur-md border border-border p-10 rounded-[3rem] relative shadow-2xl overflow-hidden group/info">
          <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-10 transition-all duration-1000 pointer-events-none">
             <Calculator size={160} className="text-primary -rotate-12 translate-x-20 translate-y-[-20px]" />
          </div>

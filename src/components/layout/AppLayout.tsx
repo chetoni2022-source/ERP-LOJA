@@ -238,6 +238,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLink
               key={item.path}
               to={item.path}
+              end={item.path === '/inventory'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) => cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150',

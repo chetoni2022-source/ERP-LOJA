@@ -107,7 +107,12 @@ export default function CatalogPublicView() {
       const {data:sd}=await supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position,whatsapp_number').eq('user_id', cat.user_id).limit(1).maybeSingle();
       const b={name:sd?.store_name||'Laris Acessórios',logo:sd?.logo_url||null,favicon:sd?.favicon_url||null,logoW:sd?.logo_width||200,logoH:sd?.logo_height||80,logoFit:sd?.logo_fit||'contain',logoPos:sd?.logo_position||'center',whatsapp:sd?.whatsapp_number||null};
       setBrand(b);
-      if(b.favicon){let l=document.querySelector("link[rel~='icon']") as HTMLLinkElement;if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.href=b.favicon;}
+      if(b.favicon){
+        const proxyFav=getProxyUrl(b.favicon);
+        let l=document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}
+        l.href=proxyFav || b.favicon;
+      }
       document.title=`${cat.name} — ${b.name}`;
     }catch(e:any){setError(e.message);}finally{setLoading(false);}
   }
@@ -117,7 +122,13 @@ export default function CatalogPublicView() {
   const onAccent=isLight?'#fff':theme.bg;
 
   const catalogCats=useMemo(()=>{const seen=new Set<string>();const out:{id:string;name:string}[]=[];items.forEach(i=>{if(i.category_id&&categoryMap[i.category_id]&&!seen.has(i.category_id)){seen.add(i.category_id);out.push({id:i.category_id,name:categoryMap[i.category_id]});}});return out;},[items,categoryMap]);
-  const filtered=useMemo(()=>items.filter(i=>{const ms=!search||i.name.toLowerCase().includes(search.toLowerCase());const mc=activeCat==='all'||i.category_id===activeCat;return ms&&mc;}),[items,search,activeCat]);
+  const filtered=useMemo(()=>items.filter(i=>{
+    const ms=!search||i.name.toLowerCase().includes(search.toLowerCase());
+    const mc=activeCat==='all'||i.category_id===activeCat;
+    const hideOutOfStock = catalog?.settings?.hide_out_of_stock;
+    const isAvailable = !hideOutOfStock || i.stock_quantity > 0;
+    return ms && mc && isAvailable;
+  }),[items,search,activeCat,catalog]);
 
   const cartCount=cart.reduce((s,c)=>s+c.qty,0);
   const cartTotal=cart.reduce((s,c)=>s+(c.item.sale_price||c.item.price)*c.qty,0);
@@ -156,7 +167,13 @@ export default function CatalogPublicView() {
           width: 100%;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 0 32px;
+          padding: 0 16px; /* Reduced for better mobile spacing */
+        }
+        
+        @media (min-width: 640px) {
+          .catalog-container {
+            padding: 0 32px;
+          }
         }
 
         .sticky-inner {
@@ -189,24 +206,27 @@ export default function CatalogPublicView() {
         }
       `}</style>
 
-      {/* ── TOP STRIP ── */}
-      <div style={{background:theme.accent,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'center',gap:12,position:'relative',zIndex:60}}>
-        <span style={{color:onAccent,fontSize:10,fontFamily:theme.sans,fontWeight:750,letterSpacing:'0.25em',textTransform:'uppercase'}}>{catalog.name} — Exclusivo</span>
-        <span style={{color:`${onAccent}60`,fontSize:10}}>•</span>
-        <span style={{color:onAccent,fontSize:10,fontFamily:theme.sans,fontWeight:600,letterSpacing:'0.12em'}}>{viewers} pessoas navegando agora</span>
-      </div>
-
-      {/* ── HERO LOGO ── */}
-      <div style={{background:theme.cardBg,borderBottom:`1px solid ${theme.border}`,padding:'32px 0 0'}}>
-        <div className="catalog-container">
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',paddingBottom:24}}>
+      {/* ── STICKY HEADER ── */}
+      <div style={{
+        position:'sticky',
+        top:0,
+        zIndex:100,
+        background:`${theme.cardBg}f8`,
+        backdropFilter:'blur(24px)',
+        WebkitBackdropFilter:'blur(24px)',
+        borderBottom:`1px solid ${theme.border}`,
+        boxShadow:'0 4px 20px rgba(0,0,0,0.1)'
+      }}>
+        <div className="catalog-container" style={{paddingTop:12, paddingBottom:12}}>
+          {/* Logo */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',paddingBottom:12}}>
             {brand.logo
               ? <img 
                   src={getProxyUrl(brand.logo) || ''} 
                   alt={brand.name} 
                   style={{
                     height:'auto',
-                    maxHeight: brand.logoH,
+                    maxHeight: Math.min(brand.logoH, 60), // Smaller for sticky header
                     width:'auto',
                     maxWidth: brand.logoW,
                     objectFit: brand.logoFit as any,
@@ -214,41 +234,28 @@ export default function CatalogPublicView() {
                     display: 'block'
                   }}
                 />
-              : <div style={{textAlign:'center'}}><p style={{fontFamily:theme.serif,fontSize:38,fontWeight:500,color:theme.text,letterSpacing:'-0.02em'}}>{brand.name}</p><p style={{fontFamily:theme.sans,fontSize:9,letterSpacing:'0.4em',textTransform:'uppercase',color:theme.accent,marginTop:4}}>Luxury Essentials</p></div>
+              : <div style={{textAlign:'center'}}><p style={{fontFamily:theme.serif,fontSize:24,fontWeight:500,color:theme.text,letterSpacing:'-0.01em'}}>{brand.name}</p></div>
             }
           </div>
-          
-          <div style={{height:1,background:`linear-gradient(90deg,transparent,${theme.accent}60,transparent)`,marginBottom:20}}/>
-          
-          <div style={{textAlign:'center',maxWidth:700,margin:'0 auto 32px'}}>
-            <p style={{fontFamily:theme.sans,fontSize:9,letterSpacing:'0.35em',textTransform:'uppercase',color:theme.accent,marginBottom:8,fontWeight:700}}>Bem-vindo à nossa</p>
-            <h1 style={{fontFamily:theme.serif,fontSize:clamp(28, 48),fontWeight:500,letterSpacing:'-0.03em',color:theme.text,lineHeight:1.1}}>{catalog.name}</h1>
-            {catalog.description&&<p style={{fontFamily:theme.sans,fontSize:13,color:theme.muted,marginTop:12,lineHeight:1.8,maxWidth:500,margin:'12px auto 0',fontWeight:400}}>{catalog.description}</p>}
-          </div>
-        </div>
 
-        {/* Sticky nav */}
-        <div style={{position:'sticky',top:0,zIndex:50,background:`${theme.cardBg}f8`,backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderBottom:`1px solid ${theme.border}`,borderTop:`1px solid ${theme.border}`}}>
-          <div className="catalog-container" style={{padding:'16px 20px'}}>
-            <div className="sticky-inner">
-              <div className="search-container" style={{position:'relative'}}>
-                <Search style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:theme.muted,pointerEvents:'none'}}/>
-                <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar na coleção..."
-                  style={{width:'100%',height:40,paddingLeft:36,paddingRight:search?32:16,fontSize:13,fontFamily:theme.sans,background:theme.bg,color:theme.text,border:`1px solid ${theme.border}`,borderRadius:10,outline:'none',transition:'border-color 0.2s'}}
-                />
-                {search&&<button onClick={()=>setSearch('')} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:theme.muted,padding:4}}><X style={{width:14,height:14}}/></button>}
-              </div>
-              
-              {catalogCats.length>0&&(
-                <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none',padding:'4px 2px'}}>
-                  {[{id:'all',name:'Todas'},...catalogCats].map(c=>{const active=activeCat===c.id;return(
-                    <button key={c.id} onClick={()=>setActiveCat(c.id)} style={{flexShrink:0,padding:'7px 18px',fontSize:9,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',borderRadius:99,cursor:'pointer',transition:'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',background:active?theme.accent:'transparent',color:active?onAccent:theme.muted,border:`1px solid ${active?theme.accent:theme.border}`,boxShadow:active?`0 4px 12px ${theme.accent}30`:'none'}}>
-                      {c.name}
-                    </button>
-                  );})}
-                </div>
-              )}
+          <div className="sticky-inner">
+            <div className="search-container" style={{position:'relative'}}>
+              <Search style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:theme.muted,pointerEvents:'none'}}/>
+              <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar na coleção..."
+                style={{width:'100%',height:40,paddingLeft:36,paddingRight:search?32:16,fontSize:13,fontFamily:theme.sans,background:theme.bg,color:theme.text,border:`1px solid ${theme.border}`,borderRadius:10,outline:'none',transition:'border-color 0.2s'}}
+              />
+              {search&&<button onClick={()=>setSearch('')} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:theme.muted,padding:4}}><X style={{width:14,height:14}}/></button>}
             </div>
+            
+            {catalogCats.length>0&&(
+              <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none',padding:'4px 2px'}}>
+                {[{id:'all',name:'Todas'},...catalogCats].map(c=>{const active=activeCat===c.id;return(
+                  <button key={c.id} onClick={()=>setActiveCat(c.id)} style={{flexShrink:0,padding:'7px 18px',fontSize:9,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',borderRadius:99,cursor:'pointer',transition:'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',background:active?theme.accent:'transparent',color:active?onAccent:theme.muted,border:`1px solid ${active?theme.accent:theme.border}`,boxShadow:active?`0 4px 12px ${theme.accent}30`:'none'}}>
+                    {c.name}
+                  </button>
+                );})}
+              </div>
+            )}
           </div>
         </div>
       </div>

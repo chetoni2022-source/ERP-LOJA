@@ -40,6 +40,7 @@ export default function CatalogBuilderPage() {
   const [pickerTab, setPickerTab] = useState<'products' | 'categories'>('products');
   const [saving, setSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<any | null>(null);
+  const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
   useEffect(() => { fetchData(); }, [user]);
 
@@ -64,6 +65,7 @@ export default function CatalogBuilderPage() {
     setUseCustomColors(false);
     setCustomColors({ bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' });
     setSelectedProducts([]); setSelectedCategories([]);
+    setHideOutOfStock(false);
   };
 
   const openEdit = async (cat: any) => {
@@ -74,6 +76,7 @@ export default function CatalogBuilderPage() {
     setUseCustomColors(isCustom);
     setSelectedTheme(isCustom ? 'luxury' : (cat.theme || 'luxury'));
     if (isCustom && cat.custom_colors) setCustomColors(cat.custom_colors);
+    setHideOutOfStock(cat.settings?.hide_out_of_stock || false);
 
     const { data: items } = await supabase.from('catalog_items').select('product_id').eq('catalog_id', cat.id);
     setSelectedProducts(items?.map(i => i.product_id) || []);
@@ -95,7 +98,13 @@ export default function CatalogBuilderPage() {
     setSaving(true);
     try {
       const theme = useCustomColors ? 'custom' : selectedTheme;
-      const payload: any = { name: catalogName, description: catalogDesc, theme, user_id: user.id };
+      const payload: any = { 
+        name: catalogName, 
+        description: catalogDesc, 
+        theme, 
+        user_id: user.id,
+        settings: { hide_out_of_stock: hideOutOfStock }
+      };
       if (useCustomColors) payload.custom_colors = customColors;
       else payload.custom_colors = null;
 
@@ -173,6 +182,19 @@ export default function CatalogBuilderPage() {
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição Pública</Label>
                 <Input value={catalogDesc} onChange={e => setCatalogDesc(e.target.value)} placeholder="Curadoria de peças exclusivas..." className="h-11 bg-background" />
               </div>
+            </div>
+
+            <div className="pt-2 border-t border-border/50">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-10 h-6 rounded-full relative transition-colors ${hideOutOfStock ? 'bg-primary' : 'bg-muted'}`}>
+                  <input type="checkbox" checked={hideOutOfStock} onChange={e => setHideOutOfStock(e.target.checked)} className="sr-only" />
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${hideOutOfStock ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-foreground">Ocultar produtos sem estoque</span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest">A vitrine online não mostrará peças esgotadas</span>
+                </div>
+              </label>
             </div>
           </div>
 

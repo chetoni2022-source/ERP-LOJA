@@ -17,7 +17,8 @@ import {
   DollarSign,
   Percent,
   Calculator,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 
 interface Product {

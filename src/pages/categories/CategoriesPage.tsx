@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Button, Input } from '../../components/ui';
 import { Tags, Plus, Trash2, Edit2, Loader2, ArrowLeft, Package, ChevronDown, ChevronUp, Check, Search } from 'lucide-react';
@@ -215,7 +215,8 @@ export default function CategoriesPage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-2">Nesta coleção ({catProducts.length})</p>
                         <div className="flex flex-wrap gap-2">
                           {catProducts.map(p => {
-                            const imgSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            const rawSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            const imgSource = getProxyUrl(rawSource);
                             return (
                               <button
                                 key={p.id}
@@ -238,7 +239,8 @@ export default function CategoriesPage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">Disponíveis para adicionar</p>
                         <div className="flex flex-wrap gap-2">
                           {otherProducts.map(p => {
-                            const imgSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            const rawSource = (p.images && p.images.length > 0) ? p.images[0] : p.image_url;
+                            const imgSource = getProxyUrl(rawSource);
                             return (
                               <button
                                 key={p.id}

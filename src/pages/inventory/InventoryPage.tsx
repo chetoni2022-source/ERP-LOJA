@@ -1070,50 +1070,51 @@ export default function InventoryPage() {
                     />
 
                     {isDescFullscreen && (
-                      <div className="fixed inset-0 z-[200] bg-background/80backdrop-blur-xl animate-in fade-in duration-300 flex flex-col p-4 md:p-8 lg:p-12">
-                         <div className="max-w-5xl mx-auto w-full flex flex-col h-full gap-4">
-                            <div className="flex items-center justify-between shrink-0 bg-card/50 border border-border p-4 md:px-8 rounded-3xl backdrop-blur-md shadow-sm">
-                               <div className="flex items-center gap-4">
-                                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                    <Edit size={20} />
+                      <div className="fixed inset-0 z-[200] bg-background/90 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:p-4">
+                         <div className="max-w-[98%] mx-auto w-full flex flex-col h-full gap-2">
+                            <div className="flex items-center justify-between shrink-0 bg-card border border-border px-4 py-3 rounded-2xl shadow-sm">
+                               <div className="flex items-center gap-3">
+                                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <Edit size={16} />
                                  </div>
-                                 <div>
-                                   <h2 className="text-lg font-black tracking-tighter text-foreground uppercase leading-none">Editor de Descrição</h2>
-                                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">Foco Total na Escrita</p>
+                                 <div className="flex items-center gap-4">
+                                   <h2 className="text-sm font-black tracking-tighter text-foreground uppercase leading-none">Editor Profissional</h2>
+                                   <div className="h-4 w-px bg-border hidden md:block" />
+                                   <p className="hidden md:block text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Escrita Técnica de Alta Performance</p>
                                  </div>
                                </div>
                                
-                               <div className="flex items-center gap-6">
-                                 <div className="hidden md:flex items-center gap-4 border-r border-border pr-6">
-                                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-10 w-10 flex items-center justify-center bg-background border border-border rounded-xl hover:bg-primary hover:text-primary-foreground transition-all group" title="Negrito (Ctrl+B)">
-                                       <Bold size={18} />
+                               <div className="flex items-center gap-4">
+                                 <div className="flex items-center gap-2 border-r border-border pr-4 mr-2">
+                                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-primary hover:text-primary-foreground transition-all" title="Negrito (Ctrl+B)">
+                                       <Bold size={16} />
                                     </button>
-                                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-10 w-10 flex items-center justify-center bg-background border border-border rounded-xl hover:bg-primary hover:text-primary-foreground transition-all group" title="Título (Alt+U)">
-                                       <Heading size={18} />
+                                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-primary hover:text-primary-foreground transition-all" title="Título (Alt+U)">
+                                       <Heading size={16} />
                                     </button>
                                  </div>
                                  <button 
                                   onClick={() => setIsDescFullscreen(false)}
-                                  className="h-12 px-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                  className="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                                  >
-                                   CURAR & FECHAR
+                                   CONCLUIR EDIÇÃO
                                  </button>
                                </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col bg-card border border-border rounded-[2.5rem] shadow-2xl overflow-hidden relative mt-2">
+                            <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden relative">
                                <textarea
                                 id="descTextareaFull"
                                 autoFocus
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
-                                className="flex-1 w-full p-8 md:p-12 lg:p-16 text-lg md:text-xl lg:text-2xl font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar"
-                                placeholder="Comece a descrever os detalhes luxuosos da sua peça..."
+                                className="flex-1 w-full p-6 md:p-10 text-sm md:text-base font-medium leading-[1.8] bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
+                                placeholder="Descreva os detalhes luxuosos da sua peça com calma e precisão..."
                                />
-                               <div className="absolute bottom-8 right-8 flex items-center gap-2 opacity-30 pointer-events-none items-center">
-                                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Pressione ESC para Finalizar</span>
+                               <div className="absolute bottom-6 right-8 flex items-center gap-3 opacity-20 pointer-events-none">
+                                  <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">Salvamento Automático</span>
                                 </div>
                             </div>
                          </div>

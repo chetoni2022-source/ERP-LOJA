@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Button, Input } from '../../components/ui';
@@ -93,17 +93,13 @@ export default function UnitEconomicsPage() {
     global_tax: 0
   });
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
-    fetchData();
-  }, [user, fetchData]);
-
-  async function fetchData() {
     setLoading(true);
     try {
       const [productsRes, settingsRes] = await Promise.all([
         supabase.from('products').select('*').order('name'),
-        supabase.from('store_settings').select('*').eq('user_id', user?.id).maybeSingle()
+        supabase.from('store_settings').select('*').eq('user_id', user.id).maybeSingle()
       ]);
 
       if (productsRes.data) setProducts(productsRes.data);
@@ -123,7 +119,11 @@ export default function UnitEconomicsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));

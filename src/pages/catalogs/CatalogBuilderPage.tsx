@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import {
   Loader2, Plus, Store, Link as LinkIcon, ExternalLink, Trash2, Edit2,
-  Palette, X, Check, CheckCircle2, Tags, Package, Sliders
+  Palette, X, Check, CheckCircle2, Tags, Package, Sliders, Eye
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -37,6 +37,7 @@ export default function CatalogBuilderPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [pickerTab, setPickerTab] = useState<'products' | 'categories'>('products');
   const [saving, setSaving] = useState(false);
+  const [viewingProduct, setViewingProduct] = useState<any | null>(null);
 
   useEffect(() => { fetchData(); }, [user]);
 
@@ -268,26 +269,52 @@ export default function CatalogBuilderPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 border border-border rounded-xl p-4 bg-muted/20 max-h-[360px] overflow-y-auto">
                 {products.length === 0 ? (
                   <div className="col-span-full py-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</div>
-                ) : products.map(p => (
-                  <div key={p.id} onClick={() => toggleProduct(p.id)}
-                    className="cursor-pointer border rounded-xl overflow-hidden flex flex-col relative transition-all"
-                    style={{ borderColor: selectedProducts.includes(p.id) ? 'hsl(var(--primary))' : 'hsl(var(--border))', boxShadow: selectedProducts.includes(p.id) ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' }}>
-                    <div className="aspect-square bg-muted overflow-hidden border-b border-border">
-                      {p.image_url ? <img src={p.image_url} alt={p.name} className="object-cover h-full w-full" /> : <Store className="h-6 w-6 text-muted-foreground/30 m-auto" />}
-                    </div>
-                    <div className="p-2 bg-card">
-                      <span className="text-[11px] font-semibold line-clamp-2">{p.name}</span>
-                      <span className="text-[10px] text-primary font-bold block mt-0.5">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.price)}
-                      </span>
-                    </div>
-                    {selectedProducts.includes(p.id) && (
-                      <div className="absolute top-1.5 right-1.5 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
+                ) : products.map(p => {
+                  const isSelected = selectedProducts.includes(p.id);
+                  const displayImg = getProxyUrl(p.image_url);
+                  return (
+                    <div key={p.id} onClick={() => toggleProduct(p.id)}
+                      className="group/item cursor-pointer border rounded-xl overflow-hidden flex flex-col relative transition-all bg-card hover:shadow-md"
+                      style={{ borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))', boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' }}>
+                      <div className="aspect-square bg-muted overflow-hidden border-b border-border relative">
+                        {displayImg ? <img src={displayImg} alt={p.name} className="object-cover h-full w-full" /> : <Store className="h-6 w-6 text-muted-foreground/30 m-auto" />}
+                        
+                        {/* Action buttons on hover */}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                           <button 
+                             type="button"
+                             onClick={(e) => { e.stopPropagation(); setViewingProduct(p); }}
+                             className="h-8 w-8 bg-white text-black rounded-lg flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-lg"
+                             title="Ver Detalhes"
+                           >
+                             <Eye size={16} />
+                           </button>
+                           {isSelected && (
+                             <button 
+                               type="button"
+                               onClick={(e) => { e.stopPropagation(); toggleProduct(p.id); }}
+                               className="h-8 w-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                               title="Remover do Catálogo"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                           )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <div className="p-2 bg-card">
+                        <span className="text-[11px] font-semibold line-clamp-2">{p.name}</span>
+                        <span className="text-[10px] text-primary font-bold block mt-0.5">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.price)}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-1.5 left-1.5 h-5 w-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -391,6 +418,55 @@ export default function CatalogBuilderPage() {
           );
         })}
       </div>
+      </div>
+      
+      {/* Product Detail Modal */}
+      {viewingProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="relative aspect-square bg-muted">
+                {viewingProduct.image_url ? (
+                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
+                ) : (
+                  <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
+                )}
+                <button onClick={() => setViewingProduct(null)} className="absolute top-3 right-3 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors">
+                  <X size={18} />
+                </button>
+             </div>
+             <div className="p-6 space-y-4">
+                <div>
+                   <h3 className="text-xl font-black text-foreground">{viewingProduct.name}</h3>
+                   <p className="text-primary font-black text-lg mt-1">
+                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(viewingProduct.sale_price || viewingProduct.price)}
+                   </p>
+                </div>
+                
+                <div className="flex gap-4">
+                   <div className="px-3 py-1.5 bg-muted rounded-lg border border-border">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Estoque</span>
+                      <span className="text-sm font-black">{viewingProduct.stock_quantity} unidades</span>
+                   </div>
+                   {viewingProduct.sku && (
+                     <div className="px-3 py-1.5 bg-muted rounded-lg border border-border flex-1">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase block">SKU</span>
+                        <span className="text-sm font-mono font-bold truncate block">{viewingProduct.sku}</span>
+                     </div>
+                   )}
+                </div>
+
+                {viewingProduct.description && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sobre o Produto</span>
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4 italic">"{viewingProduct.description}"</p>
+                  </div>
+                )}
+
+                <Button onClick={() => setViewingProduct(null)} className="w-full bg-foreground text-background font-bold h-11 rounded-xl mt-2">Fechar Detalhes</Button>
+             </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 }

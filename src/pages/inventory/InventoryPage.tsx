@@ -624,8 +624,7 @@ export default function InventoryPage() {
     setDraggedIdx(null);
   }
 
-  // Description toolbar: wrap selected text
-  function applyFormat(format: 'bold' | 'big', inputId: string = 'descTextarea') {
+  function applyFormat(format: 'bold' | 'italic' | 'big', inputId: string = 'descTextarea') {
     const el = document.getElementById(inputId) as HTMLTextAreaElement;
     if (!el) return;
     const start = el.selectionStart;
@@ -634,16 +633,20 @@ export default function InventoryPage() {
     
     // If no selection, we don't do anything or we could insert placeholders
     if (start === end) {
-      const placeholder = format === 'bold' ? '****' : '++++';
+      let placeholder = '';
+      let cursorOffset = 0;
+      if (format === 'bold') { placeholder = '****'; cursorOffset = 2; }
+      else if (format === 'italic') { placeholder = '**'; cursorOffset = 1; }
+      else if (format === 'big') { placeholder = '++++'; cursorOffset = 2; }
+      
       const newVal = description.slice(0, start) + placeholder + description.slice(end);
       setDescription(newVal);
+      saveToHistory(newVal);
       setTimeout(() => {
         el.focus();
-        el.setSelectionRange(start + 2, start + 2);
+        el.setSelectionRange(start + cursorOffset, start + cursorOffset);
       }, 0);
       return;
-    }
-
     }
     
     let wrapped = '';

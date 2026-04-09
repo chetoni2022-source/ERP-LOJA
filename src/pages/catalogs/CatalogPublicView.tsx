@@ -109,11 +109,17 @@ export default function CatalogPublicView() {
   async function fetchCatalog(){
     try{
       // First, find the catalog by ID or Slug
-      const {data:cat, error:ce} = await supabase
-        .from('catalogs')
-        .select('*')
-        .or(`id.eq.${id},slug.eq.${id}`)
-        .single();
+      // UUID check prevents "invalid input syntax" error on Postgres
+      const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
+      let query = supabase.from('catalogs').select('*');
+      if (isUuid) {
+        query = query.or(`id.eq.${id},slug.eq.${id}`);
+      } else {
+        query = query.eq('slug', id);
+      }
+      
+      const { data: cat, error: ce } = await query.single();
 
       if(ce||!cat) throw new Error('Catálogo não encontrado.');
       setCatalog(cat);

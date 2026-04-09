@@ -60,6 +60,26 @@ function renderDesc(text: string, accentColor: string) {
 
 const clamp = (min: number, max: number) => `clamp(${min}px, 5vw, ${max}px)`;
 
+const Skeleton = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={`animate-pulse bg-muted/20 rounded-lg ${className}`} style={style} />
+);
+
+const CatalogSkeleton = () => (
+  <div className="catalog-container py-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-square w-full rounded-2xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function CatalogPublicView() {
   const { id } = useParams<{ id: string }>();
   const [catalog, setCatalog] = useState<any>(null);
@@ -88,25 +108,26 @@ export default function CatalogPublicView() {
 
   async function fetchCatalog(){
     try{
-      const {data:cat,error:ce}=await supabase.from('catalogs').select('*').eq('id',id).single();
+      // First, find the catalog by ID or Slug
+      const {data:cat, error:ce} = await supabase
+        .from('catalogs')
+        .select('*')
+        .or(`id.eq.${id},slug.eq.${id}`)
+        .single();
+
       if(ce||!cat) throw new Error('Catálogo não encontrado.');
       setCatalog(cat);
 
-      const {data:rel}=await supabase.from('catalog_items').select('product_id').eq('catalog_id',id);
-      let pids=rel?.map((r:any)=>r.product_id)||[];
-      const {data:cl}=await supabase.from('catalog_categories').select('category_id').eq('catalog_id',id);
-      if(cl&&cl.length>0){const {data:cp}=await supabase.from('products').select('id').in('category_id',cl.map((l:any)=>l.category_id));if(cp)pids=[...new Set([...pids,...cp.map((p:any)=>p.id)])]; }
+      // Parallel fetch items and brand settings
+      const [itemsRes, settingsRes] = await Promise.all([
+        fetchItems(cat.id),
+        supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position,whatsapp_number').eq('user_id', cat.user_id).limit(1).maybeSingle()
+      ]);
 
-      let all:CatalogItem[]=[];
-      if(pids.length>0){const {data:pd}=await supabase.from('products').select('*').in('id',pids);all=pd||[];}
-
-      const cids=[...new Set(all.map(p=>p.category_id).filter(Boolean))];
-      if(cids.length>0){const {data:cd}=await supabase.from('categories').select('id,name').in('id',cids);const m:Record<string,string>={};(cd||[]).forEach((c:any)=>{m[c.id]=c.name;});setCategoryMap(m);all=all.map(p=>({...p,_categoryName:p.category_id?m[p.category_id]:undefined}));}
-      setItems(all);
-
-      const {data:sd}=await supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position,whatsapp_number').eq('user_id', cat.user_id).limit(1).maybeSingle();
+      const sd = settingsRes.data;
       const b={name:sd?.store_name||'Laris Acessórios',logo:sd?.logo_url||null,favicon:sd?.favicon_url||null,logoW:sd?.logo_width||200,logoH:sd?.logo_height||80,logoFit:sd?.logo_fit||'contain',logoPos:sd?.logo_position||'center',whatsapp:sd?.whatsapp_number||null};
       setBrand(b);
+      
       if(b.favicon){
         const proxyFav=getProxyUrl(b.favicon);
         let l=document.querySelector("link[rel~='icon']") as HTMLLinkElement;
@@ -114,7 +135,26 @@ export default function CatalogPublicView() {
         l.href=proxyFav || b.favicon;
       }
       document.title=`${cat.name} — ${b.name}`;
-    }catch(e:any){setError(e.message);}finally{setLoading(false);}
+    }catch(e:any){
+      console.error(e);
+      setError(e.message);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  async function fetchItems(catalogId: string) {
+    const {data:rel}=await supabase.from('catalog_items').select('product_id').eq('catalog_id', catalogId);
+    let pids=rel?.map((r:any)=>r.product_id)||[];
+    const {data:cl}=await supabase.from('catalog_categories').select('category_id').eq('catalog_id', catalogId);
+    if(cl&&cl.length>0){const {data:cp}=await supabase.from('products').select('id').in('category_id',cl.map((l:any)=>l.category_id));if(cp)pids=[...new Set([...pids,...cp.map((p:any)=>p.id)])]; }
+
+    let all:CatalogItem[]=[];
+    if(pids.length>0){const {data:pd}=await supabase.from('products').select('*').in('id',pids);all=pd||[];}
+
+    const cids=[...new Set(all.map(p=>p.category_id).filter(Boolean))];
+    if(cids.length>0){const {data:cd}=await supabase.from('categories').select('id,name').in('id',cids);const m:Record<string,string>={};(cd||[]).forEach((c:any)=>{m[c.id]=c.name;});setCategoryMap(m);all=all.map(p=>({...p,_categoryName:p.category_id?m[p.category_id]:undefined}));}
+    setItems(all);
   }
 
   const theme=resolveTheme(catalog);
@@ -149,8 +189,7 @@ export default function CatalogPublicView() {
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`,'_blank');
   }
 
-  if(loading) return(<div style={{background:'#0c0b09',minHeight:'100svh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14}}><Loader2 className="animate-spin" style={{width:28,height:28,color:'#c9a96e'}}/><p style={{color:'#c9a96e',fontSize:10,letterSpacing:'0.25em',textTransform:'uppercase',fontFamily:'Georgia,serif'}}>Carregando coleção...</p></div>);
-  if(error||!catalog) return(<div style={{background:'#0c0b09',color:'#f0ebe3',minHeight:'100svh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}><ShoppingBag style={{width:44,height:44,marginBottom:14,opacity:0.2,color:'#c9a96e'}}/><h1 style={{fontSize:20,fontFamily:'Georgia,serif'}}>Coleção Indisponível</h1><p style={{opacity:0.4,marginTop:8,fontSize:12}}>Este catálogo expirou ou o link está incorreto.</p></div>);
+  if(error) return(<div style={{background:'#0c0b09',color:'#f0ebe3',minHeight:'100svh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}><ShoppingBag style={{width:44,height:44,marginBottom:14,opacity:0.2,color:'#c9a96e'}}/><h1 style={{fontSize:20,fontFamily:'Georgia,serif'}}>Coleção Indisponível</h1><p style={{opacity:0.4,marginTop:8,fontSize:12}}>Este catálogo expirou ou o link está incorreto.</p></div>);
 
   return(
     <div style={{background:theme.bg,color:theme.text,minHeight:'100svh',fontFamily:theme.sans}}>
@@ -261,65 +300,68 @@ export default function CatalogPublicView() {
       </div>
 
       {/* ── GRID ── */}
-      <div className="catalog-container" style={{padding:'32px 0 120px'}}>
-        <p style={{fontFamily:theme.sans,fontSize:10,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:20,fontWeight:600}}>
-          {filtered.length} {filtered.length===1?'item encontrado':'itens encontrados'} {search&&`para "${search}"`}
-        </p>
-        {filtered.length===0
-          ? <div style={{textAlign:'center',padding:'80px 0',color:theme.muted,background:theme.cardBg,borderRadius:20,border:`1px dashed ${theme.border}`}}><ShoppingBag style={{width:40,height:40,margin:'0 auto 16px',opacity:0.2,color:theme.accent}}/><p style={{fontSize:14,fontFamily:theme.sans,fontWeight:500}}>Nenhuma peça encontrada nesta categoria.</p></div>
-          : <div className="product-grid" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
-              {filtered.map((item,i)=>{
-                const isSoldOut=item.stock_quantity<=0;
-                const displayImg=item.images?.[0]||item.image_url;
-                const price=item.sale_price||item.price;
-                const isOnSale=!!(item.sale_price&&item.sale_price<item.price);
-                const inCart=cart.find(c=>c.item.id===item.id);
-                const maxQty=item.stock_quantity;
-                return(
-                  <div key={item.id} className="animate-in fade-in zoom-in-95 fill-mode-both" style={{animationDelay:`${i*40}ms`,display:'flex',flexDirection:'column',opacity:isSoldOut?0.5:1,transition:'transform 0.3s ease',cursor:'pointer'}}
-                    onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-4px)')} onMouseLeave={e=>(e.currentTarget.style.transform='translateY(0)')}>
-                    {/* Image */}
-                    <div style={{position:'relative',aspectRatio:'1/1',background:theme.cardBg,border:`1px solid ${theme.border}`,overflow:'hidden',marginBottom:12,borderRadius:12}}
-                      onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>
-                      {displayImg
-                        ? <img src={getProxyUrl(displayImg) || ''} alt={item.name} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',}}
-                            onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}/>
-                        : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:32,height:32,color:theme.text}}/></div>
-                      }
-                      {isSoldOut&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:`${theme.bg}b0`,backdropFilter:'blur(4px)'}}><span style={{fontSize:10,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',padding:'6px 14px',color:'#fff',background:theme.accent,borderRadius:6,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>Esgotado</span></div>}
-                      {isOnSale&&!isSoldOut&&<div style={{position:'absolute',top:10,left:10,fontSize:8,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.15em',textTransform:'uppercase',padding:'4px 10px',background:theme.accent,color:onAccent,borderRadius:6,boxShadow:'0 4px 12px rgba(0,0,0,0.2)'}}>Oferta</div>}
-                      {item._categoryName&&<div style={{position:'absolute',bottom:10,right:10,fontSize:8,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',padding:'3px 10px',background:`${theme.bg}e0`,color:theme.accent,border:`1px solid ${theme.accent}30`,backdropFilter:'blur(10px)',borderRadius:6}}>{item._categoryName}</div>}
-                    </div>
-                    {/* Info */}
-                    <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 4px'}}>
-                      <p style={{fontFamily:theme.serif,fontSize:16,fontWeight:500,lineHeight:1.25,color:theme.text,marginBottom:6,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}
-                        onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>{item.name}</p>
-                      <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-                        <span style={{fontFamily:theme.sans,fontSize:15,fontWeight:700,color:isOnSale?theme.accent:theme.text}}>{fmt(price)}</span>
-                        {isOnSale&&<span style={{fontFamily:theme.sans,fontSize:11,color:theme.muted,textDecoration:'line-through',fontWeight:500}}>{fmt(item.price)}</span>}
+      {loading ? <CatalogSkeleton /> : (
+        <div className="catalog-container" style={{padding:'32px 0 120px'}}>
+          <p style={{fontFamily:theme.sans,fontSize:10,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:20,fontWeight:600}}>
+            {filtered.length} {filtered.length===1?'item encontrado':'itens encontrados'} {search&&`para "${search}"`}
+          </p>
+          {filtered.length===0
+            ? <div style={{textAlign:'center',padding:'80px 0',color:theme.muted,background:theme.cardBg,borderRadius:20,border:`1px dashed ${theme.border}`}}><ShoppingBag style={{width:40,height:40,margin:'0 auto 16px',opacity:0.2,color:theme.accent}}/><p style={{fontSize:14,fontFamily:theme.sans,fontWeight:500}}>Nenhuma peça encontrada nesta categoria.</p></div>
+            : <div className="product-grid" style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:12}}>
+                {filtered.map((item, i) => {
+                  const isSoldOut = item.stock_quantity <= 0;
+                  const displayImg = item.images?.[0] || item.image_url;
+                  const price = item.sale_price || item.price;
+                  const isOnSale = !!(item.sale_price && item.sale_price < item.price);
+                  const inCart = cart.find(c => c.item.id === item.id);
+                  const maxQty = item.stock_quantity;
+                  
+                  return (
+                    <div key={item.id} className="animate-in fade-in zoom-in-95 fill-mode-both" style={{animationDelay:`${i*40}ms`,display:'flex',flexDirection:'column',opacity:isSoldOut?0.5:1,transition:'transform 0.3s ease',cursor:'pointer'}}
+                      onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-4px)')} onMouseLeave={e=>(e.currentTarget.style.transform='translateY(0)')}>
+                      {/* Image */}
+                      <div style={{position:'relative',aspectRatio:'1/1',background:theme.cardBg,border:`1px solid ${theme.border}`,overflow:'hidden',marginBottom:12,borderRadius:12}}
+                        onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>
+                        {displayImg
+                          ? <img src={getProxyUrl(displayImg) || ''} alt={item.name} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',}}
+                              onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}/>
+                          : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:32,height:32,color:theme.text}}/></div>
+                        }
+                        {isSoldOut&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:`${theme.bg}b0`,backdropFilter:'blur(4px)'}}><span style={{fontSize:10,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',padding:'6px 14px',color:'#fff',background:theme.accent,borderRadius:6,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>Esgotado</span></div>}
+                        {isOnSale&&!isSoldOut&&<div style={{position:'absolute',top:10,left:10,fontSize:8,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.15em',textTransform:'uppercase',padding:'4px 10px',background:theme.accent,color:onAccent,borderRadius:6,boxShadow:'0 4px 12px rgba(0,0,0,0.2)'}}>Oferta</div>}
+                        {item._categoryName&&<div style={{position:'absolute',bottom:10,right:10,fontSize:8,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',padding:'3px 10px',background:`${theme.bg}e0`,color:theme.accent,border:`1px solid ${theme.accent}30`,backdropFilter:'blur(10px)',borderRadius:6}}>{item._categoryName}</div>}
                       </div>
-                      {/* Cart button */}
-                      {!isSoldOut&&(
-                        inCart
-                          ? <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:theme.accent,padding:'10px 14px',borderRadius:8,boxShadow:`0 4px 14px ${theme.accent}40`}}>
-                              <button onClick={()=>changeQty(item.id,-1)} style={{background:'none',border:'none',cursor:'pointer',color:onAccent,display:'flex',padding:4}}><Minus style={{width:14,height:14,strokeWidth:3}}/></button>
-                              <span style={{fontFamily:theme.sans,fontSize:11,fontWeight:800,color:onAccent,letterSpacing:'0.05em'}}>{inCart.qty} no carrinho</span>
-                              <button onClick={()=>{if(inCart.qty<maxQty)changeQty(item.id,1);}} style={{background:'none',border:'none',cursor:inCart.qty>=maxQty?'not-allowed':'pointer',color:onAccent,display:'flex',padding:4,opacity:inCart.qty>=maxQty?0.4:1}}><Plus style={{width:14,height:14,strokeWidth:3}}/></button>
-                            </div>
-                          : <button onClick={()=>addToCart(item,1)}
-                              style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 0',fontSize:10,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.18em',textTransform:'uppercase',background:theme.accent,color:onAccent,border:'none',cursor:'pointer',borderRadius:8,transition:'all 0.3s',boxShadow:`0 4px 14px ${theme.accent}30`}}
-                              onMouseEnter={e=>{e.currentTarget.style.opacity='0.9';e.currentTarget.style.transform='scale(1.02)'}} onMouseLeave={e=>{e.currentTarget.style.opacity='1';e.currentTarget.style.transform='scale(1)'}}>
-                              <ShoppingCart style={{width:14,height:14,strokeWidth:2.5}}/> Comprar
-                            </button>
-                      )}
-                      {isSoldOut&&<div style={{padding:'12px 0',fontSize:10,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,textAlign:'center',border:`1px solid ${theme.border}`,borderRadius:8,background:`${theme.border}10`}}>Indisponível</div>}
+                      {/* Info */}
+                      <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 4px'}}>
+                        <p style={{fontFamily:theme.serif,fontSize:16,fontWeight:500,lineHeight:1.25,color:theme.text,marginBottom:6,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}
+                          onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>{item.name}</p>
+                        <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+                          <span style={{fontFamily:theme.sans,fontSize:15,fontWeight:700,color:isOnSale?theme.accent:theme.text}}>{fmt(price)}</span>
+                          {isOnSale&&<span style={{fontFamily:theme.sans,fontSize:11,color:theme.muted,textDecoration:'line-through',fontWeight:500}}>{fmt(item.price)}</span>}
+                        </div>
+                        {/* Cart button */}
+                        {!isSoldOut&&(
+                          inCart
+                            ? <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:theme.accent,padding:'10px 14px',borderRadius:8,boxShadow:`0 4px 14px ${theme.accent}40`}}>
+                                <button onClick={()=>changeQty(item.id,-1)} style={{background:'none',border:'none',cursor:'pointer',color:onAccent,display:'flex',padding:4}}><Minus style={{width:14,height:14,strokeWidth:3}}/></button>
+                                <span style={{fontFamily:theme.sans,fontSize:11,fontWeight:800,color:onAccent,letterSpacing:'0.05em'}}>{inCart.qty} no carrinho</span>
+                                <button onClick={()=>{if(inCart.qty<maxQty)changeQty(item.id,1);}} style={{background:'none',border:'none',cursor:inCart.qty>=maxQty?'not-allowed':'pointer',color:onAccent,display:'flex',padding:4,opacity:inCart.qty>=maxQty?0.4:1}}><Plus style={{width:14,height:14,strokeWidth:3}}/></button>
+                              </div>
+                            : <button onClick={()=>addToCart(item,1)}
+                                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 0',fontSize:10,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.18em',textTransform:'uppercase',background:theme.accent,color:onAccent,border:'none',cursor:'pointer',borderRadius:8,transition:'all 0.3s',boxShadow:`0 4px 14px ${theme.accent}30`}}
+                                onMouseEnter={e=>{e.currentTarget.style.opacity='0.9';e.currentTarget.style.transform='scale(1.02)'}} onMouseLeave={e=>{e.currentTarget.style.opacity='1';e.currentTarget.style.transform='scale(1)'}}>
+                                <ShoppingCart style={{width:14,height:14,strokeWidth:2.5}}/> Comprar
+                              </button>
+                        )}
+                        {isSoldOut&&<div style={{padding:'12px 0',fontSize:10,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,textAlign:'center',border:`1px solid ${theme.border}`,borderRadius:8,background:`${theme.border}10`}}>Indisponível</div>}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-        }
-      </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+      )}
 
       {/* ── FOOTER ── */}
       <footer style={{borderTop:`1px solid ${theme.border}`,padding:'64px 0 48px',background:theme.cardBg,position:'relative',zIndex:10}}>

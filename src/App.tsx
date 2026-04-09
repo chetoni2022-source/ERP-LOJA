@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './components/theme-provider';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
@@ -69,7 +69,7 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <HashRouter>
+      <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
@@ -85,7 +85,7 @@ export default function App() {
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
           </Routes>
         </Suspense>
-      </HashRouter>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

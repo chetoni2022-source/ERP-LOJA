@@ -41,6 +41,7 @@ export default function CatalogBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<any | null>(null);
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
+  const [catalogSlug, setCatalogSlug] = useState('');
 
   useEffect(() => { fetchData(); }, [user]);
 
@@ -66,6 +67,7 @@ export default function CatalogBuilderPage() {
     setCustomColors({ bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' });
     setSelectedProducts([]); setSelectedCategories([]);
     setHideOutOfStock(false);
+    setCatalogSlug('');
   };
 
   const openEdit = async (cat: any) => {
@@ -77,6 +79,7 @@ export default function CatalogBuilderPage() {
     setSelectedTheme(isCustom ? 'luxury' : (cat.theme || 'luxury'));
     if (isCustom && cat.custom_colors) setCustomColors(cat.custom_colors);
     setHideOutOfStock(cat.settings?.hide_out_of_stock || false);
+    setCatalogSlug(cat.slug || '');
 
     const { data: items } = await supabase.from('catalog_items').select('product_id').eq('catalog_id', cat.id);
     setSelectedProducts(items?.map(i => i.product_id) || []);
@@ -103,6 +106,7 @@ export default function CatalogBuilderPage() {
         description: catalogDesc, 
         theme, 
         user_id: user.id,
+        slug: catalogSlug.trim().toLowerCase() || null,
         settings: { hide_out_of_stock: hideOutOfStock }
       };
       if (useCustomColors) payload.custom_colors = customColors;
@@ -143,7 +147,8 @@ export default function CatalogBuilderPage() {
   }
 
   async function copyLink(cat: any) {
-    const link = `${window.location.origin}/#/c/${cat.id}`;
+    const ident = cat.slug || cat.id;
+    const link = `${window.location.origin}/c/${ident}`;
     await navigator.clipboard.writeText(link);
     success('Link copiado! 🔗');
   }
@@ -177,6 +182,13 @@ export default function CatalogBuilderPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome da Coleção *</Label>
                 <Input required value={catalogName} onChange={e => setCatalogName(e.target.value)} placeholder="Coleção Verão 2026" className="h-11 bg-background" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL Curta (Opcional)</Label>
+                <div className="flex items-center gap-2">
+                  <div className="h-11 flex items-center px-3 bg-muted border border-border rounded-lg text-[10px] font-mono whitespace-nowrap text-muted-foreground">/c/</div>
+                  <Input value={catalogSlug} onChange={e => setCatalogSlug(e.target.value.replace(/[^a-z0-9-]/gi, '-'))} placeholder="colecao-verao" className="h-11 bg-background" />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição Pública</Label>
@@ -488,7 +500,7 @@ export default function CatalogBuilderPage() {
                     <LinkIcon className="h-3.5 w-3.5 mr-1.5" /> Copiar Link
                   </Button>
                   <a 
-                    href={`${window.location.origin}/#/c/${cat.id}`} 
+                    href={`${window.location.origin}/c/${cat.slug || cat.id}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-muted hover:text-primary transition-colors bg-background shrink-0"

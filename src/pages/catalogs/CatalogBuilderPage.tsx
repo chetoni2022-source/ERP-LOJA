@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
+
 const PRESET_THEMES = [
   { id: 'luxury', label: 'Ouro',  bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' },
   { id: 'rose',   label: 'Rosé',  bg: '#fff8f5', accent: '#cb8474', text: '#2a1a14' },
@@ -272,12 +274,26 @@ export default function CatalogBuilderPage() {
                 ) : products.map(p => {
                   const isSelected = selectedProducts.includes(p.id);
                   const displayImg = getProxyUrl(p.image_url);
+                  const outOfStock = (p.stock_quantity || 0) <= 0;
+                  
                   return (
-                    <div key={p.id} onClick={() => toggleProduct(p.id)}
-                      className="group/item cursor-pointer border rounded-xl overflow-hidden flex flex-col relative transition-all bg-card hover:shadow-md"
-                      style={{ borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))', boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' }}>
+                    <div key={p.id} onClick={() => !outOfStock && toggleProduct(p.id)}
+                      className={cn(
+                        "group/item border rounded-xl overflow-hidden flex flex-col relative transition-all bg-card",
+                        !outOfStock ? "cursor-pointer hover:shadow-md" : "opacity-60 grayscale-[0.2] cursor-not-allowed"
+                      )}
+                      style={{ 
+                        borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))', 
+                        boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' 
+                      }}>
                       <div className="aspect-square bg-muted overflow-hidden border-b border-border relative">
                         {displayImg ? <img src={displayImg} alt={p.name} className="object-cover h-full w-full" /> : <Store className="h-6 w-6 text-muted-foreground/30 m-auto" />}
+                        
+                        {outOfStock && (
+                          <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center p-2 text-center pointer-events-none">
+                            <span className="bg-red-500 text-white text-[9px] font-black uppercase tracking-tighter px-2 py-1 rounded shadow-sm">Esgotado</span>
+                          </div>
+                        )}
                         
                         {/* Action buttons on hover */}
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover/item:opacity-100 transition-opacity">

@@ -205,9 +205,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         crossOrigin="anonymous"
                         style={{
                           height: 'auto',
-                          maxHeight: Math.min(brand.logoH, 120),
+                          maxHeight: brand.logoH,
                           width: 'auto',
-                          maxWidth: Math.min(brand.logoW, 320),
+                          maxWidth: brand.logoW,
                           objectFit: brand.logoFit as any,
                           objectPosition: brand.logoPos
                         }}
@@ -222,10 +222,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <span className="font-black text-[18px] tracking-tight truncate text-foreground">{brand.name}</span>
                 </div>
               )}
-              <div className="mt-4 flex flex-col items-center">
-                <span className="font-black text-[9px] uppercase tracking-[0.25em] truncate text-muted-foreground/50">{brand.name}</span>
-                <div className="h-0.5 w-4 bg-primary/20 rounded-full mt-1.5 transition-all duration-500 group-hover:w-8 group-hover:bg-primary/40" />
-              </div>
+              <div className="mt-2 h-0.5 w-4 bg-primary/20 rounded-full transition-all duration-500 group-hover:w-8 group-hover:bg-primary/40" />
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-center w-full">

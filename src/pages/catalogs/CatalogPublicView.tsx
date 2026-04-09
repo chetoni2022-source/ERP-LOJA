@@ -201,7 +201,19 @@ export default function CatalogPublicView() {
         <div className="catalog-container">
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',paddingBottom:24}}>
             {brand.logo
-              ? <img src={getProxyUrl(brand.logo) || ''} alt={brand.name} style={{height:'auto',maxHeight:brand.logoH,width:'auto',maxWidth:brand.logoW,objectFit:brand.logoFit as any,objectPosition:brand.logoPos,filter:isLight?'none':'brightness(1.1) drop-shadow(0 4px 20px rgba(0,0,0,0.4))'}}/>
+              ? <img 
+                  src={getProxyUrl(brand.logo) || ''} 
+                  alt={brand.name} 
+                  style={{
+                    height:'auto',
+                    maxHeight: brand.logoH,
+                    width:'auto',
+                    maxWidth: brand.logoW,
+                    objectFit: brand.logoFit as any,
+                    objectPosition: brand.logoPos,
+                    display: 'block'
+                  }}
+                />
               : <div style={{textAlign:'center'}}><p style={{fontFamily:theme.serif,fontSize:38,fontWeight:500,color:theme.text,letterSpacing:'-0.02em'}}>{brand.name}</p><p style={{fontFamily:theme.sans,fontSize:9,letterSpacing:'0.4em',textTransform:'uppercase',color:theme.accent,marginTop:4}}>Luxury Essentials</p></div>
             }
           </div>

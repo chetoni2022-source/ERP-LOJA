@@ -1932,9 +1932,38 @@ export default function InventoryPage() {
                           <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/10">
                             <div>
                                <h3 className="font-black text-sm uppercase tracking-widest">Selecione uma Foto da Galeria</h3>
-                               <p className="text-[10px] text-muted-foreground mt-0.5">Vincule uma imagem à variação "{variations[isSelectingImageForVar]?.name}"</p>
+                               <p className="text-[10px] text-muted-foreground mt-0.5">Vincule uma imagem e defina o estoque da variação "{variations[isSelectingImageForVar]?.name}"</p>
                             </div>
                             <button onClick={() => setIsSelectingImageForVar(null)} className="h-8 w-8 flex items-center justify-center bg-background border border-border rounded-full hover:bg-muted transition-colors"><X size={14} /></button>
+                          </div>
+
+                          <div className="p-4 bg-primary/5 border-b border-border/40 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-background flex items-center justify-center border border-border/60">
+                                <Package className="text-primary" size={18} />
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Estoque Desta Variação</p>
+                                <p className="text-xs font-bold">{variations[isSelectingImageForVar]?.name}</p>
+                              </div>
+                            </div>
+                            <div className="w-40 relative">
+                                <input 
+                                  type="number" 
+                                  placeholder="Qtd Disponível"
+                                  value={variations[isSelectingImageForVar]?.stock ?? ''}
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                    const next = [...variations];
+                                    if (isSelectingImageForVar !== null) {
+                                      next[isSelectingImageForVar] = { ...next[isSelectingImageForVar], stock: val };
+                                      setVariations(next);
+                                    }
+                                  }}
+                                  className="w-full bg-background border-2 border-primary/20 rounded-xl py-2.5 px-4 text-sm font-black outline-none focus:border-primary transition-all text-center"
+                                />
+                                <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-lg">Definir Qtd</div>
+                            </div>
                           </div>
                           
                           <div className="p-4 overflow-y-auto max-h-[60vh] bg-background">

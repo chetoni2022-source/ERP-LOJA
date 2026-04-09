@@ -197,8 +197,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   {/* Subtle glow effect behind logo on hover */}
                   <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                   
-                  <div className="relative p-1">
-                    <div className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] rounded-[22px] overflow-hidden border border-white p-1.5 transition-all duration-500 group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)] group-hover:-translate-y-1">
+                  <NavLink to="/dashboard" className="relative p-1 block">
+                    <div className="overflow-hidden transition-all duration-500 group-hover:-translate-y-1">
                       <img 
                         src={brand.logo} 
                         alt="Logo" 
@@ -214,7 +214,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         className="rounded-lg"
                       />
                     </div>
-                  </div>
+                  </NavLink>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-3xl mb-2 shadow-inner border border-primary/5 transition-all duration-500 group-hover:scale-105 group-hover:bg-primary/15">

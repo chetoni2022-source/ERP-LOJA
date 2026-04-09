@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';
@@ -90,6 +90,7 @@ export default function InventoryPage() {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [isZipping, setIsZipping] = useState(false);
+  const [isDescFullscreen, setIsDescFullscreen] = useState(false);
 
   // Video Optimizer States
   const [videoToOptimize, setVideoToOptimize] = useState<File | null>(null);
@@ -571,18 +572,52 @@ export default function InventoryPage() {
   }
 
   // Description toolbar: wrap selected text
-  function applyFormat(format: 'bold' | 'big', ref: React.RefObject<HTMLTextAreaElement>) {
-    const el = ref.current;
+  function applyFormat(format: 'bold' | 'big', inputId: string = 'descTextarea') {
+    const el = document.getElementById(inputId) as HTMLTextAreaElement;
     if (!el) return;
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const selected = description.slice(start, end);
-    if (!selected) return;
+    
+    // If no selection, we don't do anything or we could insert placeholders
+    if (start === end) {
+      const placeholder = format === 'bold' ? '****' : '++++';
+      const newVal = description.slice(0, start) + placeholder + description.slice(end);
+      setDescription(newVal);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + 2, start + 2);
+      }, 0);
+      return;
+    }
+
     const wrapped = format === 'bold' ? `**${selected}**` : `++${selected}++`;
     const newVal = description.slice(0, start) + wrapped + description.slice(end);
     setDescription(newVal);
-    setTimeout(() => { el.focus(); el.setSelectionRange(start, start + wrapped.length); }, 0);
+    
+    // Maintain focus and update selection
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start, start + wrapped.length);
+    }, 0);
   }
+
+  const handleDescKeyDown = (e: React.KeyboardEvent, inputId: string) => {
+    // CTRL + B or CMD + B for Bold
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      applyFormat('bold', inputId);
+    }
+    // ALT + U for Big (Heading-like highlight)
+    if (e.altKey && e.key.toLowerCase() === 'u') {
+      e.preventDefault();
+      applyFormat('big', inputId);
+    }
+    // ESC to exit fullscreen
+    if (e.key === 'Escape' && isDescFullscreen) {
+      setIsDescFullscreen(false);
+    }
+  };
 
   // Pre-calculations for smart formatting
   const orgPrice = parseFloat(price) || 0;
@@ -990,28 +1025,88 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-3 group/desc">
-                    <Label className="font-black text-[10px] uppercase text-foreground/80 tracking-widest block flex items-center gap-2">
-                       Descrição da Peça
-                    </Label>
-                    <p className="text-[10px] text-muted-foreground font-medium">Destaque os diferenciais e materiais do produto.</p>
-                      <div className="flex gap-1 mb-1.5">
-                        {(['bold','big'] as const).map(fmtTag => (
-                          <button key={fmtTag} type="button"
-                            className="h-7 px-3 text-[10px] uppercase font-black tracking-tighter border border-border/60 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
-                            onClick={() => { const el = document.getElementById('descTextarea') as HTMLTextAreaElement; if (!el) return; const s = el.selectionStart; const e2 = el.selectionEnd; const sel = description.slice(s, e2); if (!sel) return; const w = fmtTag === 'bold' ? `**${sel}**` : `++${sel}++`; setDescription(description.slice(0, s) + w + description.slice(e2)); el.focus(); }}
-                          >{fmtTag === 'bold' ? 'Negrito' : 'Texto Grande'}</button>
-                        ))}
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-3 group/desc relative">
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <Label className="font-black text-[10px] uppercase text-foreground/80 tracking-widest block flex items-center gap-2">
+                           Descrição da Peça
+                        </Label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Destaque os diferenciais e materiais do produto.</p>
                       </div>
-                      <textarea
-                        id="descTextarea"
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
-                        rows={5}
-                        className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all"
-                      />
+                      <button 
+                        type="button"
+                        onClick={() => setIsDescFullscreen(true)}
+                        className="h-8 w-8 flex items-center justify-center bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all border border-border/40 shadow-sm"
+                        title="Expandir para Tela Cheia"
+                      >
+                        <Maximize2 size={16} />
+                      </button>
                     </div>
+
+                    <div className="flex gap-1 mb-1.5">
+                      {(['bold','big'] as const).map(fmtTag => (
+                        <button key={fmtTag} type="button"
+                          className="h-7 px-3 text-[10px] uppercase font-black tracking-tighter border border-border/60 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                          onClick={() => applyFormat(fmtTag, 'descTextarea')}
+                        >
+                          {fmtTag === 'bold' ? 'Negrito (Ctrl+B)' : 'Texto Grande (Alt+U)'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      id="descTextarea"
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
+                      placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
+                      rows={5}
+                      className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all min-h-[120px]"
+                    />
+
+                    {/* Fullscreen Overlay */}
+                    {isDescFullscreen && (
+                      <div className="fixed inset-0 z-[200] bg-background animate-in fade-in duration-300 flex flex-col p-4 md:p-12">
+                         <div className="max-w-4xl mx-auto w-full flex flex-col h-full gap-6">
+                            <div className="flex items-center justify-between shrink-0">
+                               <div>
+                                 <h2 className="text-2xl font-black tracking-tighter text-foreground uppercase">Editor de Descrição</h2>
+                                 <p className="text-sm text-muted-foreground font-medium flex items-center gap-4">
+                                   <span><b>Ctrl + B</b> Negrito</span>
+                                   <span>•</span>
+                                   <span><b>Alt + U</b> Título/Grande</span>
+                                 </p>
+                               </div>
+                               <button 
+                                onClick={() => setIsDescFullscreen(false)}
+                                className="h-12 w-12 flex items-center justify-center bg-muted hover:bg-red-500/10 hover:text-red-500 rounded-2xl transition-all border border-border shadow-sm group"
+                               >
+                                 <Minimize2 size={24} className="group-hover:scale-110 transition-transform" />
+                               </button>
+                            </div>
+
+                            <div className="flex-1 flex flex-col bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden relative">
+                               <div className="bg-muted/50 px-6 py-4 border-b border-border flex gap-2">
+                                  <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="px-4 py-2 bg-background border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all">Negrito</button>
+                                  <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="px-4 py-2 bg-background border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all">Texto Grande</button>
+                               </div>
+                               <textarea
+                                id="descTextareaFull"
+                                autoFocus
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
+                                className="flex-1 w-full p-8 md:p-12 text-lg md:text-xl font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar"
+                                placeholder="Comece a descrever os detalhes luxuosos da sua peça..."
+                               />
+                               <div className="absolute bottom-6 right-8 opacity-40 pointer-events-none">
+                                  <span className="text-[10px] font-black uppercase tracking-widest">Pressione ESC para Sair</span>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                    )}
+                  </div>
                   </div>
                 </div>
 

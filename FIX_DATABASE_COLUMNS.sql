@@ -14,7 +14,8 @@ ADD COLUMN IF NOT EXISTS weight_g INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS length_cm INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS width_cm INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS height_cm INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS additional_costs JSONB DEFAULT '[]'::jsonb;
+ADD COLUMN IF NOT EXISTS additional_costs JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS variations JSONB DEFAULT '[]'::jsonb;
 
 -- Força a atualização do cache do esquema
 NOTIFY pgrst, 'reload schema';

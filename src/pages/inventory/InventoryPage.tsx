@@ -1876,6 +1876,22 @@ export default function InventoryPage() {
 
                                 <p className="text-[11px] font-black uppercase tracking-widest text-foreground truncate pr-6 mt-1" title={v.name}>{v.name}</p>
                                 
+                                <div className="flex items-center gap-2 mt-1.5 bg-muted/20 rounded-lg p-1.5 border border-border/30 group-hover:border-primary/30 transition-colors">
+                                  <Package size={10} className="text-muted-foreground shrink-0" />
+                                  <input 
+                                    type="number" 
+                                    placeholder="Estoque"
+                                    value={v.stock ?? ''}
+                                    onChange={e => {
+                                      const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                      const next = [...variations];
+                                      next[i] = { ...next[i], stock: val };
+                                      setVariations(next);
+                                    }}
+                                    className="w-full bg-transparent border-none text-[9px] font-black uppercase tracking-widest outline-none focus:ring-0 p-0 placeholder:text-muted-foreground/40 text-foreground"
+                                  />
+                                </div>
+                                
                                 <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="absolute top-3 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" title="Remover Variação">
                                   <Trash2 size={12} />
                                 </button>

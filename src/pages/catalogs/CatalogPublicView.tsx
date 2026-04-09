@@ -19,7 +19,7 @@ interface CatalogItem {
   variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string }[] | null;
 }
 
-interface CartItem { item: CatalogItem; qty: number; }
+interface CartItem { item: CatalogItem; qty: number; vIdx?: number | null; }
 
 interface Theme {
   bg: string; accent: string; text: string;
@@ -97,12 +97,18 @@ export default function CatalogPublicView() {
   const [cartOpen, setCartOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CatalogItem|null>(null);
   const [detailQty, setDetailQty] = useState(1);
+  const [selectedVarIdx, setSelectedVarIdx] = useState<number|null>(null);
   const [varImage, setVarImage] = useState<string|null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const socialTimer = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
 
   useEffect(()=>{ if(id) fetchCatalog(); },[id]);
-  useEffect(() => { if(!detailItem) setVarImage(null); }, [detailItem]);
+  useEffect(() => { 
+    if(!detailItem) {
+      setVarImage(null);
+      setSelectedVarIdx(null);
+    } 
+  }, [detailItem]);
   useEffect(()=>{
     const sp=setInterval(()=>{ const n=SOCIALS.names[Math.floor(Math.random()*10)];const a=SOCIALS.actions[Math.floor(Math.random()*5)];setSocial({name:n,action:a});clearTimeout(socialTimer.current);socialTimer.current=setTimeout(()=>setSocial(null),5000); },12000+Math.random()*8000);
     const vp=setInterval(()=>setViewers(v=>Math.max(1,v+(Math.random()>0.5?1:-1))),18000);
@@ -183,18 +189,34 @@ export default function CatalogPublicView() {
   const cartCount=cart.reduce((s,c)=>s+c.qty,0);
   const cartTotal=cart.reduce((s,c)=>s+(c.item.sale_price||c.item.price)*c.qty,0);
 
-  function addToCart(item:CatalogItem,qty=1){
-    setCart(prev=>{const ex=prev.find(c=>c.item.id===item.id);if(ex)return prev.map(c=>c.item.id===item.id?{...c,qty:Math.min(c.qty+qty,item.stock_quantity)}:c);return[...prev,{item,qty:Math.min(qty,item.stock_quantity)}];});
+  function addToCart(item:CatalogItem,qty=1, vIdx: number | null = null){
+    const max = vIdx !== null ? (item.variations?.[vIdx]?.stock ?? 0) : item.stock_quantity;
+    if (max <= 0) return;
+
+    setCart(prev=>{
+      const ex=prev.find(c=>c.item.id===item.id && c.vIdx === vIdx);
+      if(ex) return prev.map(c=> (c.item.id===item.id && c.vIdx === vIdx) ? {...c,qty:Math.min(c.qty+qty, max)} : c);
+      return [...prev,{item,qty:Math.min(qty, max), vIdx}];
+    });
   }
-  function changeQty(itemId:string,delta:number){
-    setCart(prev=>prev.map(c=>{if(c.item.id!==itemId)return c;return{...c,qty:Math.min(Math.max(1,c.qty+delta),c.item.stock_quantity)};}));
+  function changeQty(itemId:string, vIdx: number | null, delta:number){
+    setCart(prev=>prev.map(c=>{
+      if(c.item.id!==itemId || c.vIdx !== vIdx) return c;
+      const max = c.vIdx !== null ? (c.item.variations?.[c.vIdx]?.stock ?? 0) : c.item.stock_quantity;
+      return {...c,qty:Math.min(Math.max(1,c.qty+delta), max)};
+    }));
   }
-  function removeFromCart(itemId:string){setCart(prev=>prev.filter(c=>c.item.id!==itemId));}
+  function removeFromCart(itemId:string, vIdx: number | null){
+    setCart(prev=>prev.filter(c=> !(c.item.id===itemId && c.vIdx === vIdx)));
+  }
 
   function sendCart(){
     if(!cart.length)return;
-    const lines=cart.map(c=>`- ${c.item.name} - ${c.qty}x - ${fmt(c.item.sale_price||c.item.price)} cada (Total: ${fmt((c.item.sale_price||c.item.price)*c.qty)})`);
-    const msg=[`Ola! Gostaria de fazer um pedido do catalogo "${catalog?.name||brand.name}":`,'',...lines,'',`Total: ${fmt(cartTotal)}`,'','Poderia confirmar a disponibilidade?'].join('\n');
+    const lines=cart.map(c=>{
+      const varName = c.vIdx !== null ? `(${c.item.variations?.[c.vIdx]?.name})` : '';
+      return `- ${c.item.name} ${varName} - ${c.qty}x - ${fmt(c.item.sale_price||c.item.price)} cada (Total: ${fmt((c.item.sale_price||c.item.price)*c.qty)})`;
+    });
+    const msg=[`Olá! Gostaria de fazer um pedido do catálogo "${catalog?.name||brand.name}":`,'',...lines,'',`Total: ${fmt(cartTotal)}`,'','Poderia confirmar a disponibilidade?'].join('\n');
     const phone = brand.whatsapp || WA_NUMBER;
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`,'_blank');
   }
@@ -463,11 +485,17 @@ export default function CatalogPublicView() {
                         {!isSoldOut&&(
                           inCart
                             ? <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:theme.accent,padding:'10px 14px',borderRadius:8,boxShadow:`0 4px 14px ${theme.accent}40`}}>
-                                <button onClick={()=>changeQty(item.id,-1)} style={{background:'none',border:'none',cursor:'pointer',color:onAccent,display:'flex',padding:4}}><Minus style={{width:14,height:14,strokeWidth:3}}/></button>
+                                <button onClick={()=>changeQty(item.id, null, -1)} style={{background:'none',border:'none',cursor:'pointer',color:onAccent,display:'flex',padding:4}}><Minus style={{width:14,height:14,strokeWidth:3}}/></button>
                                 <span style={{fontFamily:theme.sans,fontSize:11,fontWeight:800,color:onAccent,letterSpacing:'0.05em'}}>{inCart.qty} no carrinho</span>
-                                <button onClick={()=>{if(inCart.qty<maxQty)changeQty(item.id,1);}} style={{background:'none',border:'none',cursor:inCart.qty>=maxQty?'not-allowed':'pointer',color:onAccent,display:'flex',padding:4,opacity:inCart.qty>=maxQty?0.4:1}}><Plus style={{width:14,height:14,strokeWidth:3}}/></button>
+                                <button onClick={()=>{if(inCart.qty < maxQty) changeQty(item.id, null, 1);}} style={{background:'none',border:'none',cursor:inCart.qty>=maxQty?'not-allowed':'pointer',color:onAccent,display:'flex',padding:4,opacity:inCart.qty>=maxQty?0.4:1}}><Plus style={{width:14,height:14,strokeWidth:3}}/></button>
                               </div>
-                            : <button onClick={()=>addToCart(item,1)}
+                            : <button onClick={()=>{
+                                if (item.variations && item.variations.length > 0) {
+                                  setDetailItem(item);
+                                  return;
+                                }
+                                addToCart(item,1);
+                              }}
                                 style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 0',fontSize:10,fontFamily:theme.sans,fontWeight:800,letterSpacing:'0.18em',textTransform:'uppercase',background:theme.accent,color:onAccent,border:'none',cursor:'pointer',borderRadius:8,transition:'all 0.3s',boxShadow:`0 4px 14px ${theme.accent}30`}}
                                 onMouseEnter={e=>{e.currentTarget.style.opacity='0.9';e.currentTarget.style.transform='scale(1.02)'}} onMouseLeave={e=>{e.currentTarget.style.opacity='1';e.currentTarget.style.transform='scale(1)'}}>
                                 <ShoppingCart style={{width:14,height:14,strokeWidth:2.5}}/> Comprar
@@ -562,14 +590,20 @@ export default function CatalogPublicView() {
                       {img?<img src={getProxyUrl(img) || ''} alt={c.item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<ShoppingBag style={{width:'100%',height:'100%',padding:12,color:theme.muted,opacity:0.2}}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <p style={{fontFamily:theme.serif,fontSize:12,fontWeight:500,color:theme.text,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{c.item.name}</p>
+                      <div style={{display:'flex',alignItems:'center',gap:4}}>
+                        <p style={{fontFamily:theme.serif,fontSize:12,fontWeight:500,color:theme.text,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{c.item.name}</p>
+                        {c.vIdx !== null && <span style={{fontSize:9,fontWeight:700,color:theme.accent,whiteSpace:'nowrap'}}>({c.item.variations?.[c.vIdx]?.name})</span>}
+                      </div>
                       <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,color:theme.accent,marginTop:2}}>{fmt(price)} cada</p>
                     </div>
                     <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                      <button onClick={()=>changeQty(c.item.id,-1)} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:theme.cardBg,border:`1px solid ${theme.border}`,cursor:'pointer',color:theme.text,borderRadius:4}}><Minus style={{width:9,height:9}}/></button>
+                      <button onClick={()=>changeQty(c.item.id, c.vIdx ?? null, -1)} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:theme.cardBg,border:`1px solid ${theme.border}`,cursor:'pointer',color:theme.text,borderRadius:4}}><Minus style={{width:9,height:9}}/></button>
                       <span style={{fontFamily:theme.sans,fontSize:11,fontWeight:700,color:theme.text,minWidth:14,textAlign:'center'}}>{c.qty}</span>
-                      <button onClick={()=>{if(c.qty<c.item.stock_quantity)changeQty(c.item.id,1);}} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:theme.cardBg,border:`1px solid ${theme.border}`,cursor:c.qty>=c.item.stock_quantity?'not-allowed':'pointer',color:theme.text,opacity:c.qty>=c.item.stock_quantity?0.4:1,borderRadius:4}}><Plus style={{width:9,height:9}}/></button>
-                      <button onClick={()=>removeFromCart(c.item.id)} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:'transparent',border:'none',cursor:'pointer',color:theme.muted,marginLeft:2}}><Trash2 style={{width:12,height:12}}/></button>
+                      <button onClick={()=>{
+                        const m = c.vIdx !== null ? (c.item.variations?.[c.vIdx]?.stock ?? 0) : c.item.stock_quantity;
+                        if(c.qty < m) changeQty(c.item.id, c.vIdx ?? null, 1);
+                      }} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:theme.cardBg,border:`1px solid ${theme.border}`,cursor: (c.qty >= (c.vIdx !== null ? (c.item.variations?.[c.vIdx]?.stock ?? 0) : c.item.stock_quantity)) ? 'not-allowed' : 'pointer',color:theme.text,opacity: (c.qty >= (c.vIdx !== null ? (c.item.variations?.[c.vIdx]?.stock ?? 0) : c.item.stock_quantity)) ? 0.4 : 1,borderRadius:4}}><Plus style={{width:9,height:9}}/></button>
+                      <button onClick={()=>removeFromCart(c.item.id, c.vIdx ?? null)} style={{width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:'transparent',border:'none',cursor:'pointer',color:theme.muted,marginLeft:2}}><Trash2 style={{width:12,height:12}}/></button>
                     </div>
                     <p style={{fontFamily:theme.sans,fontSize:11,fontWeight:700,color:theme.text,minWidth:58,textAlign:'right'}}>{fmt(price*c.qty)}</p>
                   </div>
@@ -616,10 +650,15 @@ export default function CatalogPublicView() {
                 {detailItem.sale_price&&<span style={{fontFamily:theme.sans,fontSize:12,color:theme.muted,textDecoration:'line-through'}}>{fmt(detailItem.price)}</span>}
               </div>
               {/* Stock indicator */}
-              <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 12px',background:`${theme.accent}12`,border:`1px solid ${theme.accent}30`,borderRadius:6,marginBottom:14}}>
-                <Package style={{width:13,height:13,color:theme.accent}}/>
-                <span style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,color:theme.accent,letterSpacing:'0.05em'}}>
-                  {detailItem.stock_quantity} {detailItem.stock_quantity===1?'unidade disponível':'unidades disponíveis no estoque'}
+              <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 12px',background:((selectedVarIdx !== null ? detailItem.variations?.[selectedVarIdx]?.stock : detailItem.stock_quantity) || 0) <= 0 ? '#ef444415' : `${theme.accent}12`,border:`1px solid ${((selectedVarIdx !== null ? detailItem.variations?.[selectedVarIdx]?.stock : detailItem.stock_quantity) || 0) <= 0 ? '#ef444440' : `${theme.accent}30`}`,borderRadius:6,marginBottom:14}}>
+                <Package style={{width:13,height:13,color:((selectedVarIdx !== null ? detailItem.variations?.[selectedVarIdx]?.stock : detailItem.stock_quantity) || 0) <= 0 ? '#ef4444' : theme.accent}}/>
+                <span style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,color:((selectedVarIdx !== null ? detailItem.variations?.[selectedVarIdx]?.stock : detailItem.stock_quantity) || 0) <= 0 ? '#ef4444' : theme.accent,letterSpacing:'0.05em'}}>
+                  {selectedVarIdx !== null 
+                    ? (detailItem.variations?.[selectedVarIdx]?.stock || 0) <= 0 
+                      ? 'Opção Esgotada' 
+                      : `${detailItem.variations?.[selectedVarIdx]?.stock} disponíveis desta opção`
+                    : `${detailItem.stock_quantity} unidades disponíveis no estoque`
+                  }
                 </span>
               </div>
               {/* Variations */}
@@ -628,10 +667,37 @@ export default function CatalogPublicView() {
                   <p style={{fontFamily:theme.sans,fontSize:9,fontWeight:600,letterSpacing:'0.2em',textTransform:'uppercase',color:theme.muted,marginBottom:8}}>Opções Neste Modelo</p>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     {detailItem.variations.map((v, i) => {
-                      const isActive = varImage === v.image_url && v.image_url;
+                      const isImgActive = varImage === v.image_url && v.image_url;
+                      const isVarActive = selectedVarIdx === i;
+                      const isOutOfStock = (v.stock ?? 1) <= 0;
+                      
                       return (
-                      <button key={i} onClick={() => v.image_url && setVarImage(v.image_url)} style={{padding:'4px 10px',background:isActive?`${theme.accent}20`:`${theme.border}40`,border:`1px solid ${isActive?theme.accent:theme.border}`,borderRadius:20,fontSize:10,fontFamily:theme.sans,fontWeight:600,color:isActive?theme.accent:theme.text,display:'flex',alignItems:'center',gap:5,cursor:v.image_url?'pointer':'default',transition:'all 0.2s',outline:'none'}}>
-                        {v.image_url && <ImageIcon style={{width:10,height:10,opacity:isActive?1:0.6}}/>}
+                      <button 
+                        key={i} 
+                        onClick={() => {
+                          setSelectedVarIdx(i);
+                          if(v.image_url) setVarImage(v.image_url);
+                        }} 
+                        style={{
+                          padding:'4px 10px',
+                          background:isVarActive?`${theme.accent}20`:`${theme.border}40`,
+                          border:`1px solid ${isVarActive?theme.accent:theme.border}`,
+                          borderRadius:20,
+                          fontSize:10,
+                          fontFamily:theme.sans,
+                          fontWeight:600,
+                          color:isVarActive?theme.accent:theme.text,
+                          display:'flex',
+                          alignItems:'center',
+                          gap:5,
+                          cursor:'pointer',
+                          transition:'all 0.2s',
+                          outline:'none',
+                          opacity:isOutOfStock?0.5:1,
+                          textDecoration:isOutOfStock?'line-through':'none'
+                        }}
+                      >
+                        {v.image_url && <ImageIcon style={{width:10,height:10,opacity:isImgActive?1:0.6}}/>}
                         <span style={{width:6,height:6,borderRadius:'50%',background:v.type==='size'?'#3b82f6':v.type==='color'?'#f59e0b':'#8b5cf6'}}/>
                         {v.name}
                       </button>
@@ -641,7 +707,7 @@ export default function CatalogPublicView() {
               )}
               {/* Description */}
               {detailItem.description&&(
-                <div style={{marginBottom:14}}>
+                <div style={{marginBottom:14,marginTop:16}}>
                   <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:6}}>Sobre a Peça</p>
                   <p style={{fontFamily:theme.sans,fontSize:12,lineHeight:1.75,color:theme.text,opacity:0.85}}>
                     {renderDesc(detailItem.description,theme.accent)}
@@ -649,12 +715,6 @@ export default function CatalogPublicView() {
                 </div>
               )}
             </div>
-            {/* Add to cart from modal */}
-            <div style={{padding:'14px 18px',borderTop:`1px solid ${theme.border}`,display:'flex',gap:10,alignItems:'center'}}>
-              <div style={{display:'flex',alignItems:'center',border:`1px solid ${theme.border}`,borderRadius:4,overflow:'hidden',flexShrink:0}}>
-                <button onClick={()=>setDetailQty(q=>Math.max(1,q-1))} style={{width:36,height:44,display:'flex',alignItems:'center',justifyContent:'center',background:theme.bg,border:'none',cursor:'pointer',color:theme.text}}><Minus style={{width:13,height:13}}/></button>
-                <span style={{width:36,textAlign:'center',fontFamily:theme.sans,fontWeight:700,fontSize:14,color:theme.text}}>{detailQty}</span>
-                <button onClick={()=>setDetailQty(q=>Math.min(q+1,detailItem.stock_quantity))} style={{width:36,height:44,display:'flex',alignItems:'center',justifyContent:'center',background:theme.bg,border:'none',cursor:detailQty>=detailItem.stock_quantity?'not-allowed':'pointer',color:theme.text,opacity:detailQty>=detailItem.stock_quantity?0.4:1}}><Plus style={{width:13,height:13}}/></button>
               </div>
               <button
                 onClick={()=>{addToCart(detailItem,detailQty);setDetailItem(null);}}

@@ -287,7 +287,7 @@ export default function SalesPage() {
 
     try {
       let finalCustomerId = selectedCustomerId;
-      let finalCustomerName = customerSearch;
+      const finalCustomerName = customerSearch;
 
       // Se digitou um nome, mas não amarrou a nenhum cliente existente, CADASTRA na hora!
       if (!finalCustomerId && customerSearch.trim()) {

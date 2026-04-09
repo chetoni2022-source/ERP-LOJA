@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { Button, Input, Label } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
 import { Link } from 'react-router-dom';
 import { 
   ChevronDown, 
@@ -18,8 +18,6 @@ import {
   ExternalLink,
   Target,
   TrendingUp,
-  Zap,
-  ArrowRight,
   X
 } from 'lucide-react';
 
@@ -98,7 +96,7 @@ export default function UnitEconomicsPage() {
   useEffect(() => {
     if (!user) return;
     fetchData();
-  }, [user]);
+  }, [user, fetchData]);
 
   async function fetchData() {
     setLoading(true);
@@ -194,7 +192,7 @@ export default function UnitEconomicsPage() {
                <Calculator className="h-7 w-7" />
             </div>
             <div>
-               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground uppercase">Análise de Lucros</h1>
+               <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground uppercase">Análise de Lucros</h1>
                <p className="text-muted-foreground font-semibold flex items-center gap-2">
                  <Target size={14} className="text-primary" /> Simulador de Repasse e Unit Economics de Próxima Geração
                </p>
@@ -491,7 +489,7 @@ export default function UnitEconomicsPage() {
                <Info size={40} />
             </div>
             <div className="flex-1 text-center md:text-left space-y-3">
-               <h4 className="font-black text-3xl text-foreground uppercase tracking-tight">Estratégia Unitária</h4>
+               <h4 className="font-black text-xl text-foreground uppercase tracking-tight">Estratégia Unitária</h4>
                <p className="text-base text-muted-foreground font-medium leading-relaxed max-w-3xl">
                  Este simulador não apenas mostra números, ele projeta o seu futuro. Entender quanto você ganha por cada acessório vendido 
                  é o primeiro passo para escalar seu estoque para <strong>1.000+ vendas mensais</strong>. 

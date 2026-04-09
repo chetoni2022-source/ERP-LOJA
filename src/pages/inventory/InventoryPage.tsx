@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2 } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Heading } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';
@@ -1024,7 +1024,7 @@ export default function InventoryPage() {
                       </div>
                     </div>
                   </div>
-
+                </div>
                   <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-3 group/desc relative">
                     <div className="flex items-center justify-between mb-1">
                       <div>
@@ -1044,14 +1044,20 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="flex gap-1 mb-1.5">
-                      {(['bold','big'] as const).map(fmtTag => (
-                        <button key={fmtTag} type="button"
-                          className="h-7 px-3 text-[10px] uppercase font-black tracking-tighter border border-border/60 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
-                          onClick={() => applyFormat(fmtTag, 'descTextarea')}
-                        >
-                          {fmtTag === 'bold' ? 'Negrito (Ctrl+B)' : 'Texto Grande (Alt+U)'}
-                        </button>
-                      ))}
+                      <button type="button"
+                        className="h-8 w-8 flex items-center justify-center border border-border/60 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                        onClick={() => applyFormat('bold', 'descTextarea')}
+                        title="Negrito (Ctrl+B)"
+                      >
+                        <Bold size={14} />
+                      </button>
+                      <button type="button"
+                        className="h-8 w-8 flex items-center justify-center border border-border/60 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                        onClick={() => applyFormat('big', 'descTextarea')}
+                        title="Título (Alt+U)"
+                      >
+                        <Heading size={14} />
+                      </button>
                     </div>
 
                     <textarea
@@ -1060,53 +1066,59 @@ export default function InventoryPage() {
                       onChange={e => setDescription(e.target.value)}
                       onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
                       placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
-                      rows={5}
                       className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all min-h-[120px]"
                     />
 
-                    {/* Fullscreen Overlay */}
                     {isDescFullscreen && (
-                      <div className="fixed inset-0 z-[200] bg-background animate-in fade-in duration-300 flex flex-col p-4 md:p-12">
-                         <div className="max-w-4xl mx-auto w-full flex flex-col h-full gap-6">
-                            <div className="flex items-center justify-between shrink-0">
-                               <div>
-                                 <h2 className="text-2xl font-black tracking-tighter text-foreground uppercase">Editor de Descrição</h2>
-                                 <p className="text-sm text-muted-foreground font-medium flex items-center gap-4">
-                                   <span><b>Ctrl + B</b> Negrito</span>
-                                   <span>•</span>
-                                   <span><b>Alt + U</b> Título/Grande</span>
-                                 </p>
+                      <div className="fixed inset-0 z-[200] bg-background/80backdrop-blur-xl animate-in fade-in duration-300 flex flex-col p-4 md:p-8 lg:p-12">
+                         <div className="max-w-5xl mx-auto w-full flex flex-col h-full gap-4">
+                            <div className="flex items-center justify-between shrink-0 bg-card/50 border border-border p-4 md:px-8 rounded-3xl backdrop-blur-md shadow-sm">
+                               <div className="flex items-center gap-4">
+                                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <Edit size={20} />
+                                 </div>
+                                 <div>
+                                   <h2 className="text-lg font-black tracking-tighter text-foreground uppercase leading-none">Editor de Descrição</h2>
+                                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">Foco Total na Escrita</p>
+                                 </div>
                                </div>
-                               <button 
-                                onClick={() => setIsDescFullscreen(false)}
-                                className="h-12 w-12 flex items-center justify-center bg-muted hover:bg-red-500/10 hover:text-red-500 rounded-2xl transition-all border border-border shadow-sm group"
-                               >
-                                 <Minimize2 size={24} className="group-hover:scale-110 transition-transform" />
-                               </button>
+                               
+                               <div className="flex items-center gap-6">
+                                 <div className="hidden md:flex items-center gap-4 border-r border-border pr-6">
+                                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-10 w-10 flex items-center justify-center bg-background border border-border rounded-xl hover:bg-primary hover:text-primary-foreground transition-all group" title="Negrito (Ctrl+B)">
+                                       <Bold size={18} />
+                                    </button>
+                                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-10 w-10 flex items-center justify-center bg-background border border-border rounded-xl hover:bg-primary hover:text-primary-foreground transition-all group" title="Título (Alt+U)">
+                                       <Heading size={18} />
+                                    </button>
+                                 </div>
+                                 <button 
+                                  onClick={() => setIsDescFullscreen(false)}
+                                  className="h-12 px-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                 >
+                                   CURAR & FECHAR
+                                 </button>
+                               </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden relative">
-                               <div className="bg-muted/50 px-6 py-4 border-b border-border flex gap-2">
-                                  <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="px-4 py-2 bg-background border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all">Negrito</button>
-                                  <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="px-4 py-2 bg-background border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all">Texto Grande</button>
-                               </div>
+                            <div className="flex-1 flex flex-col bg-card border border-border rounded-[2.5rem] shadow-2xl overflow-hidden relative mt-2">
                                <textarea
                                 id="descTextareaFull"
                                 autoFocus
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
-                                className="flex-1 w-full p-8 md:p-12 text-lg md:text-xl font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar"
+                                className="flex-1 w-full p-8 md:p-12 lg:p-16 text-lg md:text-xl lg:text-2xl font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar"
                                 placeholder="Comece a descrever os detalhes luxuosos da sua peça..."
                                />
-                               <div className="absolute bottom-6 right-8 opacity-40 pointer-events-none">
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Pressione ESC para Sair</span>
-                               </div>
+                               <div className="absolute bottom-8 right-8 flex items-center gap-2 opacity-30 pointer-events-none items-center">
+                                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest">Pressione ESC para Finalizar</span>
+                                </div>
                             </div>
                          </div>
                       </div>
                     )}
-                  </div>
                   </div>
                 </div>
 

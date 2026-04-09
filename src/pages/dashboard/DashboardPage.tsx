@@ -257,7 +257,7 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async (sd?: string, ed?: string) => {
     if (!user) return;
     try {
-      // Monthly goal
+      // Monthly goal and Marketplace Taxes
       const { data: settings } = await supabase.from('store_settings').select('*').eq('user_id', user.id).limit(1).maybeSingle();
       if (settings?.monthly_goal) setMonthlyGoal(settings.monthly_goal);
 
@@ -283,8 +283,13 @@ export default function DashboardPage() {
         // Marketplace Fees (from store_settings or defaults)
         const shopee_comm = settings?.shopee_commission_pct ?? 20;
         const shopee_fee = settings?.shopee_fixed_fee ?? 4;
-        const tiktok_comm = settings?.tiktok_commission_pct ?? 6;
+        const shopee_cap = settings?.shopee_commission_cap ?? 100;
+
+        const tiktok_comm = settings?.tiktok_commission_pct ?? 15;
         const tiktok_fee = settings?.tiktok_fixed_fee ?? 4;
+        const tiktok_cap = settings?.tiktok_commission_cap ?? 100;
+
+        const global_tax = settings?.global_tax_pct ?? 0;
 
         products.forEach(p => {
           if (p.stock_quantity <= 0) return;
@@ -294,13 +299,20 @@ export default function DashboardPage() {
           const shopeeP = p.shopee_price || siteP;
           const tiktokP = p.tiktok_price || siteP;
 
+          const taxValueSite = siteP * (global_tax / 100);
+          const taxValueShopee = shopeeP * (global_tax / 100);
+          const taxValueTiktok = tiktokP * (global_tax / 100);
+
           totalRev += siteP * qty;
           totalInv += cost * qty;
           
-          // Profit calculations per unit
-          const pSite = (siteP - cost);
-          const pShopee = (shopeeP - (shopeeP * (shopee_comm / 100)) - shopee_fee - cost);
-          const pTiktok = (tiktokP - (tiktokP * (tiktok_comm / 100)) - tiktok_fee - cost);
+          // Profit calculations per unit (Consider commission caps and global taxes)
+          const commShopee = Math.min(shopeeP * (shopee_comm / 100), shopee_cap);
+          const commTiktok = Math.min(tiktokP * (tiktok_comm / 100), tiktok_cap);
+
+          const pSite = (siteP - taxValueSite - cost);
+          const pShopee = (shopeeP - commShopee - shopee_fee - taxValueShopee - cost);
+          const pTiktok = (tiktokP - commTiktok - tiktok_fee - taxValueTiktok - cost);
 
           totalProfitSite += pSite * qty;
           totalProfitShopee += pShopee * qty;
@@ -398,7 +410,7 @@ export default function DashboardPage() {
         }, {});
         setLeadSourceData(Object.entries(sourceCount).map(([name, value]) => ({ name, value })));
 
-        // Last month comparison (always fetch full current month vs previous month)
+        // Last month comparison
         const now = new Date();
         const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -418,7 +430,7 @@ export default function DashboardPage() {
           .gte('created_at', curMonthStart.toISOString());
         const thisMonth = (thisMonthSales || []).reduce((a, s) => a + s.total_price, 0);
         const thisMonthProfit = (thisMonthSales || []).reduce((a, s) => a + (s.total_price - (s.unit_cost_at_sale * s.quantity)), 0);
-        // Only override if we're looking at current month; otherwise use filtered total
+        
         if (sd === undefined) {
           setMonthlySalesValue(thisMonth);
           setTotalProfit(thisMonthProfit);
@@ -567,7 +579,7 @@ export default function DashboardPage() {
                   className="h-full rounded-full transition-all duration-700"
                   style={{
                     width: `${Math.min((monthlySalesValue / monthlyGoal) * 100, 100)}%`,
-                    background: monthlySalesValue >= monthlyGoal ? 'var(--color-emerald-500, #10b981)' : 'var(--primary)'
+                    background: monthlySalesValue >= monthlyGoal ? '#10b981' : 'var(--primary)'
                   }}
                 />
               </div>
@@ -798,174 +810,50 @@ export default function DashboardPage() {
             <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col">
               <div className="mb-4">
                 <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  Top Peças
-                  <MetricInfo title="Ranking de Vendas" content="Lista dos produtos com maior volume de unidades vendidas. Ideal para identificar seus 'Best Sellers'." />
+                  <Award className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 mr-2" /> Top Produtos (Qtd)
                 </h3>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Mais vendidas por volume no período.</p>
               </div>
-              <div className="space-y-3 flex-1">
-                {topProducts.length > 0 ? topProducts.map((prod, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 md:p-3 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-[11px] font-black text-muted-foreground w-5 text-center shrink-0">#{i + 1}</span>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs md:text-sm font-bold text-foreground truncate group-hover:text-primary">{prod.name}</span>
-                        <span className="text-[10px] font-semibold text-muted-foreground">{prod.quantity} un vendidas</span>
+              <div className="space-y-3 md:space-y-4">
+                {topProducts.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 md:h-10 md:w-10 bg-muted rounded-full flex items-center justify-center font-black text-muted-foreground text-[10px] md:text-sm border border-border group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
+                        {i + 1}
+                      </div>
+                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{p.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-end">
+                        <span className="text-[11px] md:text-sm font-black text-foreground">{p.quantity} unid.</span>
+                        <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">{formatCurrency(p.revenue)}</span>
                       </div>
                     </div>
-                    <div className="font-black text-primary text-xs md:text-sm flex items-center bg-primary/10 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg border border-primary/20 shrink-0 ml-2">
-                      {formatCurrency(prod.revenue)}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 mb-4 border-t border-border pt-6">
+                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
+                  <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-emerald-500 mr-2" /> Top Lucreativos
+                </h3>
+              </div>
+              <div className="space-y-3 md:space-y-4">
+                {topProfitableProducts.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 md:h-10 md:w-10 bg-emerald-500/10 rounded-full flex items-center justify-center font-black text-emerald-600 text-[10px] md:text-sm border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                        {i + 1}
+                      </div>
+                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{p.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-right">
+                       <div className="flex flex-col">
+                         <span className="text-[11px] md:text-sm font-black text-emerald-600">{formatCurrency(p.profit)}</span>
+                         <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">Lucro Líquido</span>
+                       </div>
                     </div>
                   </div>
-                )) : (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/10 p-8">
-                    <span className="font-semibold text-sm text-center">Registre vendas para ver o ranking.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Top Profitable 3D Block */}
-            <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden group/chart2">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl opacity-0 group-hover/chart2:opacity-100 transition-opacity" />
-              <div className="mb-4">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center gap-2">
-                  <Award className="text-amber-500 h-5 w-5" /> 
-                  Estrelas de Lucro
-                  <MetricInfo title="Produtos Mais Lucrativos" content="Ranking baseado no lucro líquido total gerado. Nem sempre o que mais vende é o que mais traz lucro!" />
-                </h3>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Top Produtos que mais encorparam o lucro liquido (Gráfico 3D).</p>
-              </div>
-              <div className="flex-1 w-full mt-2 h-[280px]">
-                {topProfitableProducts.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topProfitableProducts} layout="vertical" margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" opacity={0.3} />
-                      <XAxis type="number" stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val}`} fontWeight="bold" />
-                      <YAxis dataKey="name" type="category" stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + '…' : v} fontWeight="bold" width={70} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
-                        itemStyle={{ fontWeight: 'black', color: 'var(--foreground)' }}
-                        formatter={(val: any) => formatCurrency(val)} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} 
-                      />
-                      <Bar 
-                        dataKey="profit" 
-                        shape={<RoundedBar />} 
-                        maxBarSize={24}
-                        animationDuration={1500}
-                      >
-                        {topProfitableProducts.map((_, index) => (
-                           <Cell key={`cell-${index}`} fill={'url(#goldGradient)'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-[2rem] bg-muted/10 p-4">
-                    <span className="font-semibold text-sm text-center">Nenhum lucro registrado.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Lead Source Pie Chart */}
-            {leadSourceData.length > 0 && (
-              <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl" />
-                <h3 className="font-bold text-base md:text-xl text-foreground mb-1">Origem das Vendas</h3>
-                <p className="text-xs text-muted-foreground mb-6">Canal de aquisição dos pedidos.</p>
-                
-                <div className="flex-1 min-h-[260px] relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <defs>
-                        {leadSourceData.map((_, index) => (
-                          <linearGradient key={`grad-${index}`} id={`grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={['#8b5cf6','#6366f1','#ec4899','#f59e0b','#10b981','#06b6d4'][index % 6]} stopOpacity={1} />
-                            <stop offset="100%" stopColor={['#6d28d9','#4338ca','#be185d','#b45309','#047857','#0891b2'][index % 6]} stopOpacity={1} />
-                          </linearGradient>
-                        ))}
-                        <filter id="shadow" height="200%">
-                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.3" />
-                        </filter>
-                      </defs>
-                      <Pie
-                        data={leadSourceData}
-                        cx="50%" cy="45%"
-                        innerRadius="65%"
-                        outerRadius="85%"
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                        filter="url(#shadow)"
-                        animationBegin={0}
-                        animationDuration={1200}
-                      >
-                        {leadSourceData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={`url(#grad-${index})`} className="hover:opacity-80 transition-opacity cursor-pointer" />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                        formatter={(v: any) => formatCurrency(v)} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  
-                  {/* Central Label for Donut */}
-                  <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Total</p>
-                    <p className="text-lg md:text-xl font-black text-foreground">{formatCurrency(leadSourceData.reduce((a,b)=>a+b.value, 0))}</p>
-                  </div>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {leadSourceData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#8b5cf6','#6366f1','#ec4899','#f59e0b','#10b981','#06b6d4'][index % 6] }} />
-                      <span className="text-[10px] font-bold text-muted-foreground truncate">{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Stock Chart */}
-            <div className={`${leadSourceData.length > 0 ? 'md:col-span-4' : 'md:col-span-full'} bg-card border border-border rounded-xl shadow-sm p-4 md:p-6`}>
-              <div className="mb-3">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center gap-2">
-                  <BarChart2 className="text-primary w-5 h-5 md:w-6 md:h-6" /> Estoque Atual
-                </h3>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Passe o cursor para ver a imagem e status da peça.</p>
-              </div>
-              <div className="h-[240px] md:h-[320px] w-full mt-3">
-                {stockData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stockData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.4} />
-                      <XAxis dataKey="name" stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 12 ? val.substring(0, 12) + '…' : val} fontWeight="semibold" tickMargin={8} />
-                      <YAxis stroke="#888" fontSize={10} tickLine={false} axisLine={false} fontWeight="semibold" tickMargin={8} />
-                      <Tooltip content={<CustomStockTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.5 }} />
-                      <Bar dataKey="stock_quantity" radius={[6, 6, 0, 0]}>
-                        {stockData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.stock_quantity <= 0 ? '#ef4444' : entry.stock_quantity < 5 ? '#f97316' : '#8b5cf6'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/10">
-                    <PackageSearch className="h-10 w-10 mb-3 opacity-30" />
-                    <span className="font-semibold text-sm">Cadastre produtos para ver o gráfico de estoque.</span>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           </div>

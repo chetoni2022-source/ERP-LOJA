@@ -109,6 +109,7 @@ export default function InventoryPage() {
   const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string}[]>([]);
   const [newVarName, setNewVarName] = useState('');
   const [newVarType, setNewVarType] = useState<'size'|'color'|'style'>('size');
+  const [isSelectingImageForVar, setIsSelectingImageForVar] = useState<number | null>(null);
 
   // Store settings for tax simulation
   const [taxSettings, setTaxSettings] = useState({
@@ -576,7 +577,15 @@ export default function InventoryPage() {
           reels_video: reelsVideo || null,
           extra_videos: extraVideos.filter(v => v.trim() !== '')
         },
-        variations: variations.length > 0 ? variations : null,
+        variations: variations.length > 0 ? variations.map(v => {
+           if (!v.image_url) return v;
+           const imgIndex = images.findIndex(img => img.preview === v.image_url);
+           if (imgIndex !== -1 && finalImageUrls[imgIndex]) {
+              return { ...v, image_url: finalImageUrls[imgIndex] };
+           }
+           if (v.image_url.startsWith('http')) return v;
+           return { ...v, image_url: null };
+        }) : null,
         user_id: user.id
       };
 
@@ -638,43 +647,6 @@ export default function InventoryPage() {
     setVariations([]);
     setNewVarName('');
     setNewVarType('size');
-  }
-
-  async function handleVariationImageUpload(index: number, e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    
-    const newVars = [...variations];
-    newVars[index] = { ...newVars[index], image_url: 'uploading' };
-    setVariations(newVars);
-
-    try {
-      const optimized = await MediaOptimizer.optimizeImage(file);
-      const fileExt = optimized.name.split('.').pop() || 'jpg';
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `variations/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, optimized, { upsert: false });
-        
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      const updated = [...variations];
-      updated[index] = { ...updated[index], image_url: publicUrl };
-      setVariations(updated);
-
-    } catch (err: any) {
-      console.error(err);
-      toastError('Erro ao subir imagem da variação: ' + err.message);
-      const reverted = [...variations];
-      delete reverted[index].image_url;
-      setVariations(reverted);
-    }
   }
 
   function applyFormat(format: 'bold' | 'italic' | 'big', inputId: string = 'descTextarea') {
@@ -1863,60 +1835,116 @@ export default function InventoryPage() {
                        </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 mt-4 min-h-[100px] border border-dashed border-border/60 rounded-xl p-4 bg-muted/20">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                       {variations.length === 0 ? (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 py-4">
-                          <Tags size={24} className="mb-2" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-center">Nenhuma variação adicionada</span>
-                          <span className="text-[9px] font-medium text-center">Adicione opções acima</span>
+                        <div className="col-span-full border border-dashed border-border/60 rounded-xl bg-muted/20 flex flex-col items-center justify-center text-muted-foreground opacity-50 py-10 min-h-[150px]">
+                          <Tags size={32} className="mb-3 opacity-60" />
+                          <span className="text-xs font-black uppercase tracking-widest text-center">Nenhuma variação adicionada</span>
+                          <span className="text-[10px] font-medium text-center mt-1">Insira tamanhos, cores ou modelos acima</span>
                         </div>
                       ) : (
                         variations.map((v, i) => (
-                          <div key={i} className="flex items-center rounded-full bg-background border border-border shadow-sm overflow-hidden animate-in zoom-in duration-300">
-                             <span className={cn(
-                               "px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-white h-full flex items-center shadow-inner shrink-0",
-                               v.type === 'size' ? "bg-blue-500" : v.type === 'color' ? "bg-amber-500" : "bg-violet-500"
-                             )}>
-                               {v.type === 'size' ? 'Taman.' : v.type === 'color' ? 'Cor' : 'Estilo'}
-                             </span>
-                             <span className="px-3 py-1.5 text-xs font-bold text-foreground truncate max-w-[150px]">
-                               {v.name}
-                             </span>
-
-                             <div className="relative border-l border-border h-full flex items-center bg-muted/10 shrink-0">
-                               {v.image_url === 'uploading' ? (
-                                  <div className="w-8 h-8 flex items-center justify-center">
-                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                                  </div>
-                               ) : (
+                          <div key={i} className="relative flex flex-col bg-card/60 backdrop-blur-md border border-border/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-in zoom-in group">
+                             {/* Variation Image Area */}
+                             <div 
+                               onClick={() => setIsSelectingImageForVar(i)}
+                               className="w-full aspect-[4/3] bg-muted/30 flex flex-col items-center justify-center border-b border-border/40 cursor-pointer relative overflow-hidden group/img"
+                             >
+                               {v.image_url ? (
                                   <>
-                                    <input 
-                                      type="file" 
-                                      accept="image/*" 
-                                      id={`var-img-${i}`}
-                                      className="hidden" 
-                                      onChange={(e) => handleVariationImageUpload(i, e)} 
-                                    />
-                                    <label htmlFor={`var-img-${i}`} className="w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors z-10" title="Atribuir Foto">
-                                      {v.image_url && v.image_url !== 'uploading' ? (
-                                        <img src={getProxyUrl(v.image_url)} alt="var" className="w-6 h-6 rounded-full object-cover border border-border/50" />
-                                      ) : (
-                                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground opacity-60" />
-                                      )}
-                                    </label>
+                                    <img src={getProxyUrl(v.image_url) || v.image_url} alt={v.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                       <span className="text-[9px] font-black text-white uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">Trocar Foto</span>
+                                    </div>
                                   </>
+                               ) : (
+                                  <div className="flex flex-col items-center justify-center text-muted-foreground hover:text-foreground transition-colors opacity-60 hover:opacity-100">
+                                    <ImageIcon strokeWidth={1.5} className="h-6 w-6 mb-1.5"/>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-2">Vincular Galeria</span>
+                                  </div>
                                )}
                              </div>
+                             
+                             {/* Variation Info Area */}
+                             <div className="p-3 bg-background flex flex-col gap-1 relative">
+                                <span className={cn(
+                                   "absolute -top-3.5 right-2 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white rounded-md shadow-md shadow-black/10 flex items-center shrink-0",
+                                   v.type === 'size' ? "bg-blue-500" : v.type === 'color' ? "bg-amber-500" : "bg-violet-500"
+                                )}>
+                                   {v.type === 'size' ? 'Taman.' : v.type === 'color' ? 'Cor' : 'Estilo'}
+                                </span>
 
-                             <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="h-full px-2 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors border-l border-border flex items-center justify-center shrink-0">
-                               <X size={12} />
-                             </button>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-foreground truncate pr-6 mt-1" title={v.name}>{v.name}</p>
+                                
+                                <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="absolute top-3 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" title="Remover Variação">
+                                  <Trash2 size={12} />
+                                </button>
+                             </div>
                           </div>
                         ))
                       )}
                     </div>
                   </div>
                 </div>
+
+                    {/* SELECTOR MODAL PARA VARIACOES */}
+                    {isSelectingImageForVar !== null && (
+                      <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300" onClick={() => setIsSelectingImageForVar(null)}>
+                        <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                          <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/10">
+                            <div>
+                               <h3 className="font-black text-sm uppercase tracking-widest">Selecione uma Foto da Galeria</h3>
+                               <p className="text-[10px] text-muted-foreground mt-0.5">Vincule uma imagem à variação "{variations[isSelectingImageForVar]?.name}"</p>
+                            </div>
+                            <button onClick={() => setIsSelectingImageForVar(null)} className="h-8 w-8 flex items-center justify-center bg-background border border-border rounded-full hover:bg-muted transition-colors"><X size={14} /></button>
+                          </div>
+                          
+                          <div className="p-4 overflow-y-auto max-h-[60vh] bg-background">
+                            {images.length === 0 ? (
+                               <div className="text-center py-12">
+                                 <ImageIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                                 <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Sua galeria está vazia</p>
+                                 <p className="text-[10px] text-muted-foreground mt-1">Lembre-se de anexar e salvar todas as fotos do produto na área inferior antes de vincular.</p>
+                               </div>
+                            ) : (
+                               <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                                 {images.map((img, idx) => (
+                                   <div 
+                                     key={idx} 
+                                     onClick={() => {
+                                        const nextVars = [...variations];
+                                        nextVars[isSelectingImageForVar] = { ...nextVars[isSelectingImageForVar], image_url: img.preview };
+                                        setVariations(nextVars);
+                                        setIsSelectingImageForVar(null);
+                                     }}
+                                     className="relative aspect-square border-2 border-transparent hover:border-primary rounded-xl overflow-hidden cursor-pointer group transition-all shadow-sm"
+                                   >
+                                      <img src={getProxyUrl(img.preview) || img.preview} className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                         <CheckCircle2 strokeWidth={3} className="text-white h-8 w-8 drop-shadow-md" />
+                                      </div>
+                                   </div>
+                                 ))}
+                               </div>
+                            )}
+                          </div>
+
+                          <div className="p-4 border-t border-border/50 bg-muted/10 flex justify-end gap-3">
+                            <button onClick={() => {
+                               const nextVars = [...variations];
+                               nextVars[isSelectingImageForVar] = { ...nextVars[isSelectingImageForVar], image_url: undefined };
+                               setVariations(nextVars);
+                               setIsSelectingImageForVar(null);
+                            }} className="px-4 py-2 text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-red-500 outline-none transition-colors">
+                              Desvincular Imagem Atual
+                            </button>
+                            <button onClick={() => setIsSelectingImageForVar(null)} className="px-5 py-2 bg-foreground text-background text-[10px] uppercase font-black tracking-widest rounded-lg shadow hover:scale-[1.02] active:scale-95 transition-all">
+                              Fechar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                   <div className="space-y-4 pt-6 mt-4 border-t border-border/80">
                     <div className="flex justify-between items-end">

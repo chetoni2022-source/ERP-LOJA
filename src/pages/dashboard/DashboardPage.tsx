@@ -261,6 +261,7 @@ export default function DashboardPage() {
         let totalProfitShopee = 0;
         let totalProfitTiktok = 0;
         let totalInv = 0;
+        let totalBestProfit = 0;
 
         // Marketplace Fees (from store_settings or defaults)
         const shopee_comm = settings?.shopee_commission_pct ?? 20;
@@ -279,10 +280,18 @@ export default function DashboardPage() {
           totalRev += siteP * qty;
           totalInv += cost * qty;
           
-          // Profit calculations
-          totalProfitSite += (siteP - cost) * qty;
-          totalProfitShopee += (shopeeP - (shopeeP * (shopee_comm / 100)) - shopee_fee - cost) * qty;
-          totalProfitTiktok += (tiktokP - (tiktokP * (tiktok_comm / 100)) - tiktok_fee - cost) * qty;
+          // Profit calculations per unit
+          const pSite = (siteP - cost);
+          const pShopee = (shopeeP - (shopeeP * (shopee_comm / 100)) - shopee_fee - cost);
+          const pTiktok = (tiktokP - (tiktokP * (tiktok_comm / 100)) - tiktok_fee - cost);
+
+          totalProfitSite += pSite * qty;
+          totalProfitShopee += pShopee * qty;
+          totalProfitTiktok += pTiktok * qty;
+
+          // "Best Channel" logic: sum of max profit possible for each specific product
+          const bestChannelProfit = Math.max(pSite, pShopee, pTiktok);
+          totalBestProfit += bestChannelProfit * qty;
         });
 
         const projectionData = {
@@ -290,11 +299,12 @@ export default function DashboardPage() {
           profitSite: totalProfitSite,
           profitShopee: totalProfitShopee,
           profitTiktok: totalProfitTiktok,
+          profitBest: totalBestProfit,
           investment: totalInv,
           chartData: [
             { name: 'Site', Venda: totalRev, Lucro: totalProfitSite, color: 'var(--primary)' },
             { name: 'Shopee', Venda: totalRev, Lucro: totalProfitShopee, color: '#f53d2d' },
-            { name: 'TikTok', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
+            { name: 'TikTok Shop', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
           ]
         };
         setStockProjections(projectionData);
@@ -413,6 +423,7 @@ export default function DashboardPage() {
               profitSite: totalProfitSite,
               profitShopee: totalProfitShopee,
               profitTiktok: totalProfitTiktok,
+              profitBest: totalBestProfit,
               investment: totalInv,
               chartData: [
                 { name: 'Site', Venda: totalRev, Lucro: totalProfitSite, color: 'var(--primary)' },
@@ -634,7 +645,7 @@ export default function DashboardPage() {
                 <div className="relative z-10">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">Lucro Total Disponível</p>
                   <h4 className="text-2xl font-black italic tracking-tighter">
-                    {formatCurrency(Math.max(stockProjections.profitSite, stockProjections.profitShopee, stockProjections.profitTiktok))}
+                    {formatCurrency(stockProjections.profitBest)}
                   </h4>
                   <div className="h-1 w-12 bg-white/30 my-3 rounded-full" />
                   <p className="text-[9px] font-bold opacity-70 leading-relaxed uppercase">Estimado se todas as peças em estoque forem vendidas no melhor canal.</p>

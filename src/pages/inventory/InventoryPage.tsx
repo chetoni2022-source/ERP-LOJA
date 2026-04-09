@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
-import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useDashboardStore } from '../../stores/dashboardStore';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
@@ -50,6 +51,7 @@ const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
 export default function InventoryPage() {
   const { user } = useAuthStore();
+  const { clearCache } = useDashboardStore();
   const { success, error: toastError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -524,6 +526,7 @@ export default function InventoryPage() {
       }
 
       success(editingProduct ? 'Produto salvo!' : 'Produto cadastrado!');
+      clearCache(); // Invalidate dashboard cache
       setIsModalOpen(false);
       resetForm();
       fetchProducts();

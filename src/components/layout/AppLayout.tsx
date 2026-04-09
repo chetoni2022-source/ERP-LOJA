@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, PackageSearch, BadgeDollarSign, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, Store, Link as LinkIcon, Tags, Menu, X,
-  Users, UserCircle2
+  Users, UserCircle2, Calculator
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
@@ -14,6 +14,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => classes.filter
 const navItems = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
   { icon: PackageSearch, label: 'Estoque', path: '/inventory' },
+  { icon: Calculator, label: 'Lucros', path: '/inventory/analytics' },
   { icon: Tags, label: 'Categorias', path: '/categories' },
   { icon: BadgeDollarSign, label: 'Vendas', path: '/sales' },
   { icon: UserCircle2, label: 'Clientes', path: '/customers' },

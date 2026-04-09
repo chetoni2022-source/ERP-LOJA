@@ -9,6 +9,7 @@ import { AppLayout } from './components/layout/AppLayout';
 const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage'));
 const InventoryPage = lazy(() => import('./pages/inventory/InventoryPage'));
+const UnitEconomicsPage = lazy(() => import('./pages/inventory/UnitEconomicsPage'));
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage'));
 const SalesPage = lazy(() => import('./pages/sales/SalesPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
@@ -75,6 +76,7 @@ export default function App() {
             <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={user ? <AppLayout><DashboardPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/inventory" element={user ? <AppLayout><InventoryPage /></AppLayout> : <Navigate to="/auth" replace />} />
+            <Route path="/inventory/analytics" element={user ? <AppLayout><UnitEconomicsPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/categories" element={user ? <AppLayout><CategoriesPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/sales" element={user ? <AppLayout><SalesPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/catalogs" element={user ? <AppLayout><CatalogBuilderPage /></AppLayout> : <Navigate to="/auth" replace />} />

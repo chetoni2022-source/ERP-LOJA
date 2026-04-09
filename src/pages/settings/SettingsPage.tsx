@@ -56,8 +56,8 @@ export default function SettingsPage() {
   const [shopeeCap, setShopeeCap] = useState('100');
   
 
-  
   const [savingShopee, setSavingShopee] = useState(false);
+  const [globalTaxPct, setGlobalTaxPct] = useState('0');
 
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
@@ -89,6 +89,7 @@ export default function SettingsPage() {
           if (data.tiktok_commission_pct !== null) setTiktokCommission(data.tiktok_commission_pct.toString());
           if (data.tiktok_fixed_fee !== null) setTiktokFixedFee(data.tiktok_fixed_fee.toString());
           if (data.tiktok_commission_cap !== null) setTiktokCap(data.tiktok_commission_cap.toString());
+          if (data.global_tax_pct !== null) setGlobalTaxPct(data.global_tax_pct.toString());
         }
       });
   }, [user]);
@@ -202,7 +203,8 @@ export default function SettingsPage() {
         shopee_commission_cap: parseFloat(shopeeCap) || 100,
         tiktok_commission_pct: parseFloat(tiktokCommission) || 15,
         tiktok_fixed_fee: parseFloat(tiktokFixedFee) || 4,
-        tiktok_commission_cap: parseFloat(tiktokCap) || 100
+        tiktok_commission_cap: parseFloat(tiktokCap) || 100,
+        global_tax_pct: parseFloat(globalTaxPct) || 0
       };
       
       if (existing) {
@@ -542,6 +544,14 @@ export default function SettingsPage() {
                       <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border col-span-2">
                          <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Teto Máximo Comissão (R$)</Label>
                          <Input value={shopeeCap} onChange={e=>setShopeeCap(e.target.value)} placeholder="100.00" className="bg-background shadow-sm h-10 font-bold" />
+                      </div>
+                      <div className="space-y-1.5 bg-emerald-500/5 p-2 rounded-xl border border-emerald-500/20 col-span-2">
+                         <Label className="font-bold text-[10px] uppercase text-emerald-600 tracking-widest block ml-1">Imposto Global / NF (%)</Label>
+                         <div className="relative">
+                           <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-muted-foreground text-sm">%</span>
+                           <Input value={globalTaxPct} onChange={e=>setGlobalTaxPct(e.target.value)} placeholder="0.00" className="bg-background shadow-sm h-10 font-bold pr-8" />
+                         </div>
+                         <p className="text-[9px] text-emerald-600/70 font-medium mt-1 ml-1">Usado para calcular a margem líquida real em todos os canais.</p>
                       </div>
                     </div>
 

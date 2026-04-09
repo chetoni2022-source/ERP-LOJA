@@ -1876,20 +1876,25 @@ export default function InventoryPage() {
 
                                 <p className="text-[11px] font-black uppercase tracking-widest text-foreground truncate pr-6 mt-1" title={v.name}>{v.name}</p>
                                 
-                                <div className="flex items-center gap-2 mt-1.5 bg-muted/20 rounded-lg p-1.5 border border-border/30 group-hover:border-primary/30 transition-colors">
-                                  <Package size={10} className="text-muted-foreground shrink-0" />
-                                  <input 
-                                    type="number" 
-                                    placeholder="Estoque"
-                                    value={v.stock ?? ''}
-                                    onChange={e => {
-                                      const val = e.target.value === '' ? null : parseInt(e.target.value);
-                                      const next = [...variations];
-                                      next[i] = { ...next[i], stock: val };
-                                      setVariations(next);
-                                    }}
-                                    className="w-full bg-transparent border-none text-[9px] font-black uppercase tracking-widest outline-none focus:ring-0 p-0 placeholder:text-muted-foreground/40 text-foreground"
-                                  />
+                                <div className="mt-2 pt-2 border-t border-border/20">
+                                  <div className="flex items-center justify-between mb-1 px-0.5">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Estoque Disponível</span>
+                                    <Package size={10} className="text-primary/60" />
+                                  </div>
+                                  <div className="relative group/input">
+                                    <input 
+                                      type="number" 
+                                      placeholder="Ex: 10"
+                                      value={v.stock ?? ''}
+                                      onChange={e => {
+                                        const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                        const next = [...variations];
+                                        next[i] = { ...next[i], stock: val };
+                                        setVariations(next);
+                                      }}
+                                      className="w-full bg-background/50 border border-border/60 rounded-lg py-1.5 px-2.5 text-[10px] font-bold outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all group-hover/input:border-primary/30"
+                                    />
+                                  </div>
                                 </div>
                                 
                                 <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="absolute top-3 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" title="Remover Variação">

@@ -1787,7 +1787,10 @@ export default function InventoryPage() {
                         <Tags size={20} />
                       </div>
                       <div>
-                        <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Modelos, Cores e Tamanhos</Label>
+                        <div className="flex items-center gap-2">
+                          <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Modelos, Cores e Tamanhos</Label>
+                          <span className="bg-primary/10 text-primary text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-primary/20">v1.5-estoque-fix</span>
+                        </div>
                         <p className="text-[10px] text-muted-foreground font-medium">As variações do produto na vitrine</p>
                       </div>
                     </div>

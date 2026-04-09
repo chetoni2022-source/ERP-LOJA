@@ -358,6 +358,53 @@ export default function CatalogBuilderPage() {
           </div>
         </form>
       </div>
+
+      {viewingProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="relative aspect-square bg-muted">
+                {viewingProduct.image_url ? (
+                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
+                ) : (
+                  <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
+                )}
+                <button onClick={() => setViewingProduct(null)} className="absolute top-3 right-3 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors">
+                  <X size={18} />
+                </button>
+             </div>
+             <div className="p-6 space-y-4">
+                <div>
+                   <h3 className="text-xl font-black text-foreground">{viewingProduct.name}</h3>
+                   <p className="text-primary font-black text-lg mt-1">
+                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(viewingProduct.sale_price || viewingProduct.price)}
+                   </p>
+                </div>
+                
+                <div className="flex gap-4">
+                   <div className="px-3 py-1.5 bg-muted rounded-lg border border-border">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Estoque</span>
+                      <span className="text-sm font-black">{viewingProduct.stock_quantity} unidades</span>
+                   </div>
+                   {viewingProduct.sku && (
+                     <div className="px-3 py-1.5 bg-muted rounded-lg border border-border flex-1">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase block">SKU</span>
+                        <span className="text-sm font-mono font-bold truncate block">{viewingProduct.sku}</span>
+                     </div>
+                   )}
+                </div>
+
+                {viewingProduct.description && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sobre o Produto</span>
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4 italic">"{viewingProduct.description}"</p>
+                  </div>
+                )}
+
+                <Button onClick={() => setViewingProduct(null)} className="w-full bg-foreground text-background font-bold h-11 rounded-xl mt-2">Fechar Detalhes</Button>
+             </div>
+           </div>
+        </div>
+      )}
     );
   }
 
@@ -417,7 +464,6 @@ export default function CatalogBuilderPage() {
             </div>
           );
         })}
-      </div>
       </div>
       
       {/* Product Detail Modal */}

@@ -250,17 +250,24 @@ export default function CatalogPublicView() {
           }
         }
 
-        .categories-scroll {
-          display: flex;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 8px;
+        .categories-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
           padding: 8px 4px;
+          width: 100%;
         }
 
         .categories-wrapper {
           width: 100%;
           position: relative;
+        }
+
+        @media (min-width: 768px) {
+          .categories-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, auto));
+            justify-content: center;
+          }
         }
       `}</style>
 
@@ -307,7 +314,7 @@ export default function CatalogPublicView() {
             
             {catalogCats.length>0&&(
               <div className="categories-wrapper">
-                <div className="categories-scroll">
+                <div className="categories-grid">
                   {[{id:'all',name:'Todas'},...catalogCats].map(c=>{
                     const active=activeCat===c.id;
                     return(
@@ -315,24 +322,25 @@ export default function CatalogPublicView() {
                         key={c.id} 
                         onClick={()=>setActiveCat(c.id)} 
                         style={{
-                          flexShrink:0,
-                          padding:'8px 20px',
-                          fontSize:10,
+                          padding:'12px 10px',
+                          fontSize:11,
                           fontFamily:theme.sans,
                           fontWeight:800,
-                          letterSpacing:'0.12em',
+                          letterSpacing:'0.08em',
                           textTransform:'uppercase',
-                          borderRadius:99,
+                          borderRadius:12,
                           cursor:'pointer',
                           transition:'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          background:active?theme.accent:'transparent',
+                          background:active?theme.accent:theme.cardBg,
                           color:active?onAccent:theme.muted,
                           border:`1px solid ${active?theme.accent:theme.border}`,
-                          boxShadow:active?`0 4px 12px ${theme.accent}40`:'none',
-                          outline: 'none'
+                          boxShadow:active?`0 4px 15px ${theme.accent}60`:'0 2px 8px rgba(0,0,0,0.04)',
+                          outline: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
                         }}
-                        onMouseEnter={e => { if(!active) e.currentTarget.style.borderColor = theme.accent; }}
-                        onMouseLeave={e => { if(!active) e.currentTarget.style.borderColor = theme.border; }}
                       >
                         {c.name}
                       </button>

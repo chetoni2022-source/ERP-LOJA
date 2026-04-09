@@ -529,7 +529,14 @@ export default function InventoryPage() {
       fetchProducts();
     } catch (error: any) {
       console.error("Save error:", error);
-      toastError('Erro ao salvar produto: ' + (error.message || 'Verifique sua conexão e os dados inseridos.'));
+      let msg = error.message || 'Verifique sua conexão e os dados inseridos.';
+      
+      // Handle missing column errors gracefully
+      if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema cache')) {
+        msg = "Erro de Sincronização: Colunas faltando no seu Supabase. Verifique o arquivo FIX_DATABASE_COLUMNS.sql na raiz do projeto e execute-o no SQL Editor do Supabase.";
+      }
+      
+      toastError('Erro ao salvar produto: ' + msg);
     } finally {
       setSaving(false);
     }

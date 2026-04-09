@@ -252,32 +252,15 @@ export default function CatalogPublicView() {
 
         .categories-scroll {
           display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          scrollbar-width: none;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 8px;
           padding: 8px 4px;
-          -webkit-overflow-scrolling: touch;
-          scroll-behavior: smooth;
         }
-        .categories-scroll::-webkit-scrollbar { display: none; }
 
         .categories-wrapper {
-          position: relative;
           width: 100%;
-          mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
-          -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
-        }
-
-        @media (min-width: 768px) {
-          .categories-wrapper {
-             mask-image: none;
-             -webkit-mask-image: none;
-          }
-          .categories-scroll {
-            justify-content: center;
-            flex-wrap: wrap;
-            overflow-x: visible;
-          }
+          position: relative;
         }
       `}</style>
 

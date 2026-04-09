@@ -2,9 +2,26 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
-import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award } from 'lucide-react';
+import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
 import { Button } from '../../components/ui';
+
+// ─── Help Tooltip ───────────────────────────────────────────────────────────
+const MetricInfo = ({ title, content }: { title: string, content: string }) => (
+  <div className="group relative inline-block ml-1 text-left align-middle">
+    <button type="button" className="p-0.5 rounded-full hover:bg-muted transition-colors outline-none">
+      <Info className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors cursor-help" />
+    </button>
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-popover text-popover-foreground text-[11px] font-bold rounded-2xl border border-border shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] backdrop-blur-xl pointer-events-none scale-95 group-hover:scale-100 origin-bottom">
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border/50">
+        <Info className="h-3 w-3 text-primary shrink-0" />
+        <p className="text-primary uppercase tracking-[0.15em] font-black">{title}</p>
+      </div>
+      <p className="font-semibold text-muted-foreground leading-relaxed italic">"{content}"</p>
+      <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-popover" />
+    </div>
+  </div>
+);
 
 // ─── Tooltips ────────────────────────────────────────────────────────────────
 const CustomStockTooltip = ({ active, payload }: any) => {
@@ -459,10 +476,38 @@ export default function DashboardPage() {
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   const statCards = [
-    { label: 'Receita do Filtro', value: formatCurrency(monthlySalesValue), sub: 'Performance bruta no período', icon: BadgeDollarSign, color: 'text-primary' },
-    { label: 'Lucro Estimado', value: formatCurrency(totalProfit), sub: 'Lucro líquido aproximado', icon: TrendingUp, color: 'text-emerald-500' },
-    { label: 'Alerta de Estoque', value: lowStockCount, sub: 'Peças abaixo de 5 unidades', icon: AlertCircle, color: 'text-red-500' },
-    { label: 'Total de Produtos', value: totalProducts, sub: 'Modelos ativos na vitrine', icon: PackageSearch, color: 'text-violet-500' },
+    { 
+      label: 'Receita do Filtro', 
+      value: formatCurrency(monthlySalesValue), 
+      sub: 'Performance bruta no período', 
+      icon: BadgeDollarSign, 
+      color: 'text-primary',
+      info: 'Faturamento bruto total considerando todas as vendas realizadas no intervalo selecionado.'
+    },
+    { 
+      label: 'Lucro Estimado', 
+      value: formatCurrency(totalProfit), 
+      sub: 'Lucro líquido aproximado', 
+      icon: TrendingUp, 
+      color: 'text-emerald-500',
+      info: 'Margem líquida aproximada após descontar o custo das peças das vendas realizadas.'
+    },
+    { 
+      label: 'Alerta de Estoque', 
+      value: lowStockCount, 
+      sub: 'Peças abaixo de 5 unidades', 
+      icon: AlertCircle, 
+      color: 'text-red-500',
+      info: 'Quantidade de modelos diferentes que estão com o estoque crítico (menos de 5 unidades).'
+    },
+    { 
+      label: 'Total de Produtos', 
+      value: totalProducts, 
+      sub: 'Modelos ativos na vitrine', 
+      icon: PackageSearch, 
+      color: 'text-violet-500',
+      info: 'Total de produtos cadastrados no seu inventário que estão ativos para venda.'
+    },
   ];
 
   return (
@@ -497,7 +542,10 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-primary" />
-                  <span className="font-bold text-sm text-foreground">Meta Mensal</span>
+                  <span className="font-bold text-sm text-foreground">
+                    Meta Mensal 
+                    <MetricInfo title="Meta de Faturamento" content="Acompanhamento do seu faturamente bruto neste mês em relação ao objetivo configurado nos Ajustes." />
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-black text-sm text-primary">{formatCurrency(monthlySalesValue)}</span>
@@ -537,7 +585,10 @@ export default function DashboardPage() {
               <div key={i} className="bg-card border border-border p-4 md:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-[80px] pointer-events-none" />
                 <div className="flex items-center justify-between pb-2">
-                  <h3 className="text-[11px] md:text-sm font-bold text-muted-foreground leading-tight">{card.label}</h3>
+                  <h3 className="text-[11px] md:text-sm font-bold text-muted-foreground leading-tight flex items-center">
+                    {card.label}
+                    <MetricInfo title={card.label} content={card.info} />
+                  </h3>
                   <card.icon className={`h-4 w-4 md:h-5 md:w-5 ${card.color} shrink-0`} />
                 </div>
                 <div className="text-xl md:text-3xl font-black text-foreground mt-1">{card.value}</div>
@@ -555,7 +606,9 @@ export default function DashboardPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                   <h3 className="font-black text-2xl text-foreground flex items-center gap-3 tracking-tight italic">
-                    <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> POTENCIAL DO ESTOQUE
+                    <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> 
+                    POTENCIAL DO ESTOQUE
+                    <MetricInfo title="Potencial de Retorno" content="Este gráfico mostra quanto você pode lucrar se vender todo o seu estoque atual em cada canal. O card ao lado soma o lucro máximo possível para cada peça individualmente (Visão Otimista)." />
                   </h3>
                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1">Estimativa de Retorno Omnichannel do Estoque Ativo</p>
                 </div>

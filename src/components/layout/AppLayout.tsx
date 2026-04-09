@@ -205,9 +205,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         crossOrigin="anonymous"
                         style={{
                           height: 'auto',
-                          maxHeight: Math.min(brand.logoH, 64),
+                          maxHeight: Math.min(brand.logoH, 120),
                           width: 'auto',
-                          maxWidth: Math.min(brand.logoW, 140),
+                          maxWidth: Math.min(brand.logoW, 320),
                           objectFit: brand.logoFit as any,
                           objectPosition: brand.logoPos
                         }}

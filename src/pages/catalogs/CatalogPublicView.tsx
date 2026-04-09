@@ -249,6 +249,36 @@ export default function CatalogPublicView() {
             gap: 16px !important;
           }
         }
+
+        .categories-scroll {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: 8px 4px;
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+
+        .categories-wrapper {
+          position: relative;
+          width: 100%;
+          mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+        }
+
+        @media (min-width: 768px) {
+          .categories-wrapper {
+             mask-image: none;
+             -webkit-mask-image: none;
+          }
+          .categories-scroll {
+            justify-content: center;
+            flex-wrap: wrap;
+            overflow-x: visible;
+          }
+        }
       `}</style>
 
       {/* ── STICKY HEADER ── */}
@@ -293,12 +323,39 @@ export default function CatalogPublicView() {
             </div>
             
             {catalogCats.length>0&&(
-              <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none',padding:'4px 2px'}}>
-                {[{id:'all',name:'Todas'},...catalogCats].map(c=>{const active=activeCat===c.id;return(
-                  <button key={c.id} onClick={()=>setActiveCat(c.id)} style={{flexShrink:0,padding:'7px 18px',fontSize:9,fontFamily:theme.sans,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',borderRadius:99,cursor:'pointer',transition:'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',background:active?theme.accent:'transparent',color:active?onAccent:theme.muted,border:`1px solid ${active?theme.accent:theme.border}`,boxShadow:active?`0 4px 12px ${theme.accent}30`:'none'}}>
-                    {c.name}
-                  </button>
-                );})}
+              <div className="categories-wrapper">
+                <div className="categories-scroll">
+                  {[{id:'all',name:'Todas'},...catalogCats].map(c=>{
+                    const active=activeCat===c.id;
+                    return(
+                      <button 
+                        key={c.id} 
+                        onClick={()=>setActiveCat(c.id)} 
+                        style={{
+                          flexShrink:0,
+                          padding:'8px 20px',
+                          fontSize:10,
+                          fontFamily:theme.sans,
+                          fontWeight:800,
+                          letterSpacing:'0.12em',
+                          textTransform:'uppercase',
+                          borderRadius:99,
+                          cursor:'pointer',
+                          transition:'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          background:active?theme.accent:'transparent',
+                          color:active?onAccent:theme.muted,
+                          border:`1px solid ${active?theme.accent:theme.border}`,
+                          boxShadow:active?`0 4px 12px ${theme.accent}40`:'none',
+                          outline: 'none'
+                        }}
+                        onMouseEnter={e => { if(!active) e.currentTarget.style.borderColor = theme.accent; }}
+                        onMouseLeave={e => { if(!active) e.currentTarget.style.borderColor = theme.border; }}
+                      >
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

@@ -714,13 +714,35 @@ export default function CatalogPublicView() {
                   </p>
                 </div>
               )}
-            </div>
-              </div>
-              <button
-                onClick={()=>{addToCart(detailItem,detailQty);setDetailItem(null);}}
-                style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:7,height:44,background:theme.accent,color:onAccent,border:'none',cursor:'pointer',fontFamily:theme.sans,fontWeight:700,fontSize:11,letterSpacing:'0.14em',textTransform:'uppercase',borderRadius:4,transition:'opacity 0.18s'}}
-                onMouseEnter={e=>(e.currentTarget.style.opacity='0.85')} onMouseLeave={e=>(e.currentTarget.style.opacity='1')}>
-                <ShoppingCart style={{width:14,height:14}}/> Adicionar ao Carrinho
+            {/* Footer / Add to Cart */}
+            <div style={{padding:'16px 18px 24px',borderTop:`1px solid ${theme.border}`,background:theme.cardBg,zIndex:10}}>
+              <button 
+                onClick={() => {
+                  addToCart(detailItem, detailQty, selectedVarIdx);
+                  setDetailItem(null);
+                }}
+                disabled={ (selectedVarIdx !== null ? (detailItem.variations?.[selectedVarIdx]?.stock ?? 0) : detailItem.stock_quantity) <= 0 }
+                style={{
+                  width:'100%',
+                  padding:'16px',
+                  background:theme.accent,
+                  color:onAccent,
+                  border:'none',
+                  borderRadius:12,
+                  fontFamily:theme.sans,
+                  fontWeight:800,
+                  fontSize:13,
+                  letterSpacing:'0.1em',
+                  textTransform:'uppercase',
+                  cursor:'pointer',
+                  boxShadow:`0 8px 20px ${theme.accent}40`,
+                  opacity: (selectedVarIdx !== null ? (detailItem.variations?.[selectedVarIdx]?.stock ?? 0) : detailItem.stock_quantity) <= 0 ? 0.5 : 1
+                }}
+              >
+                { (selectedVarIdx !== null ? (detailItem.variations?.[selectedVarIdx]?.stock ?? 0) : detailItem.stock_quantity) <= 0 
+                  ? 'Indisponível' 
+                  : 'Adicionar ao Carrinho' 
+                }
               </button>
             </div>
           </div>

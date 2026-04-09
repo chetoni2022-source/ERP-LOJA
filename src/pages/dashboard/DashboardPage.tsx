@@ -12,13 +12,13 @@ const MetricInfo = ({ title, content }: { title: string, content: string }) => (
     <button type="button" className="p-0.5 rounded-full hover:bg-muted transition-colors outline-none">
       <Info className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors cursor-help" />
     </button>
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-popover text-popover-foreground text-[11px] font-bold rounded-2xl border border-border shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] backdrop-blur-xl pointer-events-none scale-95 group-hover:scale-100 origin-bottom">
+    <div className="absolute top-full left-14 -translate-x-1/2 mt-2 w-56 p-3 bg-popover text-popover-foreground text-[11px] font-bold rounded-2xl border border-border shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] backdrop-blur-xl pointer-events-none scale-95 group-hover:scale-100 origin-top">
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border/50">
         <Info className="h-3 w-3 text-primary shrink-0" />
         <p className="text-primary uppercase tracking-[0.15em] font-black">{title}</p>
       </div>
       <p className="font-semibold text-muted-foreground leading-relaxed italic">"{content}"</p>
-      <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-popover" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-popover" />
     </div>
   </div>
 );
@@ -734,7 +734,9 @@ export default function DashboardPage() {
               <div className="mb-3 flex justify-between items-start">
                 <div>
                   <h3 className="font-black text-lg md:text-2xl text-foreground flex items-center gap-2 tracking-tight">
-                    <TrendingUp className="text-emerald-500 h-5 w-5 md:h-7 md:w-7" /> Performance de Lucro
+                    <TrendingUp className="text-emerald-500 h-5 w-5 md:h-7 md:w-7" /> 
+                    Performance de Lucro
+                    <MetricInfo title="Evolução de Lucro" content="Mostra o lucro líquido diário acumulado no período selecionado. Acompanhe a saúde financeira dia após dia." />
                   </h3>
                   <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Evolução Diária Real</p>
                 </div>
@@ -795,7 +797,10 @@ export default function DashboardPage() {
             {/* Top Products */}
             <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col">
               <div className="mb-4">
-                <h3 className="font-bold text-base md:text-xl text-foreground">Top Peças</h3>
+                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
+                  Top Peças
+                  <MetricInfo title="Ranking de Vendas" content="Lista dos produtos com maior volume de unidades vendidas. Ideal para identificar seus 'Best Sellers'." />
+                </h3>
                 <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Mais vendidas por volume no período.</p>
               </div>
               <div className="space-y-3 flex-1">
@@ -825,7 +830,9 @@ export default function DashboardPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl opacity-0 group-hover/chart2:opacity-100 transition-opacity" />
               <div className="mb-4">
                 <h3 className="font-bold text-base md:text-xl text-foreground flex items-center gap-2">
-                  <Award className="text-amber-500 h-5 w-5" /> Estrelas de Lucro
+                  <Award className="text-amber-500 h-5 w-5" /> 
+                  Estrelas de Lucro
+                  <MetricInfo title="Produtos Mais Lucrativos" content="Ranking baseado no lucro líquido total gerado. Nem sempre o que mais vende é o que mais traz lucro!" />
                 </h3>
                 <p className="text-xs md:text-sm font-medium text-muted-foreground mt-0.5">Top Produtos que mais encorparam o lucro liquido (Gráfico 3D).</p>
               </div>

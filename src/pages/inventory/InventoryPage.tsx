@@ -743,6 +743,12 @@ export default function InventoryPage() {
                           <ImageIcon className="h-3 w-3" /> {product.images.length}
                         </div>
                       )}
+
+                      {product.cost_price <= 0 && (
+                        <div className="absolute bottom-2 right-2 bg-amber-500/90 text-white text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md border border-amber-400/30 shadow-sm animate-in fade-in duration-500" title="Custo não cadastrado">
+                          <AlertTriangle size={10} className="animate-pulse" /> SEM CUSTO
+                        </div>
+                      )}
                     </div>
                     
                     <div className="p-3 flex flex-col flex-1">
@@ -778,8 +784,8 @@ export default function InventoryPage() {
                                  {calculateROI(currentPrice, product.cost_price).toFixed(0)}% ROI
                                </div>
                              ) : (
-                               <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="Defina o custo para ver o ROI real">
-                                 <AlertTriangle size={8} className="animate-pulse" /> SEM CUSTO
+                               <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 px-1.5 py-0.5 rounded-full bg-amber-500/5 border border-amber-500/20" title="Custo Ausente">
+                                 <AlertTriangle size={10} className="animate-pulse" />
                                </div>
                              )}
                            </div>

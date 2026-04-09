@@ -772,10 +772,14 @@ export default function InventoryPage() {
                                (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
                                {fmt(currentPrice - product.cost_price)}
                              </div>
-                             {product.cost_price > 0 && (
+                             {product.cost_price > 0 ? (
                                <div className={cn("px-1 py-0.5 rounded-[4px] text-[8px] font-black tracking-widest border",
                                  calculateROI(currentPrice, product.cost_price) > 30 ? "bg-emerald-500 text-white border-emerald-600" : "bg-orange-500 text-white border-orange-600")}>
                                  {calculateROI(currentPrice, product.cost_price).toFixed(0)}% ROI
+                               </div>
+                             ) : (
+                               <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="Defina o custo para ver o ROI real">
+                                 <AlertTriangle size={8} className="animate-pulse" /> SEM CUSTO
                                </div>
                              )}
                            </div>
@@ -1015,7 +1019,14 @@ export default function InventoryPage() {
                           <Scale size={20} />
                         </div>
                         <div>
-                          <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Estrutura de Custos</Label>
+                          <Label className="font-black text-sm uppercase text-foreground tracking-widest block flex items-center gap-2">
+                            Estrutura de Custos
+                            {totalCost <= 0 && (
+                              <span className="flex items-center gap-1 text-[8px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full border border-amber-500/20 animate-pulse">
+                                <AlertTriangle size={8} /> Custo não definido
+                              </span>
+                            )}
+                          </Label>
                           <p className="text-[10px] text-muted-foreground font-medium">Insumos, impostos e taxas</p>
                         </div>
                       </div>

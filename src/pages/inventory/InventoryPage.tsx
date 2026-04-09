@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Heading } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';
@@ -600,6 +600,9 @@ export default function InventoryPage() {
     setName('');
     setSku('');
     setDescription('');
+    // History reset
+    descriptionHistory.current = [''];
+    historyIndex.current = 0;
     setPrice('');
     setSalePrice('');
     setCosts([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
@@ -641,7 +644,13 @@ export default function InventoryPage() {
       return;
     }
 
-    const wrapped = format === 'bold' ? `**${selected}**` : `++${selected}++`;
+    }
+    
+    let wrapped = '';
+    if (format === 'bold') wrapped = `**${selected}**`;
+    else if (format === 'italic') wrapped = `*${selected}*`;
+    else if (format === 'big') wrapped = `++${selected}++`;
+    
     const newVal = description.slice(0, start) + wrapped + description.slice(end);
     setDescription(newVal);
     saveToHistory(newVal);
@@ -663,6 +672,11 @@ export default function InventoryPage() {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
       e.preventDefault();
       applyFormat('bold', inputId);
+    }
+    // CTRL + I or CMD + I for Italic
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      applyFormat('italic', inputId);
     }
     // ALT + U for Big (Heading-like highlight)
     if (e.altKey && e.key.toLowerCase() === 'u') {
@@ -1099,16 +1113,23 @@ export default function InventoryPage() {
                       </button>
                     </div>
 
-                    <div className="flex gap-1 mb-1.5">
+                    <div className="flex gap-1 mb-1.5 bg-muted/30 p-1 w-fit rounded-lg border border-border/40">
                       <button type="button"
-                        className="h-8 w-8 flex items-center justify-center border border-border/60 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
                         onClick={() => applyFormat('bold', 'descTextarea')}
                         title="Negrito (Ctrl+B)"
                       >
                         <Bold size={14} />
                       </button>
                       <button type="button"
-                        className="h-8 w-8 flex items-center justify-center border border-border/60 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+                        onClick={() => applyFormat('italic', 'descTextarea')}
+                        title="Itálico (Ctrl+I)"
+                      >
+                        <Italic size={14} />
+                      </button>
+                      <button type="button"
+                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
                         onClick={() => applyFormat('big', 'descTextarea')}
                         title="Título (Alt+U)"
                       >
@@ -1128,34 +1149,25 @@ export default function InventoryPage() {
                     {isDescFullscreen && (
                       <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
                          <div className="max-w-full mx-auto w-full flex flex-col h-full gap-2">
-                            <div className="flex items-center justify-between shrink-0 bg-card border border-border px-4 py-3 rounded-2xl shadow-sm">
-                               <div className="flex items-center gap-3">
-                                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                    <Edit size={16} />
-                                 </div>
-                                 <div className="flex items-center gap-4">
-                                   <h2 className="text-sm font-black tracking-tighter text-foreground uppercase leading-none">Editor Profissional</h2>
-                                   <div className="h-4 w-px bg-border hidden md:block" />
-                                   <p className="hidden md:block text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Escrita Técnica de Alta Performance</p>
-                                 </div>
+                            <div className="flex items-center justify-between shrink-0 bg-card border border-border pl-4 pr-1 py-1 rounded-xl shadow-sm">
+                               <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg">
+                                  <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Negrito (Ctrl+B)">
+                                     <Bold size={16} />
+                                  </button>
+                                  <button type="button" onClick={() => applyFormat('italic', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Itálico (Ctrl+I)">
+                                     <Italic size={16} />
+                                  </button>
+                                  <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Título (Alt+U)">
+                                     <Heading size={16} />
+                                  </button>
                                </div>
                                
-                               <div className="flex items-center gap-4">
-                                 <div className="flex items-center gap-2 border-r border-border pr-4 mr-2">
-                                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-primary hover:text-primary-foreground transition-all" title="Negrito (Ctrl+B)">
-                                       <Bold size={16} />
-                                    </button>
-                                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-primary hover:text-primary-foreground transition-all" title="Título (Alt+U)">
-                                       <Heading size={16} />
-                                    </button>
-                                 </div>
-                                 <button 
-                                  onClick={() => setIsDescFullscreen(false)}
-                                  className="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                                 >
-                                   CONCLUIR EDIÇÃO
-                                 </button>
-                               </div>
+                               <button 
+                                onClick={() => setIsDescFullscreen(false)}
+                                className="h-9 px-4 flex items-center justify-center bg-primary text-primary-foreground rounded-lg font-black uppercase text-[10px] tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all"
+                               >
+                                 CONCLUIR
+                               </button>
                             </div>
 
                             <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-2xl overflow-hidden relative">
@@ -1165,13 +1177,9 @@ export default function InventoryPage() {
                                 value={description}
                                 onChange={e => handleDescriptionChange(e.target.value)}
                                 onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
-                                className="flex-1 w-full p-6 md:p-10 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
-                                placeholder="Descreva os detalhes luxuosos da sua peça com calma e precisão..."
+                                className="flex-1 w-full p-4 md:p-6 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
+                                placeholder="..."
                                />
-                               <div className="absolute bottom-6 right-8 flex items-center gap-3 opacity-20 pointer-events-none">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">Salvamento Automático</span>
-                                </div>
                             </div>
                          </div>
                       </div>

@@ -714,6 +714,7 @@ export default function CatalogPublicView() {
                   </p>
                 </div>
               )}
+            </div>
             {/* Footer / Add to Cart */}
             <div style={{padding:'16px 18px 24px',borderTop:`1px solid ${theme.border}`,background:theme.cardBg,zIndex:10}}>
               <button 

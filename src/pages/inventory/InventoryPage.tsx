@@ -1817,9 +1817,11 @@ export default function InventoryPage() {
                            onKeyDown={e => {
                              if(e.key==='Enter') {
                                e.preventDefault();
-                               if(newVarName.trim()) { setVariations([...variations, {name: newVarName.trim(), type: newVarType}]); setNewVarName(''); }
-                             }
-                               if(newVarName.trim()) { setVariations([...variations, {name: newVarName.trim(), type: newVarType, stock: parseInt(newVarStock) || 0}]); setNewVarName(''); setNewVarStock(''); }
+                               if(newVarName.trim()) { 
+                                 setVariations([...variations, {name: newVarName.trim(), type: newVarType, stock: parseInt(newVarStock) || 0}]); 
+                                 setNewVarName(''); 
+                                 setNewVarStock(''); 
+                               }
                              }
                            }}
                            className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 

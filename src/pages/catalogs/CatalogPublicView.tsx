@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package } from 'lucide-react';
 
 const WA_NUMBER = '5511945421583';
@@ -201,7 +201,7 @@ export default function CatalogPublicView() {
         <div className="catalog-container">
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',paddingBottom:24}}>
             {brand.logo
-              ? <img src={brand.logo} alt={brand.name} style={{height:'auto',maxHeight:brand.logoH,width:'auto',maxWidth:brand.logoW,objectFit:brand.logoFit as any,objectPosition:brand.logoPos,filter:isLight?'none':'brightness(1.1) drop-shadow(0 4px 20px rgba(0,0,0,0.4))'}}/>
+              ? <img src={getProxyUrl(brand.logo) || ''} alt={brand.name} style={{height:'auto',maxHeight:brand.logoH,width:'auto',maxWidth:brand.logoW,objectFit:brand.logoFit as any,objectPosition:brand.logoPos,filter:isLight?'none':'brightness(1.1) drop-shadow(0 4px 20px rgba(0,0,0,0.4))'}}/>
               : <div style={{textAlign:'center'}}><p style={{fontFamily:theme.serif,fontSize:38,fontWeight:500,color:theme.text,letterSpacing:'-0.02em'}}>{brand.name}</p><p style={{fontFamily:theme.sans,fontSize:9,letterSpacing:'0.4em',textTransform:'uppercase',color:theme.accent,marginTop:4}}>Luxury Essentials</p></div>
             }
           </div>
@@ -263,7 +263,7 @@ export default function CatalogPublicView() {
                     <div style={{position:'relative',aspectRatio:'1/1',background:theme.cardBg,border:`1px solid ${theme.border}`,overflow:'hidden',marginBottom:12,borderRadius:12}}
                       onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>
                       {displayImg
-                        ? <img src={displayImg} alt={item.name} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',}}
+                        ? <img src={getProxyUrl(displayImg) || ''} alt={item.name} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',}}
                             onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}/>
                         : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:32,height:32,color:theme.text}}/></div>
                       }
@@ -328,7 +328,7 @@ export default function CatalogPublicView() {
           <div style={{height:1,background:theme.border,marginBottom:24}}/>
           
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
-            {brand.logo&&<img src={brand.logo} alt={brand.name} style={{height:30,maxWidth:180,objectFit:'contain',opacity:0.6}}/>}
+            {brand.logo&&<img src={getProxyUrl(brand.logo) || ''} alt={brand.name} style={{height:30,maxWidth:180,objectFit:'contain',opacity:0.6}}/>}
             <p style={{fontFamily:theme.sans,fontSize:11,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,fontWeight:500}}>&copy; {new Date().getFullYear()} {brand.name} • Todos os direitos reservados</p>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
                <span style={{fontFamily:theme.sans,fontSize:10,color:`${theme.text}40`}}>Desenvolvido por</span>
@@ -378,7 +378,7 @@ export default function CatalogPublicView() {
                 return(
                   <div key={c.item.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:8}}>
                     <div style={{width:46,height:46,background:theme.cardBg,overflow:'hidden',borderRadius:6,flexShrink:0}}>
-                      {img?<img src={img} alt={c.item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<ShoppingBag style={{width:'100%',height:'100%',padding:12,color:theme.muted,opacity:0.2}}/>}
+                      {img?<img src={getProxyUrl(img) || ''} alt={c.item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<ShoppingBag style={{width:'100%',height:'100%',padding:12,color:theme.muted,opacity:0.2}}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <p style={{fontFamily:theme.serif,fontSize:12,fontWeight:500,color:theme.text,overflow:'hidden',whiteSpace:'nowrap',textOverflow:'ellipsis'}}>{c.item.name}</p>
@@ -419,7 +419,7 @@ export default function CatalogPublicView() {
             {/* Image */}
             <div style={{position:'relative',width:'100%',maxHeight:'40vh',minHeight:'280px',background:theme.bg,flexShrink:0}}>
               {(detailItem.images?.[0]||detailItem.image_url)
-                ? <img src={detailItem.images?.[0]||detailItem.image_url||''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px'}}/>
+                ? <img src={getProxyUrl(detailItem.images?.[0]||detailItem.image_url) || ''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px'}}/>
                 : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:48,height:48,color:theme.text}}/></div>
               }
               <button onClick={()=>setDetailItem(null)} style={{position:'absolute',top:12,right:12,width:34,height:34,borderRadius:'50%',background:`${theme.bg}d0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text}}>

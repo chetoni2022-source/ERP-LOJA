@@ -31,15 +31,26 @@ ALTER TABLE IF EXISTS public.profiles ENABLE ROW LEVEL SECURITY;
 -- Políticas de isolamento por usuário (auth.uid() = user_id)
 DROP POLICY IF EXISTS "User Products" ON public.products;
 CREATE POLICY "User Products" ON public.products FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public Products Select" ON public.products FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "User Sales" ON public.sales;
 CREATE POLICY "User Sales" ON public.sales FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "User Categories" ON public.categories;
 CREATE POLICY "User Categories" ON public.categories FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public Categories Select" ON public.categories FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "User Catalogs" ON public.catalogs;
 CREATE POLICY "User Catalogs" ON public.catalogs FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public Catalogs Select" ON public.catalogs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "User Catalog Items" ON public.catalog_items;
+CREATE POLICY "User Catalog Items" ON public.catalog_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public Catalog Items Select" ON public.catalog_items FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "User Catalog Categories" ON public.catalog_categories;
+CREATE POLICY "User Catalog Categories" ON public.catalog_categories FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public Catalog Categories Select" ON public.catalog_categories FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "User Profiles" ON public.profiles;
 CREATE POLICY "User Profiles" ON public.profiles FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);

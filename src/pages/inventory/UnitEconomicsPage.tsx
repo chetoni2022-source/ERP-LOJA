@@ -183,7 +183,7 @@ export default function UnitEconomicsPage() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20 overflow-x-hidden">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card/60 backdrop-blur-md border border-border/40 p-6 md:p-10 rounded-[3rem] shadow-2xl shadow-primary/5 relative overflow-hidden group">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
@@ -231,7 +231,7 @@ export default function UnitEconomicsPage() {
       <div className="bg-card border border-border/80 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-visible relative group/table">
         {/* STICKY HEADER - FIXING STICKINESS & Z-INDEX */}
         <div className={cn(
-          "hidden lg:grid gap-2 px-8 py-6 bg-card/95 border-b border-border items-center sticky top-0 md:top-0 z-[60] backdrop-blur-2xl transition-all duration-500 shadow-sm",
+          "hidden lg:grid gap-2 px-8 py-6 bg-card/95 border-b border-border items-center sticky top-0 z-[60] backdrop-blur-2xl transition-all duration-500 shadow-md",
           GRID_CLASSES
         )}>
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Produto / SKU</span>
@@ -359,7 +359,7 @@ export default function UnitEconomicsPage() {
                                       "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg border-2 border-white/10 transition-transform",
                                       platform === 'site' ? "bg-primary text-primary-foreground shadow-primary/20" : 
                                       platform === 'shopee' ? "bg-[#f53d2d] text-white shadow-[#f53d2d]/20" : 
-                                      "bg-black text-white shadow-black/20"
+                                      "bg-black text-white shadow-black/30"
                                     )}>
                                       {platform === 'site' && <Monitor size={18} />}
                                       {platform === 'shopee' && <ShoppingBag size={18} />}
@@ -369,14 +369,22 @@ export default function UnitEconomicsPage() {
                                         <span className="text-[11px] font-black uppercase tracking-[0.15em] leading-none mb-1">
                                           {platform === 'site' ? 'Padrão / Site' : platform === 'shopee' ? 'Shopee BR' : 'TikTok Shop'}
                                         </span>
-                                        <div className="flex items-center gap-1.5 opacity-40">
+                                        <div className="flex items-center gap-1.5 opacity-80 mt-1">
                                            <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                                            <button 
                                               onClick={() => toggleSimulator(product.id, platform)}
-                                              className="text-[8px] font-black uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-1"
+                                              className={cn(
+                                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all shadow-sm border",
+                                                isSimOpen 
+                                                  ? "bg-muted text-foreground border-border" 
+                                                  : "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30"
+                                              )}
                                            >
-                                              {isSimOpen ? 'Ocultar Escala' : 'Projetar Escala'}
-                                              {isSimOpen ? <ChevronUp size={8} /> : <Zap size={8} />}
+                                              {isSimOpen ? (
+                                                <>Ocultar Escala <ChevronUp size={10} /></>
+                                              ) : (
+                                                <>Projetar Escala <TrendingUp size={10} /></>
+                                              )}
                                            </button>
                                         </div>
                                     </div>

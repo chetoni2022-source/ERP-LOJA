@@ -59,6 +59,12 @@ export default function SettingsPage() {
   const [savingShopee, setSavingShopee] = useState(false);
   const [globalTaxPct, setGlobalTaxPct] = useState('0');
 
+  // TikTok Integration State
+  const [tiktokMarkup, setTiktokMarkup] = useState('0');
+  const [tiktokCommission, setTiktokCommission] = useState('15');
+  const [tiktokFixedFee, setTiktokFixedFee] = useState('4');
+  const [tiktokCap, setTiktokCap] = useState('100');
+
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
   useEffect(() => {

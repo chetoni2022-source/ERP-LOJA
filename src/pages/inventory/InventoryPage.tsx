@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
@@ -114,6 +114,56 @@ export default function InventoryPage() {
     tiktok_cap: 100,
     tiktok_markup: 6
   });
+
+  // Description History (Undo)
+  const descriptionHistory = useRef<string[]>([]);
+  const historyIndex = useRef<number>(-1);
+  const historyTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const saveToHistory = useCallback((val: string) => {
+    // If current value is same as last history, don't save
+    if (descriptionHistory.current[historyIndex.current] === val) return;
+    
+    // Remote forward history if we were in middle of stack
+    const newHistory = descriptionHistory.current.slice(0, historyIndex.current + 1);
+    newHistory.push(val);
+    
+    // Limit history to 50 items
+    if (newHistory.length > 50) newHistory.shift();
+    
+    descriptionHistory.current = newHistory;
+    historyIndex.current = newHistory.length - 1;
+  }, []);
+
+  const handleDescriptionChange = (val: string) => {
+    setDescription(val);
+    
+    // Debounce saving to history while typing (save every 1 second of inactivity)
+    if (historyTimeout.current) clearTimeout(historyTimeout.current);
+    historyTimeout.current = setTimeout(() => {
+      saveToHistory(val);
+    }, 1000);
+  };
+
+  const undoDescription = useCallback(() => {
+    if (historyIndex.current > 0) {
+      historyIndex.current -= 1;
+      const prevVal = descriptionHistory.current[historyIndex.current];
+      setDescription(prevVal);
+    }
+  }, []);
+
+  // Initialize history when modal opens with existing description
+  useEffect(() => {
+    if (isModalOpen && descriptionHistory.current.length === 0) {
+      descriptionHistory.current = [description || ''];
+      historyIndex.current = 0;
+    } else if (!isModalOpen) {
+      // Clear history when closing modal
+      descriptionHistory.current = [];
+      historyIndex.current = -1;
+    }
+  }, [isModalOpen]);
 
   useEffect(() => {
     fetchProducts();
@@ -594,6 +644,7 @@ export default function InventoryPage() {
     const wrapped = format === 'bold' ? `**${selected}**` : `++${selected}++`;
     const newVal = description.slice(0, start) + wrapped + description.slice(end);
     setDescription(newVal);
+    saveToHistory(newVal);
     
     // Maintain focus and update selection
     setTimeout(() => {
@@ -603,6 +654,11 @@ export default function InventoryPage() {
   }
 
   const handleDescKeyDown = (e: React.KeyboardEvent, inputId: string) => {
+    // CTRL + Z or CMD + Z for Undo
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      undoDescription();
+    }
     // CTRL + B or CMD + B for Bold
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
       e.preventDefault();
@@ -1063,15 +1119,15 @@ export default function InventoryPage() {
                     <textarea
                       id="descTextarea"
                       value={description}
-                      onChange={e => setDescription(e.target.value)}
+                      onChange={e => handleDescriptionChange(e.target.value)}
                       onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
                       placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
                       className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all min-h-[120px]"
                     />
 
                     {isDescFullscreen && (
-                      <div className="fixed inset-0 z-[200] bg-background/90 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:p-4">
-                         <div className="max-w-[98%] mx-auto w-full flex flex-col h-full gap-2">
+                      <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
+                         <div className="max-w-full mx-auto w-full flex flex-col h-full gap-2">
                             <div className="flex items-center justify-between shrink-0 bg-card border border-border px-4 py-3 rounded-2xl shadow-sm">
                                <div className="flex items-center gap-3">
                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -1102,14 +1158,14 @@ export default function InventoryPage() {
                                </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl shadow-2xl overflow-hidden relative">
+                            <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-2xl overflow-hidden relative">
                                <textarea
                                 id="descTextareaFull"
                                 autoFocus
                                 value={description}
-                                onChange={e => setDescription(e.target.value)}
+                                onChange={e => handleDescriptionChange(e.target.value)}
                                 onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
-                                className="flex-1 w-full p-6 md:p-10 text-sm md:text-base font-medium leading-[1.8] bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
+                                className="flex-1 w-full p-6 md:p-10 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
                                 placeholder="Descreva os detalhes luxuosos da sua peça com calma e precisão..."
                                />
                                <div className="absolute bottom-6 right-8 flex items-center gap-3 opacity-20 pointer-events-none">

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp, SlidersHorizontal, Image as ImageIcon } from 'lucide-react';
 
 const WA_NUMBER = '5511945421583';
 
@@ -16,7 +16,7 @@ interface CatalogItem {
   images?: string[] | null;
   category_id?: string | null;
   _categoryName?: string;
-  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null }[] | null;
+  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string }[] | null;
 }
 
 interface CartItem { item: CatalogItem; qty: number; }
@@ -97,10 +97,12 @@ export default function CatalogPublicView() {
   const [cartOpen, setCartOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CatalogItem|null>(null);
   const [detailQty, setDetailQty] = useState(1);
+  const [varImage, setVarImage] = useState<string|null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const socialTimer = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
 
   useEffect(()=>{ if(id) fetchCatalog(); },[id]);
+  useEffect(() => { if(!detailItem) setVarImage(null); }, [detailItem]);
   useEffect(()=>{
     const sp=setInterval(()=>{ const n=SOCIALS.names[Math.floor(Math.random()*10)];const a=SOCIALS.actions[Math.floor(Math.random()*5)];setSocial({name:n,action:a});clearTimeout(socialTimer.current);socialTimer.current=setTimeout(()=>setSocial(null),5000); },12000+Math.random()*8000);
     const vp=setInterval(()=>setViewers(v=>Math.max(1,v+(Math.random()>0.5?1:-1))),18000);
@@ -597,8 +599,8 @@ export default function CatalogPublicView() {
           <div className="animate-in slide-in-from-bottom-4 duration-300" style={{position:'relative',background:theme.cardBg,border:`1px solid ${theme.border}`,borderBottom:'none',maxHeight:'92svh',display:'flex',flexDirection:'column',width:'100%',maxWidth:640,margin:'0 auto',borderRadius:'16px 16px 0 0',overflow:'hidden'}}>
             {/* Image */}
             <div style={{position:'relative',width:'100%',maxHeight:'40vh',minHeight:'280px',background:theme.bg,flexShrink:0}}>
-              {(detailItem.images?.[0]||detailItem.image_url)
-                ? <img src={getProxyUrl(detailItem.images?.[0]||detailItem.image_url) || ''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px'}}/>
+              {(varImage||detailItem.images?.[0]||detailItem.image_url)
+                ? <img src={getProxyUrl(varImage||detailItem.images?.[0]||detailItem.image_url) || ''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px',transition:'opacity 0.3s ease-in-out'}}/>
                 : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:48,height:48,color:theme.text}}/></div>
               }
               <button onClick={()=>setDetailItem(null)} style={{position:'absolute',top:12,right:12,width:34,height:34,borderRadius:'50%',background:`${theme.bg}d0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text}}>
@@ -625,12 +627,15 @@ export default function CatalogPublicView() {
                 <div style={{marginBottom:16}}>
                   <p style={{fontFamily:theme.sans,fontSize:9,fontWeight:600,letterSpacing:'0.2em',textTransform:'uppercase',color:theme.muted,marginBottom:8}}>Opções Neste Modelo</p>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                    {detailItem.variations.map((v, i) => (
-                      <div key={i} style={{padding:'4px 10px',background:`${theme.border}40`,border:`1px solid ${theme.border}`,borderRadius:20,fontSize:10,fontFamily:theme.sans,fontWeight:600,color:theme.text,display:'flex',alignItems:'center',gap:5}}>
+                    {detailItem.variations.map((v, i) => {
+                      const isActive = varImage === v.image_url && v.image_url;
+                      return (
+                      <button key={i} onClick={() => v.image_url && setVarImage(v.image_url)} style={{padding:'4px 10px',background:isActive?`${theme.accent}20`:`${theme.border}40`,border:`1px solid ${isActive?theme.accent:theme.border}`,borderRadius:20,fontSize:10,fontFamily:theme.sans,fontWeight:600,color:isActive?theme.accent:theme.text,display:'flex',alignItems:'center',gap:5,cursor:v.image_url?'pointer':'default',transition:'all 0.2s',outline:'none'}}>
+                        {v.image_url && <ImageIcon style={{width:10,height:10,opacity:isActive?1:0.6}}/>}
                         <span style={{width:6,height:6,borderRadius:'50%',background:v.type==='size'?'#3b82f6':v.type==='color'?'#f59e0b':'#8b5cf6'}}/>
                         {v.name}
-                      </div>
-                    ))}
+                      </button>
+                    )})}
                   </div>
                 </div>
               )}

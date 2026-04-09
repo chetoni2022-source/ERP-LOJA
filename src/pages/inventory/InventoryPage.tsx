@@ -38,7 +38,7 @@ interface Product {
     reels_video?: string;
     extra_videos?: string[];
   };
-  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null }[] | null;
+  variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string }[] | null;
 }
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
@@ -106,7 +106,7 @@ export default function InventoryPage() {
   const [tiktokPrice, setTiktokPrice] = useState('');
 
   // Variations State
-  const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null}[]>([]);
+  const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string}[]>([]);
   const [newVarName, setNewVarName] = useState('');
   const [newVarType, setNewVarType] = useState<'size'|'color'|'style'>('size');
 
@@ -638,6 +638,43 @@ export default function InventoryPage() {
     setVariations([]);
     setNewVarName('');
     setNewVarType('size');
+  }
+
+  async function handleVariationImageUpload(index: number, e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    const newVars = [...variations];
+    newVars[index] = { ...newVars[index], image_url: 'uploading' };
+    setVariations(newVars);
+
+    try {
+      const optimized = await MediaOptimizer.optimizeImage(file);
+      const fileExt = optimized.name.split('.').pop() || 'jpg';
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `variations/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, optimized, { upsert: false });
+        
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      const updated = [...variations];
+      updated[index] = { ...updated[index], image_url: publicUrl };
+      setVariations(updated);
+
+    } catch (err: any) {
+      console.error(err);
+      toastError('Erro ao subir imagem da variação: ' + err.message);
+      const reverted = [...variations];
+      delete reverted[index].image_url;
+      setVariations(reverted);
+    }
   }
 
   function applyFormat(format: 'bold' | 'italic' | 'big', inputId: string = 'descTextarea') {
@@ -1837,15 +1874,41 @@ export default function InventoryPage() {
                         variations.map((v, i) => (
                           <div key={i} className="flex items-center rounded-full bg-background border border-border shadow-sm overflow-hidden animate-in zoom-in duration-300">
                              <span className={cn(
-                               "px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-white h-full flex items-center shadow-inner",
+                               "px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-white h-full flex items-center shadow-inner shrink-0",
                                v.type === 'size' ? "bg-blue-500" : v.type === 'color' ? "bg-amber-500" : "bg-violet-500"
                              )}>
                                {v.type === 'size' ? 'Taman.' : v.type === 'color' ? 'Cor' : 'Estilo'}
                              </span>
-                             <span className="px-3 py-1.5 text-xs font-bold text-foreground">
+                             <span className="px-3 py-1.5 text-xs font-bold text-foreground truncate max-w-[150px]">
                                {v.name}
                              </span>
-                             <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="h-full px-2 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors border-l border-border flex items-center justify-center">
+
+                             <div className="relative border-l border-border h-full flex items-center bg-muted/10 shrink-0">
+                               {v.image_url === 'uploading' ? (
+                                  <div className="w-8 h-8 flex items-center justify-center">
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                                  </div>
+                               ) : (
+                                  <>
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      id={`var-img-${i}`}
+                                      className="hidden" 
+                                      onChange={(e) => handleVariationImageUpload(i, e)} 
+                                    />
+                                    <label htmlFor={`var-img-${i}`} className="w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors z-10" title="Atribuir Foto">
+                                      {v.image_url && v.image_url !== 'uploading' ? (
+                                        <img src={getProxyUrl(v.image_url)} alt="var" className="w-6 h-6 rounded-full object-cover border border-border/50" />
+                                      ) : (
+                                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground opacity-60" />
+                                      )}
+                                    </label>
+                                  </>
+                               )}
+                             </div>
+
+                             <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="h-full px-2 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors border-l border-border flex items-center justify-center shrink-0">
                                <X size={12} />
                              </button>
                           </div>

@@ -19,7 +19,8 @@ import {
   Target,
   TrendingUp,
   Zap,
-  ArrowRight
+  ArrowRight,
+  X
 } from 'lucide-react';
 
 interface Product {
@@ -374,16 +375,16 @@ export default function UnitEconomicsPage() {
                                            <button 
                                               onClick={() => toggleSimulator(product.id, platform)}
                                               className={cn(
-                                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all shadow-sm border",
+                                                "px-2.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-[0.1em] flex items-center gap-1 transition-all shadow-sm border",
                                                 isSimOpen 
                                                   ? "bg-muted text-foreground border-border" 
                                                   : "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30"
                                               )}
                                            >
                                               {isSimOpen ? (
-                                                <>Ocultar Escala <ChevronUp size={10} /></>
+                                                <>Fechar <ChevronUp size={9} /></>
                                               ) : (
-                                                <>Projetar Escala <TrendingUp size={10} /></>
+                                                <>Simular <TrendingUp size={9} /></>
                                               )}
                                            </button>
                                         </div>
@@ -439,29 +440,29 @@ export default function UnitEconomicsPage() {
 
                                 {/* SCALABILITY SIMULATOR "LEQUE" (ACCORDION) */}
                                 {isSimOpen && ecc.result !== 0 && (
-                                  <div className="px-6 lg:px-10 pb-6 animate-in slide-in-from-top-4 duration-500">
-                                     <div className="bg-primary/[0.04] border border-primary/10 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all hover:bg-primary/[0.06] shadow-inner">
-                                        <div className="flex items-center gap-4">
-                                           <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
-                                              <TrendingUp size={20} />
+                                  <div className="px-5 lg:px-8 pb-5 animate-in slide-in-from-top-4 duration-500">
+                                     <div className="bg-primary/[0.04] border border-primary/10 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-all hover:bg-primary/[0.06] shadow-inner">
+                                        <div className="flex items-center gap-3">
+                                           <div className="h-8 w-8 rounded-[12px] bg-primary/10 flex items-center justify-center text-primary shadow-sm shrink-0">
+                                              <TrendingUp size={16} />
                                            </div>
                                            <div>
-                                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Projeção {platform === 'site' ? 'SITE' : platform === 'shopee' ? 'SHOPEE' : 'TIKTOK'}</h4>
-                                              <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Estimativa baseada em volume</p>
+                                              <h4 className="text-[9px] font-black uppercase tracking-[0.15em] text-foreground leading-none">Escala {platform === 'site' ? 'SITE' : platform === 'shopee' ? 'SHOPEE' : 'TIKTOK'}</h4>
+                                              <p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60 mt-1">Projeção por volume</p>
                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 max-w-2xl">
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-1 max-w-xl">
                                            {[50, 100, 500, 1000].map(qty => (
-                                             <div key={qty} className="bg-card border border-border/80 p-3 rounded-2xl text-center shadow-sm hover:border-primary/40 transition-all">
-                                                <div className="text-[8px] font-black text-muted-foreground uppercase mb-0.5 tracking-[0.15em]">{qty} Unid.</div>
-                                                <div className={cn("text-[13px] font-black font-mono", isNeg ? "text-red-500" : "text-emerald-500")}>
+                                             <div key={qty} className="bg-card border border-border/80 p-2.5 rounded-xl text-center shadow-sm hover:border-primary/40 transition-all">
+                                                <div className="text-[7.5px] font-black text-muted-foreground uppercase mb-0.5 tracking-[0.1em]">{qty} Unid.</div>
+                                                <div className={cn("text-[12px] font-black font-mono", isNeg ? "text-red-500" : "text-emerald-500")}>
                                                    {fmt(ecc.result * qty)}
                                                 </div>
                                              </div>
                                            ))}
                                         </div>
-                                        <button onClick={() => toggleSimulator(product.id, platform)} className="p-2 text-muted-foreground hover:text-primary transition-colors">
-                                            <X size={16} />
+                                        <button onClick={() => toggleSimulator(product.id, platform)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors">
+                                            <X size={14} />
                                         </button>
                                      </div>
                                   </div>

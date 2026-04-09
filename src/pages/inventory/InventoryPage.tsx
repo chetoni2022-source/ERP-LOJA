@@ -1095,95 +1095,42 @@ export default function InventoryPage() {
                     </div>
                   </div>
                 </div>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-3 group/desc relative">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm flex flex-col gap-3 group/desc relative">
+                    <div className="flex items-center justify-between">
                       <div>
                         <Label className="font-black text-[10px] uppercase text-foreground/80 tracking-widest block flex items-center gap-2">
                            Descrição da Peça
                         </Label>
                         <p className="text-[10px] text-muted-foreground font-medium">Destaque os diferenciais e materiais do produto.</p>
                       </div>
-                      <button 
-                        type="button"
-                        onClick={() => setIsDescFullscreen(true)}
-                        className="h-8 w-8 flex items-center justify-center bg-muted/50 hover:bg-primary/10 hover:text-primary rounded-lg transition-all border border-border/40 shadow-sm"
-                        title="Expandir para Tela Cheia"
-                      >
-                        <Maximize2 size={16} />
-                      </button>
                     </div>
 
-                    <div className="flex gap-1 mb-1.5 bg-muted/30 p-1 w-fit rounded-lg border border-border/40">
-                      <button type="button"
-                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-                        onClick={() => applyFormat('bold', 'descTextarea')}
-                        title="Negrito (Ctrl+B)"
-                      >
-                        <Bold size={14} />
-                      </button>
-                      <button type="button"
-                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-                        onClick={() => applyFormat('italic', 'descTextarea')}
-                        title="Itálico (Ctrl+I)"
-                      >
-                        <Italic size={14} />
-                      </button>
-                      <button type="button"
-                        className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-                        onClick={() => applyFormat('big', 'descTextarea')}
-                        title="Título (Alt+U)"
-                      >
-                        <Heading size={14} />
-                      </button>
-                    </div>
-
-                    <textarea
-                      id="descTextarea"
-                      value={description}
-                      onChange={e => handleDescriptionChange(e.target.value)}
-                      onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
-                      placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
-                      className="w-full px-4 py-3 text-sm font-medium rounded-xl border border-border/60 bg-background/50 text-foreground outline-none focus:ring-1 focus:ring-primary focus:bg-background resize-none shadow-inner transition-all min-h-[120px]"
-                    />
-
-                    {isDescFullscreen && (
-                      <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
-                         <div className="max-w-full mx-auto w-full flex flex-col h-full gap-2">
-                            <div className="flex items-center justify-between shrink-0 bg-card border border-border pl-4 pr-1 py-1 rounded-xl shadow-sm">
-                               <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg">
-                                  <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Negrito (Ctrl+B)">
-                                     <Bold size={16} />
-                                  </button>
-                                  <button type="button" onClick={() => applyFormat('italic', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Itálico (Ctrl+I)">
-                                     <Italic size={16} />
-                                  </button>
-                                  <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Título (Alt+U)">
-                                     <Heading size={16} />
-                                  </button>
-                               </div>
-                               
-                               <button 
-                                onClick={() => setIsDescFullscreen(false)}
-                                className="h-9 px-4 flex items-center justify-center bg-primary text-primary-foreground rounded-lg font-black uppercase text-[10px] tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all"
-                               >
-                                 CONCLUIR
-                               </button>
-                            </div>
-
-                            <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-2xl overflow-hidden relative">
-                               <textarea
-                                id="descTextareaFull"
-                                autoFocus
-                                value={description}
-                                onChange={e => handleDescriptionChange(e.target.value)}
-                                onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
-                                className="flex-1 w-full p-4 md:p-6 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
-                                placeholder="..."
-                               />
-                            </div>
-                         </div>
+                    <div className="flex-1 flex flex-col border border-border/60 bg-background/50 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all shadow-inner">
+                      <div className="flex items-center justify-between bg-muted/30 border-b border-border/40 px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('bold', 'descTextarea')} title="Negrito (Ctrl+B)">
+                            <Bold size={14} />
+                          </button>
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('italic', 'descTextarea')} title="Itálico (Ctrl+I)">
+                            <Italic size={14} />
+                          </button>
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('big', 'descTextarea')} title="Título (Alt+U)">
+                            <Heading size={14} />
+                          </button>
+                        </div>
+                        <button type="button" onClick={() => setIsDescFullscreen(true)} className="h-7 px-3 flex items-center gap-1.5 bg-background shadow-sm border border-border/60 text-muted-foreground hover:text-foreground rounded-md transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest" title="Modo Foco Profissional (Tela Cheia)">
+                          <Maximize2 size={12} /> Expandir
+                        </button>
                       </div>
-                    )}
+                      <textarea
+                        id="descTextarea"
+                        value={description}
+                        onChange={e => handleDescriptionChange(e.target.value)}
+                        onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
+                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
+                        className="w-full px-5 py-5 text-sm font-medium bg-transparent text-foreground outline-none resize-none min-h-[300px] leading-relaxed custom-scrollbar"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1936,6 +1883,45 @@ export default function InventoryPage() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isDescFullscreen && (
+        <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
+           <div className="max-w-full mx-auto w-full flex flex-col h-full gap-2">
+              <div className="flex items-center justify-between shrink-0 bg-card border border-border pl-4 pr-1 py-1 rounded-xl shadow-sm">
+                 <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg">
+                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Negrito (Ctrl+B)">
+                       <Bold size={16} />
+                    </button>
+                    <button type="button" onClick={() => applyFormat('italic', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Itálico (Ctrl+I)">
+                       <Italic size={16} />
+                    </button>
+                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Título (Alt+U)">
+                       <Heading size={16} />
+                    </button>
+                 </div>
+                 
+                 <button 
+                  onClick={() => setIsDescFullscreen(false)}
+                  className="h-9 px-4 flex items-center justify-center bg-primary text-primary-foreground rounded-lg font-black uppercase text-[10px] tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all"
+                 >
+                   CONCLUIR
+                 </button>
+              </div>
+
+              <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-2xl overflow-hidden relative">
+                 <textarea
+                  id="descTextareaFull"
+                  autoFocus
+                  value={description}
+                  onChange={e => handleDescriptionChange(e.target.value)}
+                  onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
+                  className="flex-1 w-full p-4 md:p-6 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
+                  placeholder="Escreva a descrição detalhada aqui..."
+                 />
+              </div>
+           </div>
         </div>
       )}
     </div>

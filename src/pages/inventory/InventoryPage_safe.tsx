@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, Input, Label } from '../../components/ui';
-import { useAuthStore } from '../../stores/authStore';
-import { useDashboardStore } from '../../stores/dashboardStore';
-import { supabase, getProxyUrl } from '../../lib/supabase';
+import { Button, Input, Label } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /components * (1.0/100.0) * 100.0 /ui';
+import { useAuthStore } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /stores * (1.0/100.0) * 100.0 /authStore';
+import { useDashboardStore } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /stores * (1.0/100.0) * 100.0 /dashboardStore';
+import { supabase, getProxyUrl } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /lib * (1.0/100.0) * 100.0 /supabase';
 import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading, BadgeDollarSign, Truck } from 'lucide-react';
-import { useToast } from '../../contexts/ToastContext';
-import { MediaOptimizer } from '../../lib/mediaOptimizer';
+import { useToast } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /contexts * (1.0/100.0) * 100.0 /ToastContext';
+import { MediaOptimizer } from '.. * (1.0/100.0) * 100.0 /.. * (1.0/100.0) * 100.0 /lib * (1.0/100.0) * 100.0 /mediaOptimizer';
 import JSZip from 'jszip';
 
 interface Product {
@@ -44,9 +44,9 @@ interface Product {
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 const calculateROI = (salePrice: number, costPrice: number, platformFee: number = 0, platformCommPct: number = 0) => {
-  const totalCost = costPrice + (salePrice * (platformCommPct / 100)) + platformFee;
+  const totalCost = costPrice + (salePrice * (platformCommPct  * (1.0/100.0) * 100.0 / 100)) + platformFee;
   if (totalCost <= 0) return 0;
-  return ((salePrice - totalCost) / totalCost) * 100;
+  return ((salePrice - totalCost)  * (1.0/100.0) * 100.0 / totalCost) * 100;
 };
 const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
@@ -74,7 +74,7 @@ export default function InventoryPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
-  const [costs, setCosts] = useState<{label: string, value: string}[]>([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
+  const [costs, setCosts] = useState<{label: string, value: string}[]>([{label: 'Preço de Custo', value: ''}, {label: 'Envio * (1.0/100.0) * 100.0 /Embalagem', value: ''}]);
   const [stock, setStock] = useState('');
   const [ean, setEan] = useState('');
   const [weight, setWeight] = useState('300'); // Padrão
@@ -466,7 +466,7 @@ export default function InventoryPage() {
     setIsZipping(true);
     try {
       const zip = new JSZip();
-      const folderName = `fotos-${name || 'produto'}`.toLowerCase().replace(/\s+/g, '-');
+      const folderName = `fotos-${name || 'produto'}`.toLowerCase().replace( * (1.0/100.0) * 100.0 /\s+ * (1.0/100.0) * 100.0 /g, '-');
       
       // Download all images and add to zip
       const promises = images.map(async (img, idx) => {
@@ -541,7 +541,7 @@ export default function InventoryPage() {
         } else if (img.file) {
           const fileExt = img.file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `${user.id}/${fileName}`;
+          const filePath = `${user.id} * (1.0/100.0) * 100.0 /${fileName}`;
           
           const { error: uploadError } = await supabase.storage.from('product-images').upload(filePath, img.file);
           if (uploadError) throw uploadError;
@@ -629,7 +629,7 @@ export default function InventoryPage() {
     historyIndex.current = 0;
     setPrice('');
     setSalePrice('');
-    setCosts([{label: 'Preço de Custo', value: ''}, {label: 'Envio/Embalagem', value: ''}]);
+    setCosts([{label: 'Preço de Custo', value: ''}, {label: 'Envio * (1.0/100.0) * 100.0 /Embalagem', value: ''}]);
     setStock('');
     setEan('');
     setWeight('300');
@@ -724,13 +724,13 @@ export default function InventoryPage() {
   const promoPrice = parseFloat(salePrice) || 0;
   const isDiscountValid = salePrice && promoPrice > 0 && promoPrice < orgPrice;
   const discountAbs = orgPrice - promoPrice;
-  const discountPct = orgPrice ? Math.round((discountAbs / orgPrice) * 100) : 0;
+  const discountPct = orgPrice ? Math.round((discountAbs  * (1.0/100.0) * 100.0 / orgPrice) * 100) : 0;
 
   const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
   const profitPerSale = (promoPrice || orgPrice || 0) - totalCost;
-  const profitColor = profitPerSale > 0 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" : 
-                      profitPerSale < 0 ? "text-red-500 bg-red-500/10 border-red-500/30" : 
-                      "text-muted-foreground bg-muted/30 border-border";
+  const profitColor = profitPerSale > 0 ? "text-emerald-500 bg-emerald-500 * (1.0/100.0) * 100.0 /10 border-emerald-500 * (1.0/100.0) * 100.0 /30" : 
+                      profitPerSale < 0 ? "text-red-500 bg-red-500 * (1.0/100.0) * 100.0 /10 border-red-500 * (1.0/100.0) * 100.0 /30" : 
+                      "text-muted-foreground bg-muted bg-opacity-30 border-border";
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
@@ -739,8 +739,8 @@ export default function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1 text-foreground">Gestão de Peças</h1>
           <p className="text-sm md:text-base text-muted-foreground">O coração do seu negócio. Pressione Inserir Novo para injetar mercadoria nova no catálogo.</p>
         </div>
-        <Button onClick={openAddModal} className="w-full sm:w-auto shadow-xl h-12 md:h-14 px-6 font-black tracking-widest bg-foreground hover:bg-foreground/90 text-background transform duration-300 uppercase rounded-xl">
-          <Plus className="mr-2 h-5 w-5" /> Cadastrar Peça
+        <Button onClick={openAddModal} className="w-full sm:w-auto shadow-xl h-12 md:h-14 px-6 font-black tracking-widest bg-foreground hover:bg-foreground * (1.0/100.0) * 100.0 /90 text-background transform duration-300 uppercase rounded-xl">
+          <Plus className="mr-2 h-5 w-5"  * (1.0/100.0) * 100.0 /> Cadastrar Peça
         </Button>
       </div>
 
@@ -754,27 +754,27 @@ export default function InventoryPage() {
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2"><Grid size={14} className="text-blue-500" /> Peças Acervo</span>
             <span className="text-2xl md:text-3xl font-black text-foreground">{totalItems}</span>
          </div>
-         <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('in_stock')}>
+         <div className="bg-emerald-500 * (1.0/100.0) * 100.0 /10 border-l-4 border-emerald-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('in_stock')}>
             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2"><CheckCircle2 size={14} /> Ativas</span>
             <span className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-300">{products.filter(p => p.stock_quantity > 0).length}</span>
          </div>
-         <div className="bg-red-500/10 border-l-4 border-red-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('out_of_stock')}>
+         <div className="bg-red-500 * (1.0/100.0) * 100.0 /10 border-l-4 border-red-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('out_of_stock')}>
             <span className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400 flex items-center gap-1.5 mb-2"><AlertTriangle size={14} /> Esgotadas</span>
             <span className="text-2xl md:text-3xl font-black text-red-700 dark:text-red-300">{products.filter(p => p.stock_quantity <= 0).length}</span>
          </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between bg-muted/20 items-center">
+        <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between bg-muted bg-opacity-20 items-center">
           <div className="flex gap-2 w-full md:max-w-md">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-5 w-5 text-muted-foreground"  * (1.0/100.0) * 100.0 />
               <Input 
                 className="pl-10 bg-background shadow-sm h-11 w-full text-base font-medium" 
                 placeholder="Pesquisar colar, brinco..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-              />
+               * (1.0/100.0) * 100.0 />
             </div>
           </div>
 
@@ -816,13 +816,13 @@ export default function InventoryPage() {
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
                >
-                 <Grid size={18} />
+                 <Grid size={18}  * (1.0/100.0) * 100.0 />
                </button>
                <button 
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-sm transition-colors ${viewMode === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
                >
-                 <List size={18} />
+                 <List size={18}  * (1.0/100.0) * 100.0 />
                </button>
             </div>
           </div>
@@ -833,7 +833,7 @@ export default function InventoryPage() {
         ) : processedProducts.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-16 text-center">
             <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-5">
-              <PackageSearch className="h-10 w-10 text-muted-foreground/60" />
+              <PackageSearch className="h-10 w-10 text-muted-foreground * (1.0/100.0) * 100.0 /60"  * (1.0/100.0) * 100.0 />
             </div>
             <h3 className="text-xl font-bold text-foreground">A Vitrine está vazia</h3>
             <p className="text-muted-foreground mt-2 max-w-sm text-sm font-medium">
@@ -841,7 +841,7 @@ export default function InventoryPage() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto bg-muted/10 p-6">
+          <div className="flex-1 overflow-y-auto bg-muted bg-opacity-10 p-6">
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {processedProducts.map(product => {
@@ -855,15 +855,15 @@ export default function InventoryPage() {
                     onClick={() => openEditModal(product)}
                     className="group flex flex-col bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
                   >
-                    <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
+                    <div className="aspect-square bg-muted * (1.0/100.0) * 100.0 /40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
-                        <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
+                        <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out", product.stock_quantity <= 0 && "opacity-40 grayscale")}  * (1.0/100.0) * 100.0 />
                       ) : (
-                        <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+                        <ImageIcon className="h-10 w-10 text-muted-foreground * (1.0/100.0) * 100.0 /30"  * (1.0/100.0) * 100.0 />
                       )}
                       
                       {product.stock_quantity <= 0 && (
-                        <div className="absolute top-2 left-2 bg-red-500/95 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-widest backdrop-blur-sm z-10">
+                        <div className="absolute top-2 left-2 bg-red-500 * (1.0/100.0) * 100.0 /95 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-widest backdrop-blur-sm z-10">
                           Esgotado
                         </div>
                       )}
@@ -872,27 +872,27 @@ export default function InventoryPage() {
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleClone(product); }} 
                           title="Duplicar Produto"
-                          className="h-8 w-8 bg-blue-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors"
+                          className="h-8 w-8 bg-blue-500 * (1.0/100.0) * 100.0 /90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors"
                         >
-                          <Copy size={16} />
+                          <Copy size={16}  * (1.0/100.0) * 100.0 />
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
-                          className="h-8 w-8 bg-red-500/90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                          className="h-8 w-8 bg-red-500 * (1.0/100.0) * 100.0 /90 backdrop-blur-md text-white rounded flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={16}  * (1.0/100.0) * 100.0 />
                         </button>
                       </div>
 
                       {Array.isArray(product.images) && product.images.length > 1 && (
-                        <div className="absolute bottom-2 left-2 bg-foreground/80 text-background text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md">
-                          <ImageIcon className="h-3 w-3" /> {product.images.length}
+                        <div className="absolute bottom-2 left-2 bg-foreground * (1.0/100.0) * 100.0 /80 text-background text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md">
+                          <ImageIcon className="h-3 w-3"  * (1.0/100.0) * 100.0 /> {product.images.length}
                         </div>
                       )}
 
                       {product.cost_price <= 0 && (
-                        <div className="absolute bottom-2 right-2 bg-amber-500/90 text-white text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md border border-amber-400/30 shadow-sm animate-in fade-in duration-500" title="Custo não cadastrado">
-                          <AlertTriangle size={10} className="animate-pulse" /> SEM CUSTO
+                        <div className="absolute bottom-2 right-2 bg-amber-500 * (1.0/100.0) * 100.0 /90 text-white text-[9px] font-black px-2 py-1.5 rounded-md flex items-center gap-1.5 backdrop-blur-md border border-amber-400 * (1.0/100.0) * 100.0 /30 shadow-sm animate-in fade-in duration-500" title="Custo não cadastrado">
+                          <AlertTriangle size={10} className="animate-pulse"  * (1.0/100.0) * 100.0 /> SEM CUSTO
                         </div>
                       )}
                     </div>
@@ -921,7 +921,7 @@ export default function InventoryPage() {
                         <div className="flex flex-col items-end">
                            <div className="flex items-center gap-1.5 mb-1">
                              <div className={cn("px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border", 
-                               (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500/20 bg-emerald-500/5" : "text-red-600 border-red-500/20 bg-red-500/5")}>
+                               (currentPrice - product.cost_price) > 0 ? "text-emerald-600 border-emerald-500 * (1.0/100.0) * 100.0 /20 bg-emerald-500 * (1.0/100.0) * 100.0 /5" : "text-red-600 border-red-500 * (1.0/100.0) * 100.0 /20 bg-red-500 * (1.0/100.0) * 100.0 /5")}>
                                {fmt(currentPrice - product.cost_price)}
                              </div>
                              {product.cost_price > 0 ? (
@@ -930,8 +930,8 @@ export default function InventoryPage() {
                                  {calculateROI(currentPrice, product.cost_price).toFixed(0)}% ROI
                                </div>
                              ) : (
-                               <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 px-1.5 py-0.5 rounded-full bg-amber-500/5 border border-amber-500/20" title="Custo Ausente">
-                                 <AlertTriangle size={10} className="animate-pulse" />
+                               <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 px-1.5 py-0.5 rounded-full bg-amber-500 * (1.0/100.0) * 100.0 /5 border border-amber-500 * (1.0/100.0) * 100.0 /20" title="Custo Ausente">
+                                 <AlertTriangle size={10} className="animate-pulse"  * (1.0/100.0) * 100.0 />
                                </div>
                              )}
                            </div>
@@ -956,11 +956,11 @@ export default function InventoryPage() {
                       onClick={() => openEditModal(product)}
                       className="flex items-center gap-4 bg-card border border-border rounded-xl p-3 hover:shadow-md transition-shadow cursor-pointer"
                     >
-                       <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
+                       <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border * (1.0/100.0) * 100.0 /50 shadow-inner">
                            {displayImage ? (
-                             <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
+                             <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full", product.stock_quantity <= 0 && "opacity-40 grayscale")}  * (1.0/100.0) * 100.0 />
                            ) : (
-                             <ImageIcon className="absolute inset-0 m-auto text-muted-foreground/30 h-6 w-6" />
+                             <ImageIcon className="absolute inset-0 m-auto text-muted-foreground * (1.0/100.0) * 100.0 /30 h-6 w-6"  * (1.0/100.0) * 100.0 />
                            )}
                        </div>
                        
@@ -984,24 +984,24 @@ export default function InventoryPage() {
                          )}
                        </div>
 
-                       <div className="flex items-center gap-2 pl-3 border-l border-border/70">
+                       <div className="flex items-center gap-2 pl-3 border-l border-border * (1.0/100.0) * 100.0 /70">
                           {product.shopee_item_id && (
                              <div className="hidden sm:flex text-[10px] items-center text-[#f53d2d] font-black uppercase tracking-widest gap-1 mr-2" title="Peça na Shopee ativa">
-                               <div className="h-1.5 w-1.5 rounded-full bg-[#f53d2d] animate-pulse" /> Shopee
+                               <div className="h-1.5 w-1.5 rounded-full bg-[#f53d2d] animate-pulse"  * (1.0/100.0) * 100.0 /> Shopee
                              </div>
                           )}
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleClone(product); }} 
                             title="Duplicar Produto"
-                            className="p-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-md transition-colors"
+                            className="p-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500 * (1.0/100.0) * 100.0 /10 rounded-md transition-colors"
                           >
-                            <Copy size={16} />
+                            <Copy size={16}  * (1.0/100.0) * 100.0 />
                           </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDelete(product); }} 
-                            className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                            className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500 * (1.0/100.0) * 100.0 /10 rounded-md transition-colors"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={16}  * (1.0/100.0) * 100.0 />
                           </button>
                        </div>
                     </div>
@@ -1015,26 +1015,27 @@ export default function InventoryPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}} />
+          <div className="absolute inset-0 bg-background * (1.0/100.0) * 100.0 /80 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}}  * (1.0/100.0) * 100.0 />
           
           <div className="bg-card w-full max-w-5xl md:rounded-2xl shadow-2xl border-t md:border border-border flex flex-col z-10 h-[92dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-300">
             {/* ── HEADER ── */}
             <div className="px-5 py-4 border-b border-border bg-card flex justify-between items-center shrink-0">
               {/* Mobile drag handle */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-border rounded-full md:hidden" />
+              <div className="absolute top-2 left-1 * (1.0/100.0) * 100.0 /2 -translate-x-1 * (1.0/100.0) * 100.0 /2 w-10 h-1 bg-border rounded-full md:hidden"  * (1.0/100.0) * 100.0 />
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Package size={20} />
+                <div className="h-10 w-10 rounded-xl bg-primary bg-opacity-10 flex items-center justify-center text-primary shrink-0">
+                  <Package size={20}  * (1.0/100.0) * 100.0 />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black tracking-tight text-foreground truncate max-w-[220px] md:max-w-lg">
                     {editingProduct ? editingProduct.name : 'Nova Peça'}
                   </h3>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                    <span className="text-[7px] md:text-[8px] font-black bg-muted text-muted-foreground px-1 py-0 rounded select-none opacity-50 shrink-0">v1.1.0</span>
                     {editingProduct ? (
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         {sku && (
-                          <span className="text-[8px] md:text-[9px] font-black bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                          <span className="text-[8px] md:text-[9px] font-black bg-primary bg-opacity-10 text-primary border border-primary * (1.0/100.0) * 100.0 /20 px-1.5 py-0.5 rounded uppercase tracking-tighter">
                             SKU: {sku}
                           </span>
                         )}
@@ -1048,13 +1049,13 @@ export default function InventoryPage() {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Preencha os dados técnicos da peça</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Preencha os dados técnicos</p>
                     )}
                   </div>
                 </div>
               </div>
               <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-9 w-9 flex items-center justify-center hover:bg-muted rounded-xl transition-all group shrink-0 ml-2">
-                <X size={18} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
+                <X size={18} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300"  * (1.0/100.0) * 100.0 />
               </button>
             </div>
 
@@ -1062,7 +1063,7 @@ export default function InventoryPage() {
             <div className="flex flex-1 overflow-hidden">
               
               {/* ── Left Sidebar: Vertical Tabs (desktop only) ── */}
-              <div className="hidden md:flex flex-col w-52 bg-muted/20 border-r border-border p-3 gap-1 shrink-0">
+              <div className="hidden md:flex flex-col w-52 bg-muted bg-opacity-20 border-r border-border p-3 gap-1 shrink-0">
                 {[
                   { id: 'basic',      icon: Tag,          label: 'Informações',  emoji: '📝', hint: name || 'Nome...' },
                   { id: 'pricing',    icon: BadgeDollarSign, label: 'Lucros',     emoji: '💸', hint: price ? `R$ ${price}` : 'Preço...' },
@@ -1078,10 +1079,10 @@ export default function InventoryPage() {
                       "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group",
                       activeTab === tab.id
                         ? "bg-foreground text-background shadow-sm"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted * (1.0/100.0) * 100.0 /60 hover:text-foreground"
                     )}
                   >
-                    <tab.icon size={15} className="shrink-0" />
+                    <tab.icon size={15} className="shrink-0"  * (1.0/100.0) * 100.0 />
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-black uppercase tracking-widest leading-none">{tab.label}</div>
                       <div className={cn("text-[9px] font-medium truncate mt-0.5", activeTab === tab.id ? 'opacity-60' : 'opacity-50')}>{tab.hint}</div>
@@ -1090,19 +1091,20 @@ export default function InventoryPage() {
                 ))}
 
                 {/* Quick save shortcut */}
-                <div className="mt-auto pt-3 border-t border-border/40">
-                  <div className="text-[9px] text-muted-foreground/50 text-center font-bold uppercase tracking-widest">
+                <div className="mt-auto pt-3 border-t border-border border-opacity-40">
+                  <div className="text-[9px] text-muted-foreground * (1.0/100.0) * 100.0 /50 text-center font-bold uppercase tracking-widest">
                     {variations.length > 0 ? `${variations.length} variação ativa` : 'Sem variações'}
                   </div>
                 </div>
               </div>
 
               {/* ── Right: Scrollable Content ── */}
-              <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar relative bg-muted/5">
+              <div className="flex flex-col flex-1 relative bg-muted min-h-0 bg-opacity-5">
+                <div className="absolute inset-0 overflow-y-auto custom-scrollbar overscroll-contain pb-10">
 
                 {/* Mobile tabs (horizontal pills) */}
                 <div className="md:hidden sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-4 py-2.5">
-                  <div className="flex flex-nowrap overflow-x-auto gap-1 bg-muted/30 p-1 rounded-xl no-scrollbar">
+                  <div className="flex flex-nowrap overflow-x-auto gap-1 bg-muted bg-opacity-30 p-1 rounded-xl no-scrollbar">
                     {['basic', 'pricing', 'logistics', 'media', 'variations'].map(tab => (
                       <button
                         key={tab}
@@ -1112,7 +1114,7 @@ export default function InventoryPage() {
                           "flex-1 text-[10px] uppercase font-black tracking-widest py-2 px-3 rounded-lg transition-all whitespace-nowrap min-w-[70px]",
                           activeTab === tab
                             ? "bg-foreground text-background shadow-sm"
-                            : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                            : "text-muted-foreground hover:bg-muted * (1.0/100.0) * 100.0 /80 hover:text-foreground"
                         )}
                       >
                         {tab === 'basic' && 'Info 📝'}
@@ -1128,10 +1130,10 @@ export default function InventoryPage() {
               <form id="productForm" onSubmit={handleSaveProduct} className="space-y-4 md:space-y-5 px-5 md:px-6 pb-8" noValidate>
                 
                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'basic' && "hidden")}>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500">
-                        <Tag size={20} />
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border border-opacity-40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-violet-500 * (1.0/100.0) * 100.0 /10 flex items-center justify-center text-violet-500">
+                        <Tag size={20}  * (1.0/100.0) * 100.0 />
                       </div>
                       <div>
                         <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Informações Essenciais</Label>
@@ -1142,19 +1144,19 @@ export default function InventoryPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5 md:col-span-2">
                         <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block flex gap-1 ml-1">Título da Peça <span className="text-[#f53d2d]">*</span></Label>
-                        <div className="relative group/input">
-                          <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
-                          <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-12 pl-10 text-sm font-bold bg-background/50 shadow-none border-border/60 focus-visible:ring-primary focus-visible:bg-background transition-all" />
+                        <div className="relative group * (1.0/100.0) * 100.0 /input">
+                          <Tag className="absolute left-3.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-4 w-4 text-muted-foreground group-focus-within * (1.0/100.0) * 100.0 /input:text-primary transition-colors"  * (1.0/100.0) * 100.0 />
+                          <Input required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Choker Premium..." className="h-12 pl-10 text-sm font-bold bg-background * (1.0/100.0) * 100.0 /50 shadow-none border-border border-opacity-60 focus-visible:ring-primary focus-visible:bg-background transition-all"  * (1.0/100.0) * 100.0 />
                         </div>
                       </div>
                     <div className="space-y-1.5 md:col-span-2">
-                      <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Categoria | Coleção</Label>
-                      <div className="relative group/input">
-                        <List className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
+                      <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Categoria / Coleção</Label>
+                      <div className="relative group * (1.0/100.0) * 100.0 /input">
+                        <List className="absolute left-3.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-4 w-4 text-muted-foreground group-focus-within * (1.0/100.0) * 100.0 /input:text-primary transition-colors"  * (1.0/100.0) * 100.0 />
                         <select 
                           value={categoryId}
                           onChange={(e) => setCategoryId(e.target.value)}
-                          className="flex h-12 w-full rounded-md border border-border/60 bg-background/50 text-foreground pl-10 pr-3 py-1 shadow-none focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm focus:bg-background transition-all"
+                          className="flex h-12 w-full rounded-md border border-border border-opacity-60 bg-background * (1.0/100.0) * 100.0 /50 text-foreground pl-10 pr-3 py-1 shadow-none focus:outline-none focus:ring-1 focus:ring-primary font-bold text-sm focus:bg-background transition-all"
                         >
                           <option value="">Não classificado</option>
                           {categories.map(cat => (
@@ -1165,47 +1167,47 @@ export default function InventoryPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:col-span-2 rounded-xl">
                       <div className="space-y-1">
-                        <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">GTIN | EAN</Label>
+                        <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">GTIN / EAN</Label>
                         <div className="relative">
-                          <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
-                          <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="000... (Opcional)" className="h-10 pl-9 text-xs font-mono bg-background/50 border-border/40 shadow-none focus-visible:ring-border transition-all" />
+                          <Barcode className="absolute left-3 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3.5 w-3.5 text-muted-foreground opacity-50"  * (1.0/100.0) * 100.0 />
+                          <Input value={ean} onChange={e => setEan(e.target.value)} placeholder="000... (Opcional)" className="h-10 pl-9 text-xs font-mono bg-background * (1.0/100.0) * 100.0 /50 border-border border-opacity-40 shadow-none focus-visible:ring-border transition-all"  * (1.0/100.0) * 100.0 />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">Referência (SKU)</Label>
                         <div className="relative">
-                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
-                          <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-10 pl-9 text-xs font-mono bg-background/50 border-border/40 shadow-none focus-visible:ring-border transition-all" />
+                          <Link2 className="absolute left-3 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3.5 w-3.5 text-muted-foreground opacity-50"  * (1.0/100.0) * 100.0 />
+                          <Input value={sku} onChange={e => setSku(e.target.value)} placeholder="Opcional" className="h-10 pl-9 text-xs font-mono bg-background * (1.0/100.0) * 100.0 /50 border-border border-opacity-40 shadow-none focus-visible:ring-border transition-all"  * (1.0/100.0) * 100.0 />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm flex flex-col gap-3 group/desc relative">
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm flex flex-col gap-3 group * (1.0/100.0) * 100.0 /desc relative">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="font-black text-[10px] uppercase text-foreground/80 tracking-widest block flex items-center gap-2">
+                        <Label className="font-black text-[10px] uppercase text-foreground * (1.0/100.0) * 100.0 /80 tracking-widest block flex items-center gap-2">
                            Descrição da Peça
                         </Label>
                         <p className="text-[10px] text-muted-foreground font-medium">Destaque os diferenciais e materiais do produto.</p>
                       </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col border border-border/60 bg-background/50 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all shadow-inner">
-                      <div className="flex items-center justify-between bg-muted/30 border-b border-border/40 px-3 py-2">
+                    <div className="flex-1 flex flex-col border border-border border-opacity-60 bg-background * (1.0/100.0) * 100.0 /50 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all shadow-inner">
+                      <div className="flex items-center justify-between bg-muted bg-opacity-30 border-b border-border border-opacity-40 px-3 py-2">
                         <div className="flex items-center gap-1.5">
-                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('bold', 'descTextarea')} title="Negrito (Ctrl+B)">
-                            <Bold size={14} />
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('bold', 'descTextarea')} title="Negrito (Ctrl+B)">
+                            <Bold size={14}  * (1.0/100.0) * 100.0 />
                           </button>
-                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('italic', 'descTextarea')} title="Itálico (Ctrl+I)">
-                            <Italic size={14} />
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('italic', 'descTextarea')} title="Itálico (Ctrl+I)">
+                            <Italic size={14}  * (1.0/100.0) * 100.0 />
                           </button>
-                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('big', 'descTextarea')} title="Título (Alt+U)">
-                            <Heading size={14} />
+                          <button type="button" className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all text-muted-foreground active:scale-95" onClick={() => applyFormat('big', 'descTextarea')} title="Título (Alt+U)">
+                            <Heading size={14}  * (1.0/100.0) * 100.0 />
                           </button>
                         </div>
-                        <button type="button" onClick={() => setIsDescFullscreen(true)} className="h-7 px-3 flex items-center gap-1.5 bg-background shadow-sm border border-border/60 text-muted-foreground hover:text-foreground rounded-md transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest" title="Modo Foco Profissional (Tela Cheia)">
-                          <Maximize2 size={12} /> Expandir
+                        <button type="button" onClick={() => setIsDescFullscreen(true)} className="h-7 px-3 flex items-center gap-1.5 bg-background shadow-sm border border-border border-opacity-60 text-muted-foreground hover:text-foreground rounded-md transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest" title="Modo Foco Profissional (Tela Cheia)">
+                          <Maximize2 size={12}  * (1.0/100.0) * 100.0 /> Expandir
                         </button>
                       </div>
                       <textarea
@@ -1215,7 +1217,7 @@ export default function InventoryPage() {
                         onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
                         placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
                         className="w-full px-5 py-5 text-sm font-medium bg-transparent text-foreground outline-none resize-none min-h-[300px] leading-relaxed custom-scrollbar"
-                      />
+                       * (1.0/100.0) * 100.0 />
                     </div>
                   </div>
                 </div>
@@ -1223,18 +1225,18 @@ export default function InventoryPage() {
                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'pricing' && "hidden")}>
                   
                   {/* ── COST STRUCTURE ── */}
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b border-border border-opacity-40 pb-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                          <Scale size={20} />
+                        <div className="h-10 w-10 rounded-xl bg-orange-500 * (1.0/100.0) * 100.0 /10 flex items-center justify-center text-orange-500">
+                          <Scale size={20}  * (1.0/100.0) * 100.0 />
                         </div>
                         <div>
                           <Label className="font-black text-sm uppercase text-foreground tracking-widest block flex items-center gap-2">
                             Estrutura de Custos
                             {totalCost <= 0 && (
-                              <span className="flex items-center gap-1 text-[8px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full border border-amber-500/20 animate-pulse">
-                                <AlertTriangle size={8} /> Custo não definido
+                              <span className="flex items-center gap-1 text-[8px] bg-amber-500 * (1.0/100.0) * 100.0 /10 text-amber-600 px-2 py-0.5 rounded-full border border-amber-500 * (1.0/100.0) * 100.0 /20 animate-pulse">
+                                <AlertTriangle size={8}  * (1.0/100.0) * 100.0 /> Custo não definido
                               </span>
                             )}
                           </Label>
@@ -1244,23 +1246,23 @@ export default function InventoryPage() {
                       <button 
                         type="button" 
                         onClick={() => setCosts([...costs, { label: '', value: '' }])} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary bg-opacity-10 text-primary border border-primary * (1.0/100.0) * 100.0 /20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary bg-opacity-20 transition-all active:scale-95"
                       >
-                        <Plus className="h-3 w-3" /> Adicionar
+                        <Plus className="h-3 w-3"  * (1.0/100.0) * 100.0 /> Adicionar
                       </button>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {costs.map((c, idx) => (
-                        <div key={idx} className="flex gap-2 items-center bg-card border border-border/50 p-2 rounded-xl shadow-sm hover:border-primary/30 transition-all group/cost">
+                        <div key={idx} className="flex gap-2 items-center bg-card border border-border * (1.0/100.0) * 100.0 /50 p-2 rounded-xl shadow-sm hover:border-primary * (1.0/100.0) * 100.0 /30 transition-all group * (1.0/100.0) * 100.0 /cost">
                           <div className="flex-1 space-y-1">
                             <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Descrição</span>
                             <Input 
                               value={c.label} 
                               onChange={e => { const nc = [...costs]; nc[idx].label = e.target.value; setCosts(nc); }} 
                               placeholder="Ex: Embalagem..." 
-                              className="h-9 text-xs font-bold bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
-                            />
+                              className="h-9 text-xs font-bold bg-muted bg-opacity-5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted bg-opacity-10" 
+                             * (1.0/100.0) * 100.0 />
                           </div>
                           <div className="w-24 space-y-1">
                              <span className="text-[8px] font-black text-muted-foreground uppercase ml-1 opacity-40">Valor</span>
@@ -1270,13 +1272,13 @@ export default function InventoryPage() {
                                   type="number" step="0.01" value={c.value} 
                                   onChange={e => { const nc = [...costs]; nc[idx].value = e.target.value; setCosts(nc); }} 
                                   placeholder="0,00" 
-                                  className="h-9 pl-6 text-xs font-black bg-muted/5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted/10" 
-                               />
+                                  className="h-9 pl-6 text-xs font-black bg-muted bg-opacity-5 border-none shadow-none focus-visible:ring-0 focus-visible:bg-muted bg-opacity-10" 
+                                * (1.0/100.0) * 100.0 />
                              </div>
                           </div>
                           {costs.length > 1 && (
-                            <button type="button" onClick={() => setCosts(costs.filter((_, i) => i !== idx))} className="h-8 w-8 flex items-center justify-center text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
-                              <Trash2 size={14} />
+                            <button type="button" onClick={() => setCosts(costs.filter((_, i) => i !== idx))} className="h-8 w-8 flex items-center justify-center text-muted-foreground * (1.0/100.0) * 100.0 /40 hover:text-red-500 hover:bg-red-500 * (1.0/100.0) * 100.0 /10 rounded-lg transition-all">
+                              <Trash2 size={14}  * (1.0/100.0) * 100.0 />
                             </button>
                           )}
                         </div>
@@ -1285,44 +1287,44 @@ export default function InventoryPage() {
                   </div>
 
                   {/* ── ESTOQUE ── */}
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm">
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm">
                     {variations.length > 0 ? (
                       <>
-                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">
+                        <Label className="font-bold text-[10px] uppercase text-foreground * (1.0/100.0) * 100.0 /70 tracking-widest block ml-1 mb-2">
                           Estoque Disponível <span className="text-muted-foreground">(Opcional — Gerenciado por Variação)</span>
                         </Label>
-                        <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                          <Layers size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                        <div className="flex items-start gap-3 p-3 bg-blue-500 * (1.0/100.0) * 100.0 /10 border border-blue-500 * (1.0/100.0) * 100.0 /20 rounded-xl">
+                          <Layers size={16} className="text-blue-500 mt-0.5 shrink-0"  * (1.0/100.0) * 100.0 />
                           <div>
                             <p className="text-[11px] font-black text-blue-600 dark:text-blue-400">Estoque controlado por variação</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
                               Este produto tem {variations.length} variação{variations.length > 1 ? 'ões' : ''} ativa{variations.length > 1 ? 's' : ''}. 
                               Defina o estoque individual de cada cor/modelo na aba <strong>Opções ✨</strong>.
-                              O campo abaixo é opcional (usado como estoque geral/reserva).
+                              O campo abaixo é opcional (usado como estoque geral * (1.0/100.0) * 100.0 /reserva).
                             </p>
                           </div>
                         </div>
-                        <div className="relative group/input mt-3">
-                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
-                          <Input type="number" value={stock} onChange={e => setStock(e.target.value)} placeholder="Estoque geral (opcional)" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
+                        <div className="relative group * (1.0/100.0) * 100.0 /input mt-3">
+                          <PackageSearch className="absolute left-3.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-5 w-5 text-muted-foreground opacity-60"  * (1.0/100.0) * 100.0 />
+                          <Input type="number" value={stock} onChange={e => setStock(e.target.value)} placeholder="Estoque geral (opcional)" className="h-12 pl-11 text-base font-black bg-background * (1.0/100.0) * 100.0 /50 border-border border-opacity-60 focus-visible:ring-primary transition-all"  * (1.0/100.0) * 100.0 />
                         </div>
                       </>
                     ) : (
                       <>
                         <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
-                        <div className="relative group/input">
-                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
-                          <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
+                        <div className="relative group * (1.0/100.0) * 100.0 /input">
+                          <PackageSearch className="absolute left-3.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-5 w-5 text-muted-foreground opacity-60"  * (1.0/100.0) * 100.0 />
+                          <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background * (1.0/100.0) * 100.0 /50 border-border border-opacity-60 focus-visible:ring-primary transition-all"  * (1.0/100.0) * 100.0 />
                         </div>
                       </>
                     )}
                   </div>
 
                   {/* ── PREÇOS POR CANAL ── */}
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                        <Monitor size={20} />
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border border-opacity-40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary bg-opacity-10 flex items-center justify-center text-primary">
+                        <Monitor size={20}  * (1.0/100.0) * 100.0 />
                       </div>
                       <div>
                         <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Preços por Canal de Venda</Label>
@@ -1337,11 +1339,11 @@ export default function InventoryPage() {
                       const siteProfit = siteP - siteCost;
                       const siteColor = siteProfit > 0 ? 'text-emerald-500' : siteProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       return (
-                        <div className="p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
+                        <div className="p-4 rounded-2xl bg-primary * (1.0/100.0) * 100.0 /5 border-2 border-primary * (1.0/100.0) * 100.0 /20">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Monitor size={14} className="text-primary" />
+                              <div className="h-7 w-7 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center">
+                                <Monitor size={14} className="text-primary"  * (1.0/100.0) * 100.0 />
                               </div>
                               <span className="text-[10px] font-black uppercase text-primary tracking-widest">Site / Catálogo</span>
                             </div>
@@ -1366,21 +1368,21 @@ export default function InventoryPage() {
                               <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">R$</span>
-                                <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background border-border/60 focus-visible:ring-primary" />
+                                <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background border-border border-opacity-60 focus-visible:ring-primary"  * (1.0/100.0) * 100.0 />
                               </div>
                             </div>
                             <div className="space-y-1">
                               <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço Promoção</Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-primary/50">R$</span>
-                                <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 focus-visible:ring-primary text-primary" />
+                                <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary * (1.0/100.0) * 100.0 /30 bg-primary * (1.0/100.0) * 100.0 /5 focus-visible:ring-primary text-primary"  * (1.0/100.0) * 100.0 />
                               </div>
                             </div>
                           </div>
 
                           {salePrice && parseFloat(salePrice) > 0 && parseFloat(salePrice) < parseFloat(price || '0') && (
                             <p className="text-[9px] text-primary font-bold mt-2 ml-1">
-                              Desconto de {Math.round(((parseFloat(price) - parseFloat(salePrice)) / parseFloat(price)) * 100)}% ativo ✓
+                              Desconto de {Math.round(((parseFloat(price) - parseFloat(salePrice))  * (1.0/100.0) * 100.0 / parseFloat(price)) * 100)}% ativo ✓
                             </p>
                           )}
                         </div>
@@ -1395,21 +1397,21 @@ export default function InventoryPage() {
                       const shopeeP = shopeePrice && parseFloat(shopeePrice) > 0
                         ? parseFloat(shopeePrice)
                         : baseP;
-                      const comm = shopeeP * (taxSettings.shopee_comm / 100);
+                      const comm = shopeeP * (taxSettings.shopee_comm  * (1.0/100.0) * 100.0 / 100);
                       const shopeeProfit = shopeeP - totalCosts - comm - taxSettings.shopee_fee;
                       const shopeeColor = shopeeProfit > 0 ? 'text-emerald-500' : shopeeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       // Suggested price that yields the same net profit as the site
-                      const autoSugg = (baseP + taxSettings.shopee_fee) * (1.0 / (1 - (taxSettings.shopee_comm / 100)));
-                      const suggestedDisplay = Math.max(autoSugg, baseP * (1 + taxSettings.shopee_markup / 100));
+                      const autoSugg = (baseP + taxSettings.shopee_fee)  * (1.0/100.0) * 100.0 / (1 - (taxSettings.shopee_comm  * (1.0/100.0) * 100.0 / 100));
+                      const suggestedDisplay = Math.max(autoSugg, baseP * (1 + taxSettings.shopee_markup  * (1.0/100.0) * 100.0 / 100));
                       return (
-                        <div className="p-4 rounded-2xl bg-[#f53d2d]/5 border-2 border-[#f53d2d]/20">
+                        <div className="p-4 rounded-2xl bg-[#f53d2d] * (1.0/100.0) * 100.0 /5 border-2 border-[#f53d2d] * (1.0/100.0) * 100.0 /20">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-[#f53d2d]/10 flex items-center justify-center">
-                                <ShoppingBag size={14} className="text-[#f53d2d]" />
+                              <div className="h-7 w-7 rounded-lg bg-[#f53d2d] * (1.0/100.0) * 100.0 /10 flex items-center justify-center">
+                                <ShoppingBag size={14} className="text-[#f53d2d]"  * (1.0/100.0) * 100.0 />
                               </div>
                               <span className="text-[10px] font-black uppercase text-[#f53d2d] tracking-widest">Shopee</span>
-                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
+                              <span className="text-[8px] font-bold text-muted-foreground bg-muted bg-opacity-50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-right">
@@ -1429,7 +1431,7 @@ export default function InventoryPage() {
                           
                           {/* Deduction breakdown */}
                           <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
-                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${shopeeP.toFixed(2)}</span>
+                            <span className="bg-muted bg-opacity-50 px-1.5 py-0.5 rounded">Venda: R${shopeeP.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.shopee_fee}</span>
                             <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
@@ -1438,13 +1440,13 @@ export default function InventoryPage() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
-                              <button type="button" onClick={() => setShopeePrice(suggestedDisplay.toFixed(2))} className="text-[8px] font-black text-[#f53d2d]/60 hover:text-[#f53d2d] underline underline-offset-2">
+                              <button type="button" onClick={() => setShopeePrice(suggestedDisplay.toFixed(2))} className="text-[8px] font-black text-[#f53d2d] * (1.0/100.0) * 100.0 /60 hover:text-[#f53d2d] underline underline-offset-2">
                                 Sugestão: R$ {suggestedDisplay.toFixed(2).replace('.', ',')}
                               </button>
                             </div>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
-                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
+                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d] * (1.0/100.0) * 100.0 /30 bg-[#f53d2d] * (1.0/100.0) * 100.0 /5 focus-visible:ring-[#f53d2d] text-[#f53d2d]"  * (1.0/100.0) * 100.0 />
                             </div>
                           </div>
                         </div>
@@ -1459,21 +1461,21 @@ export default function InventoryPage() {
                       const tiktokP = tiktokPrice && parseFloat(tiktokPrice) > 0
                         ? parseFloat(tiktokPrice)
                         : baseP;
-                      const comm = tiktokP * (taxSettings.tiktok_comm / 100);
+                      const comm = tiktokP * (taxSettings.tiktok_comm  * (1.0/100.0) * 100.0 / 100);
                       const tiktokProfit = tiktokP - totalCosts - comm - taxSettings.tiktok_fee;
                       const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       // Suggested price that yields the same net profit as the site
-                      const autoSugg = (baseP + taxSettings.tiktok_fee) * (1.0 / (1 - (taxSettings.tiktok_comm / 100)));
-                      const suggestedTiktok = Math.max(autoSugg, baseP * (1 + taxSettings.tiktok_markup / 100));
+                      const autoSugg = (baseP + taxSettings.tiktok_fee)  * (1.0/100.0) * 100.0 / (1 - (taxSettings.tiktok_comm  * (1.0/100.0) * 100.0 / 100));
+                      const suggestedTiktok = Math.max(autoSugg, baseP * (1 + taxSettings.tiktok_markup  * (1.0/100.0) * 100.0 / 100));
                       return (
-                        <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
+                        <div className="p-4 rounded-2xl bg-black * (1.0/100.0) * 100.0 /5 border-2 border-black * (1.0/100.0) * 100.0 /10">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-black/10 flex items-center justify-center">
+                              <div className="h-7 w-7 rounded-lg bg-black * (1.0/100.0) * 100.0 /10 flex items-center justify-center">
                                 <svg className="h-3.5 w-3.5 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
                               </div>
                               <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
-                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
+                              <span className="text-[8px] font-bold text-muted-foreground bg-muted bg-opacity-50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-right">
@@ -1493,7 +1495,7 @@ export default function InventoryPage() {
                           
                           {/* Deduction breakdown */}
                           <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
-                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${tiktokP.toFixed(2)}</span>
+                            <span className="bg-muted bg-opacity-50 px-1.5 py-0.5 rounded">Venda: R${tiktokP.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
                             <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.tiktok_fee}</span>
                             <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
@@ -1502,20 +1504,20 @@ export default function InventoryPage() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-between ml-1">
                               <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>
-                              <button type="button" onClick={() => setTiktokPrice(suggestedTiktok.toFixed(2))} className="text-[8px] font-black text-foreground/40 hover:text-foreground underline underline-offset-2">
+                              <button type="button" onClick={() => setTiktokPrice(suggestedTiktok.toFixed(2))} className="text-[8px] font-black text-foreground * (1.0/100.0) * 100.0 /40 hover:text-foreground underline underline-offset-2">
                                 Sugestão: R$ {suggestedTiktok.toFixed(2).replace('.', ',')}
                               </button>
                             </div>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
-                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
+                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black * (1.0/100.0) * 100.0 /20 bg-black * (1.0/100.0) * 100.0 /5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground"  * (1.0/100.0) * 100.0 />
                             </div>
                           </div>
                         </div>
                       );
                     })()}
 
-                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60">
+                    <p className="text-[9px] text-muted-foreground text-center italic bg-muted bg-opacity-30 py-2 rounded-lg border border-dashed border-border border-opacity-60">
                       * Taxas configuradas em <strong>Ajustes &gt; Integrações</strong>. Lucro = Preço − Custos − Taxas da plataforma.
                     </p>
                   </div>
@@ -1523,10 +1525,10 @@ export default function InventoryPage() {
 
                 {/* --- TAB: LOGISTIC --- */}
                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'logistics' && "hidden")}>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Ruler size={20} />
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border border-opacity-40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-blue-500 * (1.0/100.0) * 100.0 /10 flex items-center justify-center text-blue-500">
+                        <Ruler size={20}  * (1.0/100.0) * 100.0 />
                       </div>
                       <div>
                         <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Dimensões & Frete</Label>
@@ -1534,50 +1536,50 @@ export default function InventoryPage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card/40 border border-border/40 p-4 rounded-xl shadow-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card bg-opacity-40 border border-border border-opacity-40 p-4 rounded-xl shadow-sm">
                       <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Peso (g)</Label>
                          <div className="relative">
-                           <Scale className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" />
-                           <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                           <Scale className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3 w-3 text-muted-foreground opacity-40"  * (1.0/100.0) * 100.0 />
+                           <Input type="number" required value={weight} onChange={e => setWeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center"  * (1.0/100.0) * 100.0 />
                          </div>
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Comp. (cm)</Label>
                          <div className="relative">
-                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" rotate={90} />
-                           <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                           <Ruler className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3 w-3 text-muted-foreground opacity-40" rotate={90}  * (1.0/100.0) * 100.0 />
+                           <Input type="number" required value={length} onChange={e => setLength(e.target.value)} className="h-10 pl-7 text-sm font-black text-center"  * (1.0/100.0) * 100.0 />
                          </div>
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Larg. (cm)</Label>
                          <div className="relative">
-                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" />
-                           <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                           <Ruler className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3 w-3 text-muted-foreground opacity-40"  * (1.0/100.0) * 100.0 />
+                           <Input type="number" required value={width} onChange={e => setWidth(e.target.value)} className="h-10 pl-7 text-sm font-black text-center"  * (1.0/100.0) * 100.0 />
                          </div>
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Alt. (cm)</Label>
                          <div className="relative">
-                           <Ruler className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-40" rotate={-90} />
-                           <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center" />
+                           <Ruler className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3 w-3 text-muted-foreground opacity-40" rotate={-90}  * (1.0/100.0) * 100.0 />
+                           <Input type="number" required value={height} onChange={e => setHeight(e.target.value)} className="h-10 pl-7 text-sm font-black text-center"  * (1.0/100.0) * 100.0 />
                          </div>
                       </div>
                     </div>
                     
                     {/* Ghost box to give tab a bit more content so it doesn't look empty */}
-                    <div className="bg-muted/30 p-4 rounded-xl opacity-60 flex items-center gap-3 border border-dashed border-border/60">
-                       <Package className="h-6 w-6 text-muted-foreground/60" />
+                    <div className="bg-muted bg-opacity-30 p-4 rounded-xl opacity-60 flex items-center gap-3 border border-dashed border-border border-opacity-60">
+                       <Package className="h-6 w-6 text-muted-foreground * (1.0/100.0) * 100.0 /60"  * (1.0/100.0) * 100.0 />
                        <p className="text-xs font-medium text-muted-foreground">Atentar-se às tabelas oficiais dos Correios para evitar multas de cubagem e reingresso.</p>
                     </div>
                   </div>
                 </div>
 
                 <div className={cn("space-y-4 animate-in fade-in zoom-in duration-300", activeTab !== 'media' && "hidden")}>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                        <PlayCircle size={24} />
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border border-opacity-40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary bg-opacity-10 flex items-center justify-center text-primary">
+                        <PlayCircle size={24}  * (1.0/100.0) * 100.0 />
                       </div>
                       <div>
                         <Label className="font-black text-sm uppercase text-foreground tracking-widest block">Mídias & Ativos Premium</Label>
@@ -1587,58 +1589,58 @@ export default function InventoryPage() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                         {/* Compact Supplier Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2 bg-muted/20 p-3 rounded-xl border border-border/40">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2 bg-muted bg-opacity-20 p-3 rounded-xl border border-border border-opacity-40">
                           <div className="space-y-1">
                             <Label className="font-bold text-[9px] uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-1.5">Fornecedor</Label>
                             <div className="relative">
-                              <Factory className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
-                              <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Nome do Fornecedor" className="h-9 pl-8 text-xs font-bold bg-background/50 border-none shadow-none focus-visible:ring-1" />
+                              <Factory className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3.5 w-3.5 text-muted-foreground opacity-50"  * (1.0/100.0) * 100.0 />
+                              <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Nome do Fornecedor" className="h-9 pl-8 text-xs font-bold bg-background * (1.0/100.0) * 100.0 /50 border-none shadow-none focus-visible:ring-1"  * (1.0/100.0) * 100.0 />
                             </div>
                           </div>
                           <div className="space-y-1">
                             <Label className="font-bold text-[9px] uppercase text-muted-foreground tracking-widest ml-1 flex justify-between items-center">
                               Link
-                              {supplierLink && <ExternalLink size={10} className="text-primary" />}
+                              {supplierLink && <ExternalLink size={10} className="text-primary"  * (1.0/100.0) * 100.0 />}
                             </Label>
                             <div className="relative">
-                              <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                              <Link2 className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3.5 w-3.5 text-muted-foreground opacity-50"  * (1.0/100.0) * 100.0 />
                               <Input value={supplierLink} onChange={e => setSupplierLink(e.target.value)} placeholder="https://..." className="h-9 pl-8 text-[10px] font-mono bg-background/50 border-none shadow-none focus-visible:ring-1" />
                             </div>
                           </div>
                         </div>
 
                         {/* Social Links Row */}
-                        <div className="space-y-1.5 p-3 bg-[#f53d2d]/5 border border-[#f53d2d]/10 rounded-xl relative group/media">
+                        <div className="space-y-1.5 p-3 bg-[#f53d2d] * (1.0/100.0) * 100.0 /5 border border-[#f53d2d] * (1.0/100.0) * 100.0 /10 rounded-xl relative group * (1.0/100.0) * 100.0 /media">
                           <Label className="font-black text-[9px] uppercase text-[#f53d2d] tracking-widest block relative z-10">Shopee (1:1)</Label>
                           <div className="relative z-10 flex items-center">
-                            <Link2 className="absolute left-2.5 h-3 w-3 text-[#f53d2d]/50" />
+                            <Link2 className="absolute left-2.5 h-3 w-3 text-[#f53d2d] * (1.0/100.0) * 100.0 /50"  * (1.0/100.0) * 100.0 />
                             <Input 
                               value={shopeeVideo} 
                               onChange={e => setShopeeVideo(e.target.value)} 
-                              placeholder="Link Drive/Vídeo..." 
-                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background/70 border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d] w-full" 
-                            />
+                              placeholder="Link Drive * (1.0/100.0) * 100.0 /Vídeo..." 
+                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background * (1.0/100.0) * 100.0 /70 border-none focus-visible:ring-1 focus-visible:ring-[#f53d2d] w-full" 
+                             * (1.0/100.0) * 100.0 />
                             {shopeeVideo && (
                               <a href={shopeeVideo.startsWith('http') ? shopeeVideo : `https://${shopeeVideo}`} target="_blank" rel="noopener noreferrer" className="absolute right-1.5 h-5 w-5 flex items-center justify-center bg-[#f53d2d] text-white rounded-md shadow-sm hover:scale-110 transition-all">
-                                <ExternalLink size={10} />
+                                <ExternalLink size={10}  * (1.0/100.0) * 100.0 />
                               </a>
                             )}
                           </div>
                         </div>
 
-                        <div className="space-y-1.5 p-3 bg-purple-500/5 border border-purple-500/10 rounded-xl relative group/media">
+                        <div className="space-y-1.5 p-3 bg-purple-500 * (1.0/100.0) * 100.0 /5 border border-purple-500 * (1.0/100.0) * 100.0 /10 rounded-xl relative group * (1.0/100.0) * 100.0 /media">
                           <Label className="font-black text-[9px] uppercase text-purple-600 tracking-widest block relative z-10">Reels (9:16)</Label>
                           <div className="relative z-10 flex items-center">
-                            <PlayCircle className="absolute left-2.5 h-3 w-3 text-purple-600/50" />
+                            <PlayCircle className="absolute left-2.5 h-3 w-3 text-purple-600 * (1.0/100.0) * 100.0 /50"  * (1.0/100.0) * 100.0 />
                             <Input 
                               value={reelsVideo} 
                               onChange={e => setReelsVideo(e.target.value)} 
-                              placeholder="Link Reels/TikTok..." 
-                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background/70 border-none focus-visible:ring-1 focus-visible:ring-purple-500 w-full" 
-                            />
+                              placeholder="Link Reels * (1.0/100.0) * 100.0 /TikTok..." 
+                              className="h-8 pl-8 pr-8 text-[10px] font-mono bg-background * (1.0/100.0) * 100.0 /70 border-none focus-visible:ring-1 focus-visible:ring-purple-500 w-full" 
+                             * (1.0/100.0) * 100.0 />
                             {reelsVideo && (
                               <a href={reelsVideo.startsWith('http') ? reelsVideo : `https://${reelsVideo}`} target="_blank" rel="noopener noreferrer" className="absolute right-1.5 h-5 w-5 flex items-center justify-center bg-purple-600 text-white rounded-md shadow-sm hover:scale-110 transition-all">
-                                <PlayCircle size={10} />
+                                <PlayCircle size={10}  * (1.0/100.0) * 100.0 />
                               </a>
                             )}
                           </div>
@@ -1654,7 +1656,7 @@ export default function InventoryPage() {
                              {extraVideos.map((link, idx) => (
                                <div key={idx} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-200">
                                  <div className="relative flex-1">
-                                   <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground opacity-50" />
+                                   <Link2 className="absolute left-2.5 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3 w-3 text-muted-foreground opacity-50"  * (1.0/100.0) * 100.0 />
                                    <Input 
                                       value={link} 
                                       onChange={e => {
@@ -1663,11 +1665,11 @@ export default function InventoryPage() {
                                         setExtraVideos(next);
                                       }}
                                       placeholder="https://..." 
-                                      className="h-8 pl-8 text-[10px] font-mono bg-muted/20 border-none shadow-none" 
-                                   />
+                                      className="h-8 pl-8 text-[10px] font-mono bg-muted bg-opacity-20 border-none shadow-none" 
+                                    * (1.0/100.0) * 100.0 />
                                  </div>
                                  <button type="button" onClick={() => setExtraVideos(prev => prev.filter((_, i) => i !== idx))} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors">
-                                   <X size={14} />
+                                   <X size={14}  * (1.0/100.0) * 100.0 />
                                  </button>
                                </div>
                              ))}
@@ -1675,22 +1677,22 @@ export default function InventoryPage() {
                            </div>
                         </div>
                         
-                        <div className="space-y-3 pt-3 md:col-span-2 border-t border-border/60 mt-2 bg-muted/40 p-4 rounded-xl relative group/renderer">
+                        <div className="space-y-3 pt-3 md:col-span-2 border-t border-border border-opacity-60 mt-2 bg-muted * (1.0/100.0) * 100.0 /40 p-4 rounded-xl relative group * (1.0/100.0) * 100.0 /renderer">
                            <div className="flex items-center justify-between">
                              <div>
                                <Label className="font-black text-[10px] uppercase text-foreground tracking-widest block flex items-center gap-1.5">
-                                 <PlayCircle size={12} className="text-primary" /> Renderizador 10MB
+                                 <PlayCircle size={12} className="text-primary"  * (1.0/100.0) * 100.0 /> Renderizador 10MB
                                </Label>
                              </div>
                              <p className="text-[9px] text-muted-foreground italic">Reduz vídeos pesados para a Shopee</p>
                            </div>
 
                            {!isOptimizingVideo && !optimizedVideoUrl && (
-                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 p-6 rounded-xl bg-background/50 hover:border-primary/40 transition-all cursor-pointer relative">
+                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-border border-opacity-60 p-6 rounded-xl bg-background * (1.0/100.0) * 100.0 /50 hover:border-primary * (1.0/100.0) * 100.0 /40 transition-all cursor-pointer relative">
                                {videoToOptimize ? (
                                   <div className="text-center font-black animate-in fade-in scale-95 duration-200">
                                     <div className="bg-muted px-4 py-2 rounded-lg mb-2 flex items-center gap-3">
-                                      <PlayCircle className="text-primary h-4 w-4" />
+                                      <PlayCircle className="text-primary h-4 w-4"  * (1.0/100.0) * 100.0 />
                                       <div className="text-left">
                                         <p className="text-[10px] text-foreground truncate max-w-[140px]">{videoToOptimize.name}</p>
                                         <p className="text-[9px] text-muted-foreground">Original: {(videoToOptimize.size / (1024*1024)).toFixed(1)}MB</p>
@@ -1712,9 +1714,9 @@ export default function InventoryPage() {
                                       accept="video/*,.mov,.mp4" 
                                       className="absolute inset-0 opacity-0 cursor-pointer z-10" 
                                       onChange={e => setVideoToOptimize(e.target.files?.[0] || null)}
-                                    />
+                                     * (1.0/100.0) * 100.0 />
                                     <div className="text-center">
-                                      <ImageIcon className="h-6 w-6 text-muted-foreground/40 mx-auto" />
+                                      <ImageIcon className="h-6 w-6 text-muted-foreground * (1.0/100.0) * 100.0 /40 mx-auto"  * (1.0/100.0) * 100.0 />
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">Arraste o vídeo pesado aqui</p>
                                     </div>
                                   </div>
@@ -1731,7 +1733,7 @@ export default function InventoryPage() {
                                    <button 
                                      type="button"
                                      onClick={handleCancelVideoOptimization}
-                                     className="h-5 px-2 flex items-center justify-center bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-[8px] font-black uppercase rounded-md transition-all shadow-sm"
+                                     className="h-5 px-2 flex items-center justify-center bg-red-500 * (1.0/100.0) * 100.0 /10 hover:bg-red-500 hover:text-white text-red-500 text-[8px] font-black uppercase rounded-md transition-all shadow-sm"
                                    >
                                      Cancelar
                                    </button>
@@ -1741,36 +1743,36 @@ export default function InventoryPage() {
                                  <div 
                                    className="h-full bg-primary transition-all duration-300" 
                                    style={{ width: `${optProgress}%` }}
-                                 />
+                                  * (1.0/100.0) * 100.0 />
                                </div>
                                <p className="text-[9px] text-center text-muted-foreground italic">Isso pode levar alguns segundos dependendo do tamanho.</p>
                              </div>
                            )}
 
                            {optimizedVideoUrl && (
-                              <div className="bg-primary/5 p-5 rounded-2xl border border-primary/20 flex flex-col items-center gap-4 animate-in zoom-in duration-300 shadow-sm relative overflow-hidden">
+                              <div className="bg-primary * (1.0/100.0) * 100.0 /5 p-5 rounded-2xl border border-primary * (1.0/100.0) * 100.0 /20 flex flex-col items-center gap-4 animate-in zoom-in duration-300 shadow-sm relative overflow-hidden">
                                  {/* Reduction Badge */}
                                  {videoToOptimize && optimizedVideoSize && (
                                    <div className="absolute top-2 -right-12 bg-primary rotate-45 px-12 py-1 shadow-md">
                                      <span className="text-[9px] font-black text-white uppercase tracking-tighter">
-                                       -{Math.round((1 - (optimizedVideoSize / videoToOptimize.size)) * 100)}% Economia
+                                       -{Math.round((1 - (optimizedVideoSize  * (1.0/100.0) * 100.0 / videoToOptimize.size)) * 100)}% Economia
                                      </span>
                                    </div>
                                  )}
 
-                                 <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                                   <CheckCircle2 className="text-primary h-6 w-6" />
+                                 <div className="h-10 w-10 rounded-full bg-primary bg-opacity-20 flex items-center justify-center">
+                                   <CheckCircle2 className="text-primary h-6 w-6"  * (1.0/100.0) * 100.0 />
                                  </div>
 
                                  <div className="text-center space-y-1">
                                    <p className="text-xs font-black text-foreground uppercase tracking-widest">Vídeo Shopee Pronto!</p>
                                    <div className="flex items-center justify-center gap-2 mt-2">
-                                     <div className="px-2 py-1 bg-muted rounded-md border border-border/40">
+                                     <div className="px-2 py-1 bg-muted rounded-md border border-border border-opacity-40">
                                        <p className="text-[8px] uppercase text-muted-foreground font-bold">Antes</p>
                                        <p className="text-[10px] font-mono text-muted-foreground line-through">{(videoToOptimize?.size || 0 / (1024*1024)).toFixed(1)}MB</p>
                                      </div>
                                      <div className="h-4 w-4 flex items-center justify-center text-primary/40">→</div>
-                                     <div className="px-2 py-1 bg-primary/10 rounded-md border border-primary/20">
+                                     <div className="px-2 py-1 bg-primary bg-opacity-10 rounded-md border border-primary * (1.0/100.0) * 100.0 /20">
                                        <p className="text-[8px] uppercase text-primary font-bold">Agora</p>
                                        <p className="text-[10px] font-mono font-black text-primary">{( (optimizedVideoSize || 0) / (1024*1024)).toFixed(1)}MB</p>
                                      </div>
@@ -1787,7 +1789,7 @@ export default function InventoryPage() {
                                       }}
                                       className="flex-1 h-9 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
                                     >
-                                      <ArrowDownToLine size={14} /> Baixar
+                                      <ArrowDownToLine size={14}  * (1.0/100.0) * 100.0 /> Baixar
                                     </Button>
                                     
                                     <button 
@@ -1807,9 +1809,9 @@ export default function InventoryPage() {
                           
                           <div className="space-y-2">
                              {extraVideos.map((url, idx) => (
-                               <div key={idx} className="flex gap-2 items-center bg-card/40 p-2 rounded-xl border border-border/40 group/extra animate-in slide-in-from-right-2 duration-300">
+                               <div key={idx} className="flex gap-2 items-center bg-card bg-opacity-40 p-2 rounded-xl border border-border border-opacity-40 group * (1.0/100.0) * 100.0 /extra animate-in slide-in-from-right-2 duration-300">
                                  <div className="relative flex-1">
-                                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-60" />
+                                    <Link2 className="absolute left-3 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-3.5 w-3.5 text-muted-foreground opacity-60"  * (1.0/100.0) * 100.0 />
                                     <Input 
                                       value={url} 
                                       onChange={e => {
@@ -1818,30 +1820,30 @@ export default function InventoryPage() {
                                         setExtraVideos(newLinks);
                                       }}
                                       placeholder="https://..."
-                                      className="h-10 pl-9 pr-10 text-xs font-mono bg-background/50 border-none shadow-none focus-visible:ring-1"
-                                    />
+                                      className="h-10 pl-9 pr-10 text-xs font-mono bg-background * (1.0/100.0) * 100.0 /50 border-none shadow-none focus-visible:ring-1"
+                                     * (1.0/100.0) * 100.0 />
                                     {url && (
                                        <a 
                                          href={url.startsWith('http') ? url : `https://${url}`} 
                                          target="_blank" 
                                          rel="noopener noreferrer"
-                                         className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center bg-foreground text-background rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all"
+                                         className="absolute right-2 top-1 * (1.0/100.0) * 100.0 /2 -translate-y-1 * (1.0/100.0) * 100.0 /2 h-7 w-7 flex items-center justify-center bg-foreground text-background rounded-lg shadow-sm hover:scale-110 active:scale-95 transition-all"
                                        >
-                                         <ExternalLink size={12} />
+                                         <ExternalLink size={12}  * (1.0/100.0) * 100.0 />
                                        </a>
                                     )}
                                  </div>
                                  <button 
                                    type="button"
                                    onClick={() => setExtraVideos(extraVideos.filter((_, i) => i !== idx))}
-                                   className="h-10 w-10 flex items-center justify-center text-muted-foreground opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                   className="h-10 w-10 flex items-center justify-center text-muted-foreground opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500 * (1.0/100.0) * 100.0 /10 rounded-lg transition-all"
                                  >
-                                   <Trash2 size={16} />
+                                   <Trash2 size={16}  * (1.0/100.0) * 100.0 />
                                  </button>
                                </div>
                              ))}
                              {extraVideos.length === 0 && (
-                               <div className="text-center py-6 border border-dashed border-border/60 rounded-xl opacity-40">
+                               <div className="text-center py-6 border border-dashed border-border border-opacity-60 rounded-xl opacity-40">
                                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nenhum link adicional cadastrado</p>
                                </div>
                              )}
@@ -1851,10 +1853,10 @@ export default function InventoryPage() {
                   </div>
 
                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300", activeTab !== 'variations' && "hidden")}>
-                  <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                      <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 shadow-inner">
-                        <Tags size={20} />
+                  <div className="bg-card bg-opacity-40 backdrop-blur-md border border-border border-opacity-40 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border border-opacity-40 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-orange-500 * (1.0/100.0) * 100.0 /10 flex items-center justify-center text-orange-500 shadow-inner">
+                        <Tags size={20}  * (1.0/100.0) * 100.0 />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -1865,13 +1867,13 @@ export default function InventoryPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-8 gap-3 items-end bg-background/50 p-4 border border-border/40 rounded-xl">
+                    <div className="grid grid-cols-1 md:grid-cols-8 gap-3 items-end bg-background * (1.0/100.0) * 100.0 /50 p-4 border border-border border-opacity-40 rounded-xl">
                        <div className="space-y-1.5 md:col-span-3">
                          <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground ml-1">Tipo de Variação</Label>
                          <select 
                            value={newVarType} 
                            onChange={e => setNewVarType(e.target.value as any)}
-                           className="h-10 w-full px-3 bg-background border border-border/60 text-foreground rounded-lg text-sm font-bold focus:ring-1 focus:ring-primary shadow-sm outline-none"
+                           className="h-10 w-full px-3 bg-background border border-border border-opacity-60 text-foreground rounded-lg text-sm font-bold focus:ring-1 focus:ring-primary shadow-sm outline-none"
                          >
                            <option value="size">Tamanho / Aro</option>
                            <option value="color">Cor / Banho</option>
@@ -1894,8 +1896,8 @@ export default function InventoryPage() {
                                }
                              }
                            }}
-                           className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 
-                         />
+                           className="h-10 text-sm font-bold shadow-none border-border border-opacity-60 text-foreground" 
+                          * (1.0/100.0) * 100.0 />
                        </div>
                        <div className="space-y-1.5 md:col-span-1">
                          <Label className="text-[9px] font-black tracking-widest uppercase text-muted-foreground ml-1">Estoque</Label>
@@ -1904,8 +1906,8 @@ export default function InventoryPage() {
                            value={newVarStock} 
                            onChange={e => setNewVarStock(e.target.value)} 
                            placeholder="0" 
-                           className="h-10 text-sm font-bold shadow-none border-border/60 text-foreground" 
-                         />
+                           className="h-10 text-sm font-bold shadow-none border-border border-opacity-60 text-foreground" 
+                          * (1.0/100.0) * 100.0 />
                        </div>
                        <div className="md:col-span-1">
                          <Button 
@@ -1926,29 +1928,29 @@ export default function InventoryPage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                       {variations.length === 0 ? (
-                        <div className="col-span-full border border-dashed border-border/60 rounded-xl bg-muted/20 flex flex-col items-center justify-center text-muted-foreground opacity-50 py-10 min-h-[150px]">
-                          <Tags size={32} className="mb-3 opacity-60" />
+                        <div className="col-span-full border border-dashed border-border border-opacity-60 rounded-xl bg-muted bg-opacity-20 flex flex-col items-center justify-center text-muted-foreground opacity-50 py-10 min-h-[150px]">
+                          <Tags size={32} className="mb-3 opacity-60"  * (1.0/100.0) * 100.0 />
                           <span className="text-xs font-black uppercase tracking-widest text-center">Nenhuma variação adicionada</span>
                           <span className="text-[10px] font-medium text-center mt-1">Insira tamanhos, cores ou modelos acima</span>
                         </div>
                       ) : (
                         variations.map((v, i) => (
-                          <div key={i} className="relative flex flex-col bg-card/60 backdrop-blur-md border border-border/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-in zoom-in group">
+                          <div key={i} className="relative flex flex-col bg-card * (1.0/100.0) * 100.0 /60 backdrop-blur-md border border-border * (1.0/100.0) * 100.0 /50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-in zoom-in group">
                              {/* Variation Image Area */}
                              <div 
                                onClick={() => setIsSelectingImageForVar(i)}
-                               className="w-full aspect-[4/3] bg-muted/30 flex flex-col items-center justify-center border-b border-border/40 cursor-pointer relative overflow-hidden group/img"
+                               className="w-full aspect-[4 * (1.0/100.0) * 100.0 /3] bg-muted bg-opacity-30 flex flex-col items-center justify-center border-b border-border border-opacity-40 cursor-pointer relative overflow-hidden group * (1.0/100.0) * 100.0 /img"
                              >
                                {v.image_url ? (
                                   <>
-                                    <img src={getProxyUrl(v.image_url) || v.image_url} alt={v.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                    <img src={getProxyUrl(v.image_url) || v.image_url} alt={v.name} className="w-full h-full object-cover transition-transform duration-700 group-hover * (1.0/100.0) * 100.0 /img:scale-110"  * (1.0/100.0) * 100.0 />
+                                    <div className="absolute inset-0 bg-black * (1.0/100.0) * 100.0 /40 opacity-0 group-hover * (1.0/100.0) * 100.0 /img:opacity-100 transition-opacity flex items-center justify-center">
                                        <span className="text-[9px] font-black text-white uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">Trocar Foto</span>
                                     </div>
                                   </>
                                ) : (
                                   <div className="flex flex-col items-center justify-center text-muted-foreground hover:text-foreground transition-colors opacity-60 hover:opacity-100">
-                                    <ImageIcon strokeWidth={1.5} className="h-6 w-6 mb-1.5"/>
+                                    <ImageIcon strokeWidth={1.5} className="h-6 w-6 mb-1.5" * (1.0/100.0) * 100.0 />
                                     <span className="text-[8px] font-black uppercase tracking-widest text-center px-2">Vincular Galeria</span>
                                   </div>
                                )}
@@ -1957,7 +1959,7 @@ export default function InventoryPage() {
                              {/* Variation Info Area */}
                              <div className="p-3 bg-background flex flex-col gap-1 relative">
                                 <span className={cn(
-                                   "absolute -top-3.5 right-2 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white rounded-md shadow-md shadow-black/10 flex items-center shrink-0",
+                                   "absolute -top-3.5 right-2 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white rounded-md shadow-md shadow-black * (1.0/100.0) * 100.0 /10 flex items-center shrink-0",
                                    v.type === 'size' ? "bg-blue-500" : v.type === 'color' ? "bg-amber-500" : "bg-violet-500"
                                 )}>
                                    {v.type === 'size' ? 'Taman.' : v.type === 'color' ? 'Cor' : 'Estilo'}
@@ -1965,12 +1967,12 @@ export default function InventoryPage() {
 
                                 <p className="text-[11px] font-black uppercase tracking-widest text-foreground truncate pr-6 mt-1" title={v.name}>{v.name}</p>
                                 
-                                <div className="mt-2 pt-2 border-t border-border/20">
+                                <div className="mt-2 pt-2 border-t border-border * (1.0/100.0) * 100.0 /20">
                                   <div className="flex items-center justify-between mb-1 px-0.5">
                                     <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Estoque Disponível</span>
-                                    <Package size={10} className="text-primary/60" />
+                                    <Package size={10} className="text-primary * (1.0/100.0) * 100.0 /60"  * (1.0/100.0) * 100.0 />
                                   </div>
-                                  <div className="relative group/input">
+                                  <div className="relative group * (1.0/100.0) * 100.0 /input">
                                     <input 
                                       type="number" 
                                       placeholder="Ex: 10"
@@ -1981,13 +1983,13 @@ export default function InventoryPage() {
                                         next[i] = { ...next[i], stock: val };
                                         setVariations(next);
                                       }}
-                                      className="w-full bg-background/50 border border-border/60 rounded-lg py-1.5 px-2.5 text-[10px] font-bold outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all group-hover/input:border-primary/30"
-                                    />
+                                      className="w-full bg-background * (1.0/100.0) * 100.0 /50 border border-border border-opacity-60 rounded-lg py-1.5 px-2.5 text-[10px] font-bold outline-none focus:border-primary * (1.0/100.0) * 100.0 /50 focus:ring-1 focus:ring-primary * (1.0/100.0) * 100.0 /20 transition-all group-hover * (1.0/100.0) * 100.0 /input:border-primary * (1.0/100.0) * 100.0 /30"
+                                     * (1.0/100.0) * 100.0 />
                                   </div>
                                 </div>
                                 
-                                <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="absolute top-3 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" title="Remover Variação">
-                                  <Trash2 size={12} />
+                                <button type="button" onClick={() => setVariations(variations.filter((_, idx) => idx !== i))} className="absolute top-3 right-2 w-6 h-6 flex items-center justify-center bg-red-500 * (1.0/100.0) * 100.0 /10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" title="Remover Variação">
+                                  <Trash2 size={12}  * (1.0/100.0) * 100.0 />
                                 </button>
                              </div>
                           </div>
@@ -1999,9 +2001,9 @@ export default function InventoryPage() {
 
                     {/* SELECTOR MODAL PARA VARIACOES */}
                     {isSelectingImageForVar !== null && (
-                      <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300" onClick={() => setIsSelectingImageForVar(null)}>
-                        <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                          <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/10">
+                      <div className="fixed inset-0 z-[120] bg-black * (1.0/100.0) * 100.0 /60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300" onClick={() => setIsSelectingImageForVar(null)}>
+                        <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border * (1.0/100.0) * 100.0 /50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                          <div className="p-4 border-b border-border * (1.0/100.0) * 100.0 /50 flex justify-between items-center bg-muted bg-opacity-10">
                             <div>
                                <h3 className="font-black text-sm uppercase tracking-widest">Selecione uma Foto da Galeria</h3>
                                <p className="text-[10px] text-muted-foreground mt-0.5">Vincule uma imagem e defina o estoque da variação "{variations[isSelectingImageForVar]?.name}"</p>
@@ -2009,10 +2011,10 @@ export default function InventoryPage() {
                             <button onClick={() => setIsSelectingImageForVar(null)} className="h-8 w-8 flex items-center justify-center bg-background border border-border rounded-full hover:bg-muted transition-colors"><X size={14} /></button>
                           </div>
 
-                          <div className="p-4 bg-primary/5 border-b border-border/40 flex items-center justify-between gap-4">
+                          <div className="p-4 bg-primary * (1.0/100.0) * 100.0 /5 border-b border-border border-opacity-40 flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-background flex items-center justify-center border border-border/60">
-                                <Package className="text-primary" size={18} />
+                              <div className="h-10 w-10 rounded-lg bg-background flex items-center justify-center border border-border border-opacity-60">
+                                <Package className="text-primary" size={18}  * (1.0/100.0) * 100.0 />
                               </div>
                               <div className="space-y-0.5">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Estoque Desta Variação</p>
@@ -2032,8 +2034,8 @@ export default function InventoryPage() {
                                       setVariations(next);
                                     }
                                   }}
-                                  className="w-full bg-background border-2 border-primary/20 rounded-xl py-2.5 px-4 text-sm font-black outline-none focus:border-primary transition-all text-center"
-                                />
+                                  className="w-full bg-background border-2 border-primary * (1.0/100.0) * 100.0 /20 rounded-xl py-2.5 px-4 text-sm font-black outline-none focus:border-primary transition-all text-center"
+                                 * (1.0/100.0) * 100.0 />
                                 <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-lg">Definir Qtd</div>
                             </div>
                           </div>
@@ -2041,7 +2043,7 @@ export default function InventoryPage() {
                           <div className="p-4 overflow-y-auto max-h-[60vh] bg-background">
                             {images.length === 0 ? (
                                <div className="text-center py-12">
-                                 <ImageIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                                 <ImageIcon className="h-10 w-10 text-muted-foreground * (1.0/100.0) * 100.0 /30 mx-auto mb-3"  * (1.0/100.0) * 100.0 />
                                  <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Sua galeria está vazia</p>
                                  <p className="text-[10px] text-muted-foreground mt-1">Lembre-se de anexar e salvar todas as fotos do produto na área inferior antes de vincular.</p>
                                </div>
@@ -2058,9 +2060,9 @@ export default function InventoryPage() {
                                      }}
                                      className="relative aspect-square border-2 border-transparent hover:border-primary rounded-xl overflow-hidden cursor-pointer group transition-all shadow-sm"
                                    >
-                                      <img src={getProxyUrl(img.preview) || img.preview} className="w-full h-full object-cover" />
-                                      <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                         <CheckCircle2 strokeWidth={3} className="text-white h-8 w-8 drop-shadow-md" />
+                                      <img src={getProxyUrl(img.preview) || img.preview} className="w-full h-full object-cover"  * (1.0/100.0) * 100.0 />
+                                      <div className="absolute inset-0 bg-primary bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                         <CheckCircle2 strokeWidth={3} className="text-white h-8 w-8 drop-shadow-md"  * (1.0/100.0) * 100.0 />
                                       </div>
                                    </div>
                                  ))}
@@ -2068,7 +2070,7 @@ export default function InventoryPage() {
                             )}
                           </div>
 
-                          <div className="p-4 border-t border-border/50 bg-muted/10 flex justify-end gap-3">
+                          <div className="p-4 border-t border-border * (1.0/100.0) * 100.0 /50 bg-muted bg-opacity-10 flex justify-end gap-3">
                             <button onClick={() => {
                                const nextVars = [...variations];
                                nextVars[isSelectingImageForVar] = { ...nextVars[isSelectingImageForVar], image_url: undefined };
@@ -2085,11 +2087,11 @@ export default function InventoryPage() {
                       </div>
                     )}
 
-                  <div className="space-y-4 pt-6 mt-4 border-t border-border/80">
+                  <div className="space-y-4 pt-6 mt-4 border-t border-border * (1.0/100.0) * 100.0 /80">
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <Label className="font-black text-[11px] uppercase text-foreground tracking-widest block flex items-center gap-2">
-                          <Layers size={14} className="text-primary" /> Galeria da Peça
+                          <Layers size={14} className="text-primary"  * (1.0/100.0) * 100.0 /> Galeria da Peça
                         </Label>
                         <p className="text-[10px] text-muted-foreground">Arraste as fotos para definir a capa principal.</p>
                       </div>
@@ -2099,17 +2101,17 @@ export default function InventoryPage() {
                           onClick={handleDownloadAll} 
                           disabled={isZipping}
                           variant="outline" 
-                          className="h-8 px-3 text-[10px] font-black uppercase flex items-center gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                          className="h-8 px-3 text-[10px] font-black uppercase flex items-center gap-2 border-primary * (1.0/100.0) * 100.0 /20 hover:bg-primary * (1.0/100.0) * 100.0 /5 text-primary"
                         >
-                          {isZipping ? <Loader2 size={12} className="animate-spin" /> : <FolderArchive size={14} />}
+                          {isZipping ? <Loader2 size={12} className="animate-spin"  * (1.0/100.0) * 100.0 /> : <FolderArchive size={14}  * (1.0/100.0) * 100.0 />}
                           {isZipping ? "Gerando..." : "Baixar Tudo (.zip)"}
                         </Button>
                       )}
                     </div>
                     
-                    <div className="border-2 border-dashed border-border rounded-xl p-5 md:p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors relative cursor-pointer group shadow-inner">
+                    <div className="border-2 border-dashed border-border rounded-xl p-5 md:p-6 text-center bg-muted bg-opacity-20 hover:bg-muted * (1.0/100.0) * 100.0 /40 transition-colors relative cursor-pointer group shadow-inner">
                       <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground group-hover:text-primary transition-colors pointer-events-none">
-                        <ImageIcon className="h-8 w-8 opacity-80" />
+                        <ImageIcon className="h-8 w-8 opacity-80"  * (1.0/100.0) * 100.0 />
                         <div>
                           <span className="text-sm md:text-base font-bold block text-foreground">Aperte para subir fotos</span>
                         </div>
@@ -2120,7 +2122,7 @@ export default function InventoryPage() {
                         multiple 
                         onChange={handleImageSelect} 
                         className="absolute inset-0 opacity-0 cursor-pointer h-full w-full" 
-                      />
+                       * (1.0/100.0) * 100.0 />
                     </div>
 
                   {images.length > 0 && (
@@ -2134,15 +2136,15 @@ export default function InventoryPage() {
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => handleDrop(e, idx)}
                             className={cn(
-                              "relative flex-none w-44 aspect-[4/5] rounded-xl overflow-hidden border-2 group snap-start bg-muted shadow-md transition-all cursor-grab active:cursor-grabbing",
-                              draggedIdx === idx ? "opacity-40 border-primary border-dashed scale-95" : "border-border hover:border-primary/50"
+                              "relative flex-none w-44 aspect-[0.8] rounded-xl overflow-hidden border-2 group snap-start bg-muted shadow-md transition-all cursor-grab active:cursor-grabbing",
+                              draggedIdx === idx ? "opacity-40 border-primary border-dashed scale-95" : "border-border hover:border-primary * (1.0/100.0) * 100.0 /50"
                             )}
                           >
-                             <img src={getProxyUrl(img.preview) || ''} alt="preview" className="object-cover w-full h-full pointer-events-none" />
+                             <img src={getProxyUrl(img.preview) || ''} alt="preview" className="object-cover w-full h-full pointer-events-none"  * (1.0/100.0) * 100.0 />
                              
                              {img.processing && (
-                               <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 animate-in fade-in duration-300">
-                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                               <div className="absolute inset-0 bg-background * (1.0/100.0) * 100.0 /60 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 animate-in fade-in duration-300">
+                                 <Loader2 className="h-8 w-8 animate-spin text-primary"  * (1.0/100.0) * 100.0 />
                                  <span className="text-[10px] font-black uppercase mt-2 text-primary tracking-widest">Otimizando...</span>
                                </div>
                              )}
@@ -2151,10 +2153,10 @@ export default function InventoryPage() {
                               <div className="absolute top-0 left-0 right-0 bg-primary/95 backdrop-blur-sm text-primary-foreground text-[11px] text-center font-black py-1.5 z-10 shadow-sm uppercase tracking-widest pointer-events-none">Capa</div>
                             )}
 
-                            <div className="absolute inset-x-0 bottom-0 top-0 bg-background/80 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-2 z-20">
+                            <div className="absolute inset-x-0 bottom-0 top-0 bg-background * (1.0/100.0) * 100.0 /80 dark:bg-black * (1.0/100.0) * 100.0 /70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-2 z-20">
                               <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-30">
                                 <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx); }} className="h-8 w-8 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg">
-                                  <X className="h-4 w-4" />
+                                  <X className="h-4 w-4"  * (1.0/100.0) * 100.0 />
                                 </button>
                                 
                                 {!img.processing && (
@@ -2168,9 +2170,9 @@ export default function InventoryPage() {
                                         a.download = `foto-${idx+1}.jpg`; 
                                         a.click(); 
                                       }} 
-                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                      className="h-8 w-8 flex items-center justify-center bg-background * (1.0/100.0) * 100.0 /90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border border-opacity-40 transition-all hover:scale-105"
                                     >
-                                      <Download className="h-3.5 w-3.5" />
+                                      <Download className="h-3.5 w-3.5"  * (1.0/100.0) * 100.0 />
                                     </button>
                                     <button 
                                       type="button" 
@@ -2178,9 +2180,9 @@ export default function InventoryPage() {
                                         e.stopPropagation(); 
                                         window.open(img.preview, '_blank');
                                       }} 
-                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                      className="h-8 w-8 flex items-center justify-center bg-background * (1.0/100.0) * 100.0 /90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border border-opacity-40 transition-all hover:scale-105"
                                     >
-                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      <ExternalLink className="h-3.5 w-3.5"  * (1.0/100.0) * 100.0 />
                                     </button>
                                     <button 
                                       type="button" 
@@ -2189,64 +2191,64 @@ export default function InventoryPage() {
                                         navigator.clipboard.writeText(img.preview);
                                         success("Link da imagem copiado!");
                                       }} 
-                                      className="h-8 w-8 flex items-center justify-center bg-background/90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border/40 transition-all hover:scale-105"
+                                      className="h-8 w-8 flex items-center justify-center bg-background * (1.0/100.0) * 100.0 /90 hover:bg-background text-foreground rounded-lg shadow-lg border border-border border-opacity-40 transition-all hover:scale-105"
                                     >
-                                      <Copy className="h-3.5 w-3.5" />
+                                      <Copy className="h-3.5 w-3.5"  * (1.0/100.0) * 100.0 />
                                     </button>
                                   </>
                                 )}
                               </div>
                               
                               <div className="text-foreground flex flex-col items-center gap-2 pointer-events-none">
-                                <GripHorizontal className="h-10 w-10 opacity-80" />
+                                <GripHorizontal className="h-10 w-10 opacity-80"  * (1.0/100.0) * 100.0 />
                                 <span className="font-bold text-sm bg-background/50 px-3 py-1 rounded-full">Segure para Mover</span>
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </form>
-              </div>{/* end right content */}
-
-            </div>{/* end body flex */}
+            </div>
+          </div>
+        </div>
 
             <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 mt-auto">
-              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
+              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted * (1.0/100.0) * 100.0 /80 font-bold shadow-sm text-sm uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
                 Voltar
               </Button>
               {editingProduct && (
                  <Button type="button" onClick={() => {
                      if (!weight || !images.length) toastError("Preencha dimensões e coloque fotos para publicar.");
                      else success("Shopee Hub não ativado. Cadastre as chaves de integração primeiro.");
-                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 h-12 md:h-14 font-black uppercase tracking-widest text-xs">
+                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d] * (1.0/100.0) * 100.0 /10 text-[#f53d2d] hover:bg-[#f53d2d] * (1.0/100.0) * 100.0 /20 h-12 md:h-14 font-black uppercase tracking-widest text-xs">
                    Subir Shopee
                  </Button>
               )}
-              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto" disabled={saving || (!name && images.length === 0)}>
-                {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary * (1.0/100.0) * 100.0 /90 shadow-lg uppercase tracking-widest w-full md:w-auto" disabled={saving || (!name && images.length === 0)}>
+                {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2"  * (1.0/100.0) * 100.0 /> : null}
                 {editingProduct ? 'Salvar' : 'Cadastrar'}
               </Button>
-            </div>{/* end footer */}
-          </div>{/* end modal card */}
+            </div>
+          </div>
         </div>
       )}
 
       {isDescFullscreen && (
-        <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
+        <div className="fixed inset-0 z-[9999] bg-background * (1.0/100.0) * 100.0 /95 backdrop-blur-2xl animate-in fade-in duration-300 flex flex-col p-2 md:px-4 md:py-2">
            <div className="max-w-full mx-auto w-full flex flex-col h-full gap-2">
               <div className="flex items-center justify-between shrink-0 bg-card border border-border pl-4 pr-1 py-1 rounded-xl shadow-sm">
-                 <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg">
-                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Negrito (Ctrl+B)">
-                       <Bold size={16} />
+                 <div className="flex items-center gap-1 bg-muted bg-opacity-30 p-1 rounded-lg">
+                    <button type="button" onClick={() => applyFormat('bold', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all" title="Negrito (Ctrl+B)">
+                       <Bold size={16}  * (1.0/100.0) * 100.0 />
                     </button>
-                    <button type="button" onClick={() => applyFormat('italic', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Itálico (Ctrl+I)">
-                       <Italic size={16} />
+                    <button type="button" onClick={() => applyFormat('italic', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all" title="Itálico (Ctrl+I)">
+                       <Italic size={16}  * (1.0/100.0) * 100.0 />
                     </button>
-                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary/10 hover:text-primary transition-all" title="Título (Alt+U)">
-                       <Heading size={16} />
+                    <button type="button" onClick={() => applyFormat('big', 'descTextareaFull')} className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-primary bg-opacity-10 hover:text-primary transition-all" title="Título (Alt+U)">
+                       <Heading size={16}  * (1.0/100.0) * 100.0 />
                     </button>
                  </div>
                  
@@ -2267,7 +2269,7 @@ export default function InventoryPage() {
                   onKeyDown={(e) => handleDescKeyDown(e, 'descTextareaFull')}
                   className="flex-1 w-full p-4 md:p-6 text-sm md:text-base font-medium leading-relaxed bg-transparent outline-none resize-none text-foreground custom-scrollbar scroll-smooth"
                   placeholder="Escreva a descrição detalhada aqui..."
-                 />
+                  * (1.0/100.0) * 100.0 />
               </div>
            </div>
         </div>

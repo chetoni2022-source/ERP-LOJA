@@ -1365,10 +1365,19 @@ export default function InventoryPage() {
 
                     {/* ── SITE (Site price = public price or promo) ── */}
                     {(() => {
-                      const siteP = parseFloat(salePrice || price || '0');
+                      const siteP = parseFloat(price || '0');
+                      const sitePromo = parseFloat(salePrice || '0');
+                      const hasPromo = sitePromo > 0 && sitePromo < siteP;
+                      
                       const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      const siteProfit = siteP - siteCost;
-                      const siteColor = siteProfit > 0 ? 'text-emerald-500' : siteProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+                      
+                      const baseProfit = siteP - siteCost;
+                      const promoProfit = sitePromo - siteCost;
+                      
+                      const activePrice = hasPromo ? sitePromo : siteP;
+                      const activeProfit = hasPromo ? promoProfit : baseProfit;
+                      const activeColor = activeProfit > 0 ? 'text-emerald-500' : activeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
+
                       return (
                         <div className="p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
                           <div className="flex items-center justify-between mb-3">
@@ -1380,14 +1389,27 @@ export default function InventoryPage() {
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-right">
-                                <p className={`text-[10px] font-black tabular-nums ${siteProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                  {calculateROI(siteP, siteCost).toFixed(1)}% ROI
-                                </p>
-                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                                {hasPromo ? (
+                                  <>
+                                    <p className="text-[9px] font-black text-emerald-500/70 tabular-nums">
+                                      {calculateROI(siteP, siteCost).toFixed(0)}% <span className="text-[7px] opacity-60">BASE</span>
+                                    </p>
+                                    <p className="text-[10px] font-black tabular-nums text-emerald-500">
+                                      {calculateROI(sitePromo, siteCost).toFixed(1)}% ROI
+                                    </p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className={`text-[10px] font-black tabular-nums ${activeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                      {calculateROI(activePrice, siteCost).toFixed(1)}% ROI
+                                    </p>
+                                    <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                                  </>
+                                )}
                               </div>
                               <div className="text-right">
-                                <p className={`text-lg font-black tabular-nums ${siteColor}`}>
-                                  {siteProfit >= 0 ? '+' : ''}R$ {siteProfit.toFixed(2).replace('.', ',')}
+                                <p className={`text-lg font-black tabular-nums ${activeColor}`}>
+                                  {activeProfit >= 0 ? '+' : ''}R$ {activeProfit.toFixed(2).replace('.', ',')}
                                 </p>
                                 <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
                               </div>
@@ -1411,9 +1433,9 @@ export default function InventoryPage() {
                             </div>
                           </div>
 
-                          {salePrice && parseFloat(salePrice) > 0 && parseFloat(salePrice) < parseFloat(price || '0') && (
+                          {hasPromo && (
                             <p className="text-[9px] text-primary font-bold mt-2 ml-1">
-                              Desconto de {Math.round(((parseFloat(price) - parseFloat(salePrice)) / parseFloat(price)) * 100)}% ativo ✓
+                              Desconto de {Math.round(((siteP - sitePromo) / siteP) * 100)}% ativo ✓
                             </p>
                           )}
                         </div>
@@ -1422,7 +1444,10 @@ export default function InventoryPage() {
 
                     {/* ── SHOPEE ── */}
                     {(() => {
-                      const baseP = parseFloat(salePrice || price || '0');
+                      const siteP = parseFloat(price || '0');
+                      const sitePromo = parseFloat(salePrice || '0');
+                      const baseP = (sitePromo > 0 && sitePromo < siteP) ? sitePromo : siteP;
+                      
                       const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
                       // If user typed a shopee price, use it. Otherwise use site price to show real fee impact.
                       const shopeeP = shopeePrice && parseFloat(shopeePrice) > 0
@@ -1486,7 +1511,10 @@ export default function InventoryPage() {
 
                     {/* ── TIKTOK ── */}
                     {(() => {
-                      const baseP = parseFloat(salePrice || price || '0');
+                      const siteP = parseFloat(price || '0');
+                      const sitePromo = parseFloat(salePrice || '0');
+                      const baseP = (sitePromo > 0 && sitePromo < siteP) ? sitePromo : siteP;
+                      
                       const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
                       // If user typed a tiktok price, use it. Otherwise use site price to show real fee impact.
                       const tiktokP = tiktokPrice && parseFloat(tiktokPrice) > 0

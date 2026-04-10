@@ -1030,13 +1030,27 @@ export default function InventoryPage() {
                   <h3 className="text-lg font-black tracking-tight text-foreground truncate max-w-[220px] md:max-w-lg">
                     {editingProduct ? editingProduct.name : 'Nova Peça'}
                   </h3>
-                  {editingProduct ? (
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                      Editado: {new Date(editingProduct.updated_at || editingProduct.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </span>
-                  ) : (
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gestão de Ativos &amp; Lucratividade</p>
-                  )}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                    {editingProduct ? (
+                      <>
+                        {sku && (
+                          <span className="text-[8px] md:text-[9px] font-black bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                            SKU: {sku}
+                          </span>
+                        )}
+                        {categoryId && (
+                          <span className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-widest border-l border-border pl-2">
+                             {categories.find(c => c.id === categoryId)?.name || 'Peça'}
+                          </span>
+                        )}
+                        <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest border-l border-border pl-2 ${parseInt(stock) > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          {parseInt(stock) > 0 ? `${stock} em estoque` : 'Esgotado'}
+                        </span>
+                      </>
+                    ) : (
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Preencha os dados técnicos da peça</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-9 w-9 flex items-center justify-center hover:bg-muted rounded-xl transition-all group shrink-0 ml-2">
@@ -1084,7 +1098,7 @@ export default function InventoryPage() {
               </div>
 
               {/* ── Right: Scrollable Content ── */}
-              <div className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar relative bg-muted/5">
 
                 {/* Mobile tabs (horizontal pills) */}
                 <div className="md:hidden sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-4 py-2.5">

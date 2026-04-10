@@ -747,6 +747,36 @@ export default function InventoryPage() {
                       profitPerSale < 0 ? "text-red-500 bg-red-500/10 border-red-500/30" : 
                       "text-muted-foreground bg-muted/30 border-border";
 
+  const itemTotalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+  
+  // Site Calculations
+  const siteBaseP = parseFloat(price || '0');
+  const sitePromoP = parseFloat(salePrice || '0');
+  const siteHasPromo = sitePromoP > 0 && sitePromoP < siteBaseP;
+  const siteActivePrice = siteHasPromo ? sitePromoP : siteBaseP;
+  const siteActiveProfit = siteActivePrice - itemTotalCosts;
+  const siteBaseROI = calculateROI(siteBaseP, itemTotalCosts);
+  const sitePromoROI = calculateROI(sitePromoP, itemTotalCosts);
+
+  // Common Base for market suggestions
+  const commonBaseP = siteHasPromo ? sitePromoP : siteBaseP;
+
+  // Shopee Calculations
+  const shopeePriceVal = shopeePrice && parseFloat(shopeePrice) > 0 ? parseFloat(shopeePrice) : commonBaseP;
+  const shopeeComm = shopeePriceVal * (taxSettings.shopee_comm / 100);
+  const shopeeProfit = shopeePriceVal - itemTotalCosts - shopeeComm - taxSettings.shopee_fee;
+  const shopeeROI = calculateROI(shopeePriceVal, itemTotalCosts, taxSettings.shopee_fee, taxSettings.shopee_comm);
+  const shopeeCommRate = (taxSettings.shopee_comm || 0) / 100;
+  const shopeeSuggested = Math.max((commonBaseP + taxSettings.shopee_fee) / (1 - shopeeCommRate), commonBaseP * (1 + (taxSettings.shopee_markup / 100)));
+
+  // TikTok Calculations
+  const tiktokPriceVal = tiktokPrice && parseFloat(tiktokPrice) > 0 ? parseFloat(tiktokPrice) : commonBaseP;
+  const tiktokComm = tiktokPriceVal * (taxSettings.tiktok_comm / 100);
+  const tiktokProfit = tiktokPriceVal - itemTotalCosts - tiktokComm - taxSettings.tiktok_fee;
+  const tiktokROI = calculateROI(tiktokPriceVal, itemTotalCosts, taxSettings.tiktok_fee, taxSettings.tiktok_comm);
+  const tiktokCommRate = (taxSettings.tiktok_comm || 0) / 100;
+  const tiktokSuggested = Math.max((commonBaseP + taxSettings.tiktok_fee) / (1 - tiktokCommRate), commonBaseP * (1 + (taxSettings.tiktok_markup / 100)));
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-end">
@@ -1364,220 +1394,160 @@ export default function InventoryPage() {
                     </div>
 
                     {/* ── SITE (Site price = public price or promo) ── */}
-                    {(() => {
-                      const siteP = parseFloat(price || '0');
-                      const sitePromo = parseFloat(salePrice || '0');
-                      const hasPromo = sitePromo > 0 && sitePromo < siteP;
-                      
-                      const siteCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      
-                      const baseProfit = siteP - siteCost;
-                      const promoProfit = sitePromo - siteCost;
-                      
-                      const activePrice = hasPromo ? sitePromo : siteP;
-                      const activeProfit = hasPromo ? promoProfit : baseProfit;
-                      const activeColor = activeProfit > 0 ? 'text-emerald-500' : activeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
-
-                      return (
-                        <div className="p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Monitor size={14} className="text-primary" />
-                              </div>
-                              <span className="text-[10px] font-black uppercase text-primary tracking-widest">Site / Catálogo</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                {hasPromo ? (
-                                  <>
-                                    <p className="text-[9px] font-black text-emerald-500/70 tabular-nums">
-                                      {calculateROI(siteP, siteCost).toFixed(0)}% <span className="text-[7px] opacity-60">BASE</span>
-                                    </p>
-                                    <p className="text-[10px] font-black tabular-nums text-emerald-500">
-                                      {calculateROI(sitePromo, siteCost).toFixed(1)}% ROI
-                                    </p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <p className="text-[10px] font-black tabular-nums text-emerald-500">
-                                      Calculando...
-                                    </p>
-                                    <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <p className={`text-lg font-black tabular-nums ${activeColor}`}>
-                                  {activeProfit >= 0 ? '+' : ''}R$ {activeProfit.toFixed(2).replace('.', ',')}
-                                </p>
-                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
-                              </div>
-                            </div>
+                    <div className="p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Monitor size={14} className="text-primary" />
                           </div>
-                          
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">R$</span>
-                                <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background border-border/60 focus-visible:ring-primary" />
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço Promoção</Label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-primary/50">R$</span>
-                                <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 focus-visible:ring-primary text-primary" />
-                              </div>
-                            </div>
-                          </div>
-
-                          {hasPromo && (
-                            <p className="text-[9px] text-primary font-bold mt-2 ml-1">
-                              Desconto de {Math.round( ( (siteP - sitePromo) * 100 ) / siteP )}% ativo
-                            </p>
-                          )}
+                          <span className="text-[10px] font-black uppercase text-primary tracking-widest">Site / Catálogo</span>
                         </div>
-                      );
-                    })()}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            {siteHasPromo ? (
+                              <>
+                                <p className="text-[9px] font-black text-emerald-500/70 tabular-nums">
+                                  {siteBaseROI.toFixed(0)}% <span className="text-[7px] opacity-60">BASE</span>
+                                </p>
+                                <p className="text-[10px] font-black tabular-nums text-emerald-500">
+                                  {sitePromoROI.toFixed(1)}% ROI
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-[10px] font-black tabular-nums text-emerald-500">
+                                  {siteBaseROI.toFixed(1)}% ROI
+                                </p>
+                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
+                              </>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-black tabular-nums ${siteActiveProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {siteActiveProfit >= 0 ? '+' : ''}R$ {siteActiveProfit.toFixed(2).replace('.', ',')}
+                            </p>
+                            <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Preço Público <span className="text-[#f53d2d]">*</span></Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">R$</span>
+                            <Input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black bg-background border-border/60 focus-visible:ring-primary" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="font-bold text-[10px] uppercase text-primary/70 tracking-widest block ml-1">Preço Promoção</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-primary/50">R$</span>
+                            <Input type="number" step="0.01" value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="0.00" className="h-11 pl-9 text-base font-black border-primary/30 bg-primary/5 focus-visible:ring-primary text-primary" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {siteHasPromo && (
+                        <p className="text-[9px] text-primary font-bold mt-2 ml-1">
+                          Desconto de {Math.round( ( (siteBaseP - sitePromoP) * 100 ) / siteBaseP )}% ativo
+                        </p>
+                      )}
+                    </div>
 
                     {/* ── SHOPEE ── */}
-                    {(() => {
-                      const siteP = parseFloat(price || '0');
-                      const sitePromo = parseFloat(salePrice || '0');
-                      const baseP = (sitePromo > 0 && sitePromo < siteP) ? sitePromo : siteP;
-                      
-                      const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      // If user typed a shopee price, use it. Otherwise use site price to show real fee impact.
-                      const shopeeP = shopeePrice && parseFloat(shopeePrice) > 0
-                        ? parseFloat(shopeePrice)
-                        : baseP;
-                      const comm = shopeeP * (taxSettings.shopee_comm / 100);
-                      const shopeeProfit = shopeeP - totalCosts - comm - taxSettings.shopee_fee;
-                      const shopeeColor = shopeeProfit > 0 ? 'text-emerald-500' : shopeeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
-                      // Suggested price that yields the same net profit as the site
-                      // Formula: Suggestion = (BasePrice + Fee) / (1 - Commission%)
-                      const shopeeCommRate = (taxSettings.shopee_comm || 0) / 100;
-                      const shopeeAutoSugg = (baseP + taxSettings.shopee_fee) / (1 - shopeeCommRate);
-                      const suggestedDisplay = Math.max(shopeeAutoSugg, baseP * (1 + (taxSettings.shopee_markup / 100)));
-                      return (
-                        <div className="p-4 rounded-2xl bg-[#f53d2d]/5 border-2 border-[#f53d2d]/20">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-[#f53d2d]/10 flex items-center justify-center">
-                                <ShoppingBag size={14} className="text-[#f53d2d]" />
-                              </div>
-                              <span className="text-[10px] font-black uppercase text-[#f53d2d] tracking-widest">Shopee</span>
-                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className={`text-[10px] font-black tabular-nums ${shopeeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                  {calculateROI(shopeeP, totalCosts, taxSettings.shopee_fee, taxSettings.shopee_comm).toFixed(1)}% ROI
-                                </p>
-                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
-                              </div>
-                              <div className="text-right">
-                                <p className={`text-lg font-black tabular-nums ${shopeeColor}`}>
-                                  {shopeeProfit >= 0 ? '+' : ''}R$ {shopeeProfit.toFixed(2).replace('.', ',')}
-                                </p>
-                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
-                              </div>
-                            </div>
+                    <div className="p-4 rounded-2xl bg-[#f53d2d]/5 border-2 border-[#f53d2d]/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-[#f53d2d]/10 flex items-center justify-center">
+                            <ShoppingBag size={14} className="text-[#f53d2d]" />
                           </div>
-                          
-                          {/* Deduction breakdown */}
-                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
-                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${shopeeP.toFixed(2)}</span>
-                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
-                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.shopee_fee}</span>
-                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
+                          <span className="text-[10px] font-black uppercase text-[#f53d2d] tracking-widest">Shopee</span>
+                          <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className={`text-[10px] font-black tabular-nums ${shopeeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {shopeeROI.toFixed(1)}% ROI
+                            </p>
+                            <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
                           </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between ml-1">
-                              <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
-                              <button type="button" onClick={() => setShopeePrice(suggestedDisplay.toFixed(2))} className="text-[8px] font-black text-[#f53d2d]/60 hover:text-[#f53d2d] underline underline-offset-2">
-                                Sugestão: R$ {suggestedDisplay.toFixed(2).replace('.', ',')}
-                              </button>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
-                              <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
-                            </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-black tabular-nums ${shopeeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {shopeeProfit >= 0 ? '+' : ''}R$ {shopeeProfit.toFixed(2).replace('.', ',')}
+                            </p>
+                            <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
                           </div>
                         </div>
-                      );
-                    })()}
+                      </div>
+                      
+                      <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
+                        <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${shopeePriceVal.toFixed(2)}</span>
+                        <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${shopeeComm.toFixed(2)}</span>
+                        <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.shopee_fee}</span>
+                        <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${itemTotalCosts.toFixed(2)}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between ml-1">
+                          <Label className="font-bold text-[10px] uppercase text-[#f53d2d]/70 tracking-widest">Preço na Shopee</Label>
+                          <button type="button" onClick={() => setShopeePrice(shopeeSuggested.toFixed(2))} className="text-[8px] font-black text-[#f53d2d]/60 hover:text-[#f53d2d] underline underline-offset-2">
+                            Sugestão: R$ {shopeeSuggested.toFixed(2).replace('.', ',')}
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
+                          <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={commonBaseP > 0 ? commonBaseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
+                        </div>
+                      </div>
+                    </div>
 
                     {/* ── TIKTOK ── */}
-                    {(() => {
-                      const siteP = parseFloat(price || '0');
-                      const sitePromo = parseFloat(salePrice || '0');
-                      const baseP = (sitePromo > 0 && sitePromo < siteP) ? sitePromo : siteP;
-                      
-                      const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-                      // If user typed a tiktok price, use it. Otherwise use site price to show real fee impact.
-                      const tiktokP = tiktokPrice && parseFloat(tiktokPrice) > 0
-                        ? parseFloat(tiktokPrice)
-                        : baseP;
-                      const comm = tiktokP * (taxSettings.tiktok_comm / 100);
-                      const tiktokProfit = tiktokP - totalCosts - comm - taxSettings.tiktok_fee;
-                      const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
-                      // Suggested price that yields the same net profit as the site
-                      const tiktokCommRate = (taxSettings.tiktok_comm || 0) / 100;
-                      const tiktokAutoSugg = (baseP + taxSettings.tiktok_fee) / (1 - tiktokCommRate);
-                      const suggestedTiktok = Math.max(tiktokAutoSugg, baseP * (1 + (taxSettings.tiktok_markup / 100)));
-                      return (
-                        <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-lg bg-black/10 flex items-center justify-center">
-                                <svg className="h-3.5 w-3.5 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
-                              </div>
-                              <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
-                              <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className={`text-[10px] font-black tabular-nums ${tiktokProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                  {calculateROI(tiktokP, totalCosts, taxSettings.tiktok_fee, taxSettings.tiktok_comm).toFixed(1)}% ROI
-                                </p>
-                                <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
-                              </div>
-                              <div className="text-right">
-                                <p className={`text-lg font-black tabular-nums ${tiktokColor}`}>
-                                  {tiktokProfit >= 0 ? '+' : ''}R$ {tiktokProfit.toFixed(2).replace('.', ',')}
-                                </p>
-                                <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
-                              </div>
-                            </div>
+                    <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-black/10 flex items-center justify-center">
+                            <svg className="h-3.5 w-3.5 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.67c0 2.106-1.707 3.813-3.813 3.813-2.106 0-3.813-1.707-3.813-3.813 0-2.106 1.707-3.813 3.813-3.813h1.341V8.423H10.01s-5.83.172-5.83 7.247c0 7.075 5.83 7.247 5.83 7.247s5.83.172 5.83-7.247V7.953a7.105 7.105 0 0 0 3.753 1.157v-2.424z"/></svg>
                           </div>
-                          
-                          {/* Deduction breakdown */}
-                          <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
-                            <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${tiktokP.toFixed(2)}</span>
-                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${comm.toFixed(2)}</span>
-                            <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.tiktok_fee}</span>
-                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${totalCosts.toFixed(2)}</span>
+                          <span className="text-[10px] font-black uppercase text-foreground tracking-widest">TikTok Shop</span>
+                          <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className={`text-[10px] font-black tabular-nums ${tiktokProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {tiktokROI.toFixed(1)}% ROI
+                            </p>
+                            <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
                           </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between ml-1">
-                              <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>
-                              <button type="button" onClick={() => setTiktokPrice(suggestedTiktok.toFixed(2))} className="text-[8px] font-black text-foreground/40 hover:text-foreground underline underline-offset-2">
-                                Sugestão: R$ {suggestedTiktok.toFixed(2).replace('.', ',')}
-                              </button>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
-                              <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={baseP > 0 ? baseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
-                            </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-black tabular-nums ${tiktokProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {tiktokProfit >= 0 ? '+' : ''}R$ {tiktokProfit.toFixed(2).replace('.', ',')}
+                            </p>
+                            <p className="text-[8px] text-muted-foreground uppercase font-bold">Lucro Líquido</p>
                           </div>
                         </div>
-                      );
-                    })()}
+                      </div>
+                      
+                      <div className="flex gap-2 text-[8px] font-bold text-muted-foreground mb-4">
+                        <span className="bg-muted/50 px-1.5 py-0.5 rounded">Venda: R${tiktokPriceVal.toFixed(2)}</span>
+                        <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Comissão: R${tiktokComm.toFixed(2)}</span>
+                        <span className="bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">−Taxa: R${taxSettings.tiktok_fee}</span>
+                        <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded">−Custos: R${itemTotalCosts.toFixed(2)}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between ml-1">
+                          <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest">Preço no TikTok</Label>
+                          <button type="button" onClick={() => setTiktokPrice(tiktokSuggested.toFixed(2))} className="text-[8px] font-black text-foreground/40 hover:text-foreground underline underline-offset-2">
+                            Sugestão: R$ {tiktokSuggested.toFixed(2).replace('.', ',')}
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
+                          <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={commonBaseP > 0 ? commonBaseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
+                        </div>
+                      </div>
+                    </div>
 
                     <p className="text-[9px] text-muted-foreground text-center italic bg-muted/30 py-2 rounded-lg border border-dashed border-border/60">
                       * Taxas configuradas em <strong>Ajustes &gt; Integrações</strong>. Lucro = Preço − Custos − Taxas da plataforma.

@@ -17,6 +17,7 @@ const CatalogBuilderPage = lazy(() => import('./pages/catalogs/CatalogBuilderPag
 const CatalogPublicView = lazy(() => import('./pages/catalogs/CatalogPublicView'));
 const TeamPage = lazy(() => import('./pages/team/TeamPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 
 // Lightweight fallback spinner
 const PageLoader = () => (
@@ -84,6 +85,7 @@ export default function App() {
             <Route path="/team" element={user ? <AppLayout><TeamPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/customers" element={user ? <AppLayout><CustomersPage /></AppLayout> : <Navigate to="/auth" replace />} />
             <Route path="/c/:id" element={<CatalogPublicView />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/auth"} replace />} />
           </Routes>
         </Suspense>

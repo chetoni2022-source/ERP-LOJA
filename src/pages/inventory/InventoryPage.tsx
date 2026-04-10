@@ -780,33 +780,6 @@ export default function InventoryPage() {
   const tiktokSuggested = Math.max((commonBaseP + taxSettings.tiktok_fee) / (1 - tiktokCommRate), commonBaseP * (1 + (taxSettings.tiktok_markup / 100)));
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
-      <div className="flex flex-col md:flex-row justify-between gap-4 md:items-end">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1 text-foreground">Gestão de Peças</h1>
-          <p className="text-sm md:text-base text-muted-foreground">O coração do seu negócio. Pressione Inserir Novo para injetar mercadoria nova no catálogo.</p>
-        </div>
-        <Button onClick={openAddModal} className="w-full sm:w-auto shadow-xl h-12 md:h-14 px-6 font-black tracking-widest bg-foreground hover:bg-foreground/90 text-background transform duration-300 uppercase rounded-xl">
-          <Plus className="mr-2 h-5 w-5" /> Cadastrar Peça
-        </Button>
-      </div>
-
-      {/* KPI Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pb-2">
-         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between group">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2"><PackageSearch size={14} className="text-primary" /> Total Modelos</span>
-            <span className="text-2xl md:text-3xl font-black text-foreground">{totalModels}</span>
-         </div>
-         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between group">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-2"><Grid size={14} className="text-blue-500" /> Peças Acervo</span>
-            <span className="text-2xl md:text-3xl font-black text-foreground">{totalItems}</span>
-         </div>
-         <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('in_stock')}>
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2"><CheckCircle2 size={14} /> Ativas</span>
-            <span className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-300">
-              {products.filter(p => {
-                const total = p.variations && p.variations.length > 0
-                  ? p.variations.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
                   : p.stock_quantity;
                 return total > 0;
               }).length}
@@ -2037,17 +2010,6 @@ export default function InventoryPage() {
                     {isSelectingImageForVar !== null && (
                       <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300" onClick={() => setIsSelectingImageForVar(null)}>
                         <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                          <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/10">
-                            <div>
-                               <h3 className="font-black text-sm uppercase tracking-widest">Selecione uma Foto da Galeria</h3>
-                               <p className="text-[10px] text-muted-foreground mt-0.5">Vincule uma imagem e defina o estoque da variação "{variations[isSelectingImageForVar]?.name}"</p>
-                            </div>
-                            <button onClick={() => setIsSelectingImageForVar(null)} className="h-8 w-8 flex items-center justify-center bg-background border border-border rounded-full hover:bg-muted transition-colors"><X size={14} /></button>
-                          </div>
-
-                          <div className="p-4 bg-primary/5 border-b border-border/40 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-background flex items-center justify-center border border-border/60">
                                 <Package className="text-primary" size={18} />
                               </div>
                               <div className="space-y-0.5">

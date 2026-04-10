@@ -22,61 +22,41 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Fontes elegantes e luxuosas globais opcionais */
   --font-sans: "Inter", "Helvetica Neue", sans-serif;
 }
 
 @layer base {
   :root {
-    /* LUXURY LIGHT THEME - Tonalidades Creme/Areia Nude (Bege/Cinza super claro) */
-    --background: #F8F8F7;
-    --foreground: #1c1917;
-    --card: #FFFFFF;
-    --card-foreground: #1c1917;
-    --popover: #FFFFFF;
-    --popover-foreground: #1c1917;
-    --primary: #1C1917;
-    --primary-foreground: #FFFFFF;
-    --secondary: #E9E9E8;
-    --secondary-foreground: #1c1917;
-    --muted: #EEEEED;
-    --muted-foreground: #78716C;
-    --accent: #EFEFEE;
-    --accent-foreground: #1C1917;
-    --destructive: #EF4444;
-    --destructive-foreground: #FFFFFF;
-    --border: #E5E5E4;
-    --input: #E5E5E4;
-    --ring: #1c1917;
-    --radius: 0.75rem;
-  }
- 
-  .dark {
-    /* LUXURY DARK THEME - Tonalidades Carbono profundo e Off-white */
-    --background: #0C0A09;
-    --foreground: #FAFAF9;
-    --card: #151312;
-    --card-foreground: #FAFAF9;
-    --popover: #151312;
-    --popover-foreground: #FAFAF9;
-    --primary: #FAFAF9;
-    --primary-foreground: #0C0A09;
-    --secondary: #292524;
-    --secondary-foreground: #FAFAF9;
-    --muted: #221F1E;
-    --muted-foreground: #A8A29E;
-    --accent: #221F1E;
-    --accent-foreground: #FAFAF9;
-    --destructive: #7F1D1D;
-    --destructive-foreground: #FAFAF9;
-    --border: #292523;
-    --input: #292523;
-    --ring: #FAFAF9;
+    /* LUXURY DARK PROFESSIONAL - AURA WORKSPACE DEFAULT */
+    --background: #030712;
+    --foreground: #f9fafb;
+    --card: rgba(255, 255, 255, 0.03);
+    --card-foreground: #f9fafb;
+    --popover: #111827;
+    --popover-foreground: #f9fafb;
+    --primary: #E91E8C;
+    --primary-foreground: #ffffff;
+    --secondary: #1f2937;
+    --secondary-foreground: #f9fafb;
+    --muted: #111827;
+    --muted-foreground: #9ca3af;
+    --accent: #111827;
+    --accent-foreground: #f9fafb;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: rgba(255, 255, 255, 0.06);
+    --input: rgba(255, 255, 255, 0.04);
+    --ring: #E91E8C;
+    --radius: 1rem;
+    
+    /* UX Pro Tokens */
+    --aura-opacity: 0.15;
+    --glass-blur: 16px;
+    --soft-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   }
 
   * {
     border-color: var(--border);
-    /* Faster tap response on mobile — removes 300ms delay */
     touch-action: manipulation;
   }
   
@@ -85,35 +65,76 @@
     color: var(--foreground);
     @apply antialiased;
     font-family: var(--font-sans);
-    /* Smooth momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
-    /* Prevent layout shift from scrollbar */
     scrollbar-gutter: stable;
+    letter-spacing: -0.011em;
   }
 
-  /* Smooth scrolling for all scrollable containers */
-  .overflow-y-auto, .overflow-x-auto, .overflow-auto {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+  /* Aura Background Global */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 40%;
+    width: 60vw;
+    height: 60vh;
+    background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
+    opacity: var(--aura-opacity);
+    filter: blur(120px);
+    z-index: -1;
+    pointer-events: none;
+    animation: auraMove 40s infinite ease-in-out;
   }
 
-  /* GPU acceleration for animated elements — prevents jank */
-  .animate-spin,
-  .animate-pulse,
-  .transition-all,
-  .transition-colors,
-  .transition-transform {
-    will-change: transform;
-    transform: translateZ(0);
+  @keyframes auraMove {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-5%, 5%) scale(1.1); }
+    66% { transform: translate(5%, -2%) scale(0.9); }
   }
 
-  /* Respect user's reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  /* UX Pro Utility Classes */
+  .glass-card {
+    background: var(--card);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border);
+    box-shadow: var(--soft-shadow);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .ux-input {
+    background: var(--input);
+    border: 1px solid var(--border);
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: calc(var(--radius) - 0.25rem);
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .ux-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .ux-button {
+    @apply inline-flex items-center justify-center font-bold transition-all active:scale-95;
+    border-radius: calc(var(--radius) - 0.25rem);
+  }
+
+  /* Responsive Table Container */
+  .ux-table-container {
+    @apply w-full overflow-x-auto rounded-2xl glass-card;
+  }
+
+  /* Typography Polish */
+  h1, h2, h3 {
+    @apply font-black tracking-tight;
   }
 }
-

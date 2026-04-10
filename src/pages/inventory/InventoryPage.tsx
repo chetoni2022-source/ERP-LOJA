@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading, BadgeDollarSign, Truck } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';
@@ -523,8 +523,9 @@ export default function InventoryPage() {
       setActiveTab('pricing');
       return;
     }
-    if (!stock || parseInt(stock, 10) < 0) {
-      toastError('Informe a quantidade em estoque.');
+    // Stock só é obrigatório se não houver variações (se houver, o estoque é por variação)
+    if (variations.length === 0 && (!stock || parseInt(stock, 10) < 0)) {
+      toastError('Informe a quantidade em estoque (ou adicione variações com estoque individual).');
       setActiveTab('pricing');
       return;
     }
@@ -1013,72 +1014,102 @@ export default function InventoryPage() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:py-8">
-          <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={() => {setIsModalOpen(false); resetForm();}}></div>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}} />
           
-          <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col z-10 max-h-[90vh] md:max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 border-b border-border bg-card/50 backdrop-blur-md flex justify-between items-start shrink-0">
-              <div className="flex items-start gap-4 min-w-0">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0">
-                  <Package size={24} />
+          <div className="bg-card w-full max-w-5xl md:rounded-2xl shadow-2xl border-t md:border border-border flex flex-col z-10 h-[92dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-300">
+            {/* ── HEADER ── */}
+            <div className="px-5 py-4 border-b border-border bg-card flex justify-between items-center shrink-0">
+              {/* Mobile drag handle */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-border rounded-full md:hidden" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Package size={20} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-xl font-black tracking-tight text-foreground truncate max-w-[300px] md:max-w-[420px]">
+                  <h3 className="text-lg font-black tracking-tight text-foreground truncate max-w-[220px] md:max-w-lg">
                     {editingProduct ? editingProduct.name : 'Nova Peça'}
                   </h3>
                   {editingProduct ? (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Criado: {new Date(editingProduct.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
-                      {editingProduct.updated_at && (
-                        <>
-                          <span className="text-muted-foreground/30 text-[8px]">•</span>
-                          <span className="text-[9px] font-bold text-primary/70 uppercase tracking-widest">
-                            Editado: {new Date(editingProduct.updated_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </>
-                      )}
-                    </div>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Editado: {new Date(editingProduct.updated_at || editingProduct.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
                   ) : (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Gestão de Ativos &amp; Lucratividade
-                      </p>
-                    </div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gestão de Ativos &amp; Lucratividade</p>
                   )}
                 </div>
               </div>
-              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-10 w-10 flex items-center justify-center hover:bg-muted rounded-xl transition-all border border-border group shrink-0 ml-3">
-                <X size={20} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
+              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-9 w-9 flex items-center justify-center hover:bg-muted rounded-xl transition-all group shrink-0 ml-2">
+                <X size={18} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
-            
-            <div className="overflow-y-auto bg-muted/5 flex-1 custom-scrollbar relative">
-              <div className="sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-5 md:px-6 py-3 mb-6 opacity-100">
-                 <div className="flex flex-nowrap overflow-x-auto custom-scrollbar gap-1 bg-muted/30 p-1 rounded-xl">
-                 {['basic', 'pricing', 'logistics', 'media', 'variations'].map(tab => (
-                   <button
-                     key={tab}
-                     type="button"
-                     onClick={() => setActiveTab(tab as any)}
-                     className={cn(
-                       "flex-1 text-[10px] md:text-xs uppercase font-black tracking-widest py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap min-w-[80px]",
-                       activeTab === tab 
-                         ? "bg-foreground text-background shadow-[0_0_15px_rgba(0,0,0,0.1)] border-transparent scale-[1.02] ring-1 ring-foreground/10" 
-                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95"
-                     )}
-                   >
-                     {tab === 'basic' && 'Info 📝'}
-                     {tab === 'pricing' && 'Lucros 💸'}
-                     {tab === 'logistics' && 'Frete 📦'}
-                     {tab === 'media' && 'Mídia 🎥'}
-                     {tab === 'variations' && 'Opções ✨'}
-                   </button>
-                 ))}
-                 </div>
+
+            {/* ── BODY: Sidebar + Content ── */}
+            <div className="flex flex-1 overflow-hidden">
+              
+              {/* ── Left Sidebar: Vertical Tabs (desktop only) ── */}
+              <div className="hidden md:flex flex-col w-52 bg-muted/20 border-r border-border p-3 gap-1 shrink-0">
+                {[
+                  { id: 'basic',      icon: Tag,          label: 'Informações',  emoji: '📝', hint: name || 'Nome...' },
+                  { id: 'pricing',    icon: BadgeDollarSign, label: 'Lucros',     emoji: '💸', hint: price ? `R$ ${price}` : 'Preço...' },
+                  { id: 'logistics',  icon: Truck,         label: 'Frete',        emoji: '📦', hint: `${weight}g` },
+                  { id: 'media',      icon: ImageIcon,     label: 'Mídia',        emoji: '🎥', hint: `${images.length} foto${images.length !== 1 ? 's': ''}` },
+                  { id: 'variations', icon: Tags,          label: 'Opções',      emoji: '✨', hint: variations.length > 0 ? `${variations.length} variação` : 'Sem variações' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group",
+                      activeTab === tab.id
+                        ? "bg-foreground text-background shadow-sm"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    )}
+                  >
+                    <tab.icon size={15} className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-black uppercase tracking-widest leading-none">{tab.label}</div>
+                      <div className={cn("text-[9px] font-medium truncate mt-0.5", activeTab === tab.id ? 'opacity-60' : 'opacity-50')}>{tab.hint}</div>
+                    </div>
+                  </button>
+                ))}
+
+                {/* Quick save shortcut */}
+                <div className="mt-auto pt-3 border-t border-border/40">
+                  <div className="text-[9px] text-muted-foreground/50 text-center font-bold uppercase tracking-widest">
+                    {variations.length > 0 ? `${variations.length} variação ativa` : 'Sem variações'}
+                  </div>
+                </div>
               </div>
+
+              {/* ── Right: Scrollable Content ── */}
+              <div className="flex flex-col flex-1 overflow-hidden">
+
+                {/* Mobile tabs (horizontal pills) */}
+                <div className="md:hidden sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-4 py-2.5">
+                  <div className="flex flex-nowrap overflow-x-auto gap-1 bg-muted/30 p-1 rounded-xl no-scrollbar">
+                    {['basic', 'pricing', 'logistics', 'media', 'variations'].map(tab => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab as any)}
+                        className={cn(
+                          "flex-1 text-[10px] uppercase font-black tracking-widest py-2 px-3 rounded-lg transition-all whitespace-nowrap min-w-[70px]",
+                          activeTab === tab
+                            ? "bg-foreground text-background shadow-sm"
+                            : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                        )}
+                      >
+                        {tab === 'basic' && 'Info 📝'}
+                        {tab === 'pricing' && 'Lucros 💸'}
+                        {tab === 'logistics' && 'Frete 📦'}
+                        {tab === 'media' && 'Mídia 🎥'}
+                        {tab === 'variations' && 'Opções ✨'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
               <form id="productForm" onSubmit={handleSaveProduct} className="space-y-4 md:space-y-5 px-5 md:px-6 pb-8" noValidate>
                 
@@ -1241,11 +1272,36 @@ export default function InventoryPage() {
 
                   {/* ── ESTOQUE ── */}
                   <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-5 shadow-sm">
-                    <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
-                    <div className="relative group/input">
-                      <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
-                      <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
-                    </div>
+                    {variations.length > 0 ? (
+                      <>
+                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">
+                          Estoque Disponível <span className="text-muted-foreground">(Opcional — Gerenciado por Variação)</span>
+                        </Label>
+                        <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                          <Layers size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-[11px] font-black text-blue-600 dark:text-blue-400">Estoque controlado por variação</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Este produto tem {variations.length} variação{variations.length > 1 ? 'ões' : ''} ativa{variations.length > 1 ? 's' : ''}. 
+                              Defina o estoque individual de cada cor/modelo na aba <strong>Opções ✨</strong>.
+                              O campo abaixo é opcional (usado como estoque geral/reserva).
+                            </p>
+                          </div>
+                        </div>
+                        <div className="relative group/input mt-3">
+                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
+                          <Input type="number" value={stock} onChange={e => setStock(e.target.value)} placeholder="Estoque geral (opcional)" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1 mb-2">Estoque Disponível <span className="text-[#f53d2d]">*</span></Label>
+                        <div className="relative group/input">
+                          <PackageSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-60" />
+                          <Input type="number" required value={stock} onChange={e => setStock(e.target.value)} placeholder="1" className="h-12 pl-11 text-base font-black bg-background/50 border-border/60 focus-visible:ring-primary transition-all" />
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* ── PREÇOS POR CANAL ── */}
@@ -2139,7 +2195,9 @@ export default function InventoryPage() {
                   )}
                 </div>
               </form>
-            </div>
+              </div>{/* end right content */}
+
+            </div>{/* end body flex */}
 
             <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 mt-auto">
               <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
@@ -2157,8 +2215,8 @@ export default function InventoryPage() {
                 {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
                 {editingProduct ? 'Salvar' : 'Cadastrar'}
               </Button>
-            </div>
-          </div>
+            </div>{/* end footer */}
+          </div>{/* end modal card */}
         </div>
       )}
 

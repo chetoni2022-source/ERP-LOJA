@@ -588,9 +588,7 @@ export default function InventoryPage() {
            if (v.image_url.startsWith('http')) return v;
            return { ...v, image_url: null };
         }) : null,
-        user_id: user.id
-      };
-
+      console.log("Payload sent to Supabase:", payload);
       // Perform a single, robust save attempt
       if (editingProduct) {
         const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
@@ -606,12 +604,20 @@ export default function InventoryPage() {
       resetForm();
       fetchProducts();
     } catch (error: any) {
-      console.error("Save error:", error);
-      let msg = error.message || 'Verifique sua conexão e os dados inseridos.';
+      console.error("Save error full object:", error);
+      let msg = error.message || 'Verifique sua conexão.';
+      
+      // If error has more details (PostgREST specific)
+      if (error.details) {
+         msg += ` | Detalhes: ${error.details}`;
+      }
+      if (error.hint) {
+         msg += ` | Dica: ${error.hint}`;
+      }
       
       // Handle missing column errors gracefully
       if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema cache')) {
-        msg = "Erro de Sincronização: Colunas faltando no seu Supabase. Verifique o arquivo FIX_DATABASE_COLUMNS.sql na raiz do projeto e execute-o no SQL Editor do Supabase.";
+        msg = "Erro de Sincronização: Colunas faltando no seu Supabase. Verifique o arquivo FIX_DATABASE_COLUMNS.sql na raiz do projeto e execute-o no SQL Editor do Supabase. Erro Original: " + msg;
       }
       
       toastError('Erro ao salvar produto: ' + msg);

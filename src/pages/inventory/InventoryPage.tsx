@@ -1435,7 +1435,7 @@ export default function InventoryPage() {
 
                           {hasPromo && (
                             <p className="text-[9px] text-primary font-bold mt-2 ml-1">
-                              Desconto de {Math.round( ( (siteP - sitePromo) / siteP ) * 100 )}% ativo ✓
+                              Desconto de {Math.round( ( (siteP - sitePromo) * 100 ) / siteP )}% ativo
                             </p>
                           )}
                         </div>
@@ -1457,8 +1457,10 @@ export default function InventoryPage() {
                       const shopeeProfit = shopeeP - totalCosts - comm - taxSettings.shopee_fee;
                       const shopeeColor = shopeeProfit > 0 ? 'text-emerald-500' : shopeeProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       // Suggested price that yields the same net profit as the site
-                      const autoSugg = (baseP + taxSettings.shopee_fee) * ( 1.0 / ( 1 - (taxSettings.shopee_comm / 100) ) );
-                      const suggestedDisplay = Math.max(autoSugg, baseP * ( 1 + (taxSettings.shopee_markup / 100) ));
+                      // Formula: Suggestion = (BasePrice + Fee) / (1 - Commission%)
+                      const shopeeCommRate = (taxSettings.shopee_comm || 0) / 100;
+                      const shopeeAutoSugg = (baseP + taxSettings.shopee_fee) / (1 - shopeeCommRate);
+                      const suggestedDisplay = Math.max(shopeeAutoSugg, baseP * (1 + (taxSettings.shopee_markup / 100)));
                       return (
                         <div className="p-4 rounded-2xl bg-[#f53d2d]/5 border-2 border-[#f53d2d]/20">
                           <div className="flex items-center justify-between mb-3">
@@ -1524,8 +1526,9 @@ export default function InventoryPage() {
                       const tiktokProfit = tiktokP - totalCosts - comm - taxSettings.tiktok_fee;
                       const tiktokColor = tiktokProfit > 0 ? 'text-emerald-500' : tiktokProfit < 0 ? 'text-red-500' : 'text-muted-foreground';
                       // Suggested price that yields the same net profit as the site
-                      const autoSugg = (baseP + taxSettings.tiktok_fee) * ( 1.0 / ( 1 - (taxSettings.tiktok_comm / 100) ) );
-                      const suggestedTiktok = Math.max(autoSugg, baseP * ( 1 + (taxSettings.tiktok_markup / 100) ));
+                      const tiktokCommRate = (taxSettings.tiktok_comm || 0) / 100;
+                      const tiktokAutoSugg = (baseP + taxSettings.tiktok_fee) / (1 - tiktokCommRate);
+                      const suggestedTiktok = Math.max(tiktokAutoSugg, baseP * (1 + (taxSettings.tiktok_markup / 100)));
                       return (
                         <div className="p-4 rounded-2xl bg-black/5 border-2 border-black/10">
                           <div className="flex items-center justify-between mb-3">

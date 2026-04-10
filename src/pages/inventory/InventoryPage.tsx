@@ -597,6 +597,8 @@ export default function InventoryPage() {
            if (v.image_url.startsWith('http')) return v;
            return { ...v, image_url: null };
         }) : null,
+      };
+      
       console.log("Payload sent to Supabase:", payload);
       // Perform a single, robust save attempt
       if (editingProduct) {

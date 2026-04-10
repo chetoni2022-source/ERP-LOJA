@@ -1400,8 +1400,8 @@ export default function InventoryPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <p className={`text-[10px] font-black tabular-nums ${activeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                      {calculateROI(activePrice, siteCost).toFixed(1)}% ROI
+                                    <p className="text-[10px] font-black tabular-nums text-emerald-500">
+                                      Calculando...
                                     </p>
                                     <p className="text-[7px] text-muted-foreground uppercase font-bold">Rentabilidade</p>
                                   </>

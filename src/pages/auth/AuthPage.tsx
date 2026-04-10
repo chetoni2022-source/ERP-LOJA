@@ -154,7 +154,7 @@ export default function AuthPage() {
         <div style={{ marginBottom: 42, animation: 'fadeInLeft 0.8s ease-out 0.1s both' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
              <span style={{ padding: '4px 10px', background: '#E91E8C15', color: '#E91E8C', fontSize: 10, fontWeight: 800, borderRadius: 100, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-               Versão 2026 PRO
+               Versao 2026 PRO
              </span>
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 900, color: '#111', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
@@ -162,8 +162,8 @@ export default function AuthPage() {
           </h1>
           <p style={{ fontSize: 16, color: '#6b7280', marginTop: 12, fontWeight: 500 }}>
             {isLogin
-              ? 'Gerencie seu catálogo, estoque e lucros em um só lugar.'
-              : 'Tudo o que sua marca precisa para escalar a operação.'}
+              ? 'Gerencie seu catalogo, estoque e lucros em um so lugar.'
+              : 'Tudo o que sua marca precisa para escalar a operacao.'}
           </p>
         </div>
 
@@ -256,7 +256,7 @@ export default function AuthPage() {
               <Loader2 style={{ width: 22, height: 22, animation: 'spin 1.2s linear infinite' }} />
             ) : (
               <>
-                {isLogin ? 'Acessar Painel de Controle' : 'Criar minha conta Grátis'}
+                {isLogin ? 'Acessar Painel de Controle' : 'Criar minha conta Gratis'}
                 <Zap size={18} fill="currentColor" />
               </>
             )}
@@ -266,7 +266,7 @@ export default function AuthPage() {
         {/* Toggle & Footer */}
         <div style={{ marginTop: 42, textAlign: 'center', animation: 'fadeIn 1s ease-out 0.5s both' }}>
           <p style={{ fontSize: 15, color: '#6b7280', fontWeight: 500 }}>
-            {isLogin ? 'Ainda não possui acesso? ' : 'Já faz parte do time? '}
+            {isLogin ? 'Ainda nao possui acesso? ' : 'Ja faz parte do time? '}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -278,10 +278,10 @@ export default function AuthPage() {
           
           <div style={{ marginTop: 48, display: 'flex', justifyContent: 'center', gap: 24, opacity: 0.5 }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>
-               <ShieldCheck size={14} /> 100% Seguro
+               100% SEGURO
              </div>
              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>
-               <Sparkles size={14} /> Design Premium
+               DESIGN PREMIUM
              </div>
           </div>
         </div>

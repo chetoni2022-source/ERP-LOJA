@@ -255,8 +255,12 @@ export default function InventoryPage() {
   const processedProducts = products
     .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(p => {
-      if (stockFilter === 'in_stock') return p.stock_quantity > 0;
-      if (stockFilter === 'out_of_stock') return p.stock_quantity <= 0;
+      const total = p.variations && p.variations.length > 0
+        ? p.variations.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
+        : p.stock_quantity;
+        
+      if (stockFilter === 'in_stock') return total > 0;
+      if (stockFilter === 'out_of_stock') return total <= 0;
       return true;
     })
     .filter(p => {
@@ -275,7 +279,12 @@ export default function InventoryPage() {
     });
 
   const totalModels = products.length;
-  const totalItems = products.reduce((acc, p) => acc + (p.stock_quantity > 0 ? p.stock_quantity : 0), 0);
+  const totalItems = products.reduce((acc, p) => {
+    const total = p.variations && p.variations.length > 0
+      ? p.variations.reduce((vAcc: number, v: any) => vAcc + (v.stock || 0), 0)
+      : p.stock_quantity;
+    return acc + (total > 0 ? total : 0);
+  }, 0);
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -762,11 +771,25 @@ export default function InventoryPage() {
          </div>
          <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('in_stock')}>
             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2"><CheckCircle2 size={14} /> Ativas</span>
-            <span className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-300">{products.filter(p => p.stock_quantity > 0).length}</span>
+            <span className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-300">
+              {products.filter(p => {
+                const total = p.variations && p.variations.length > 0
+                  ? p.variations.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
+                  : p.stock_quantity;
+                return total > 0;
+              }).length}
+            </span>
          </div>
          <div className="bg-red-500/10 border-l-4 border-red-500 rounded-2xl p-4 shadow-sm flex flex-col justify-between" onClick={() => setStockFilter('out_of_stock')}>
             <span className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400 flex items-center gap-1.5 mb-2"><AlertTriangle size={14} /> Esgotadas</span>
-            <span className="text-2xl md:text-3xl font-black text-red-700 dark:text-red-300">{products.filter(p => p.stock_quantity <= 0).length}</span>
+            <span className="text-2xl md:text-3xl font-black text-red-700 dark:text-red-300">
+              {products.filter(p => {
+                const total = p.variations && p.variations.length > 0
+                  ? p.variations.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
+                  : p.stock_quantity;
+                return total <= 0;
+              }).length}
+            </span>
          </div>
       </div>
 
@@ -853,8 +876,9 @@ export default function InventoryPage() {
                 {processedProducts.map(product => {
                   const rawImage = product.images?.[0] || product.image_url;
                   const displayImage = getProxyUrl(rawImage);
-                  const currentPrice = product.sale_price || product.price;
-                  const isDiscount = !!product.sale_price;
+                  const totalStock = product.variations && product.variations.length > 0
+                    ? product.variations.reduce((acc, v) => acc + (v.stock || 0), 0)
+                    : product.stock_quantity;
 
                   return (
                   <div key={product.id} 
@@ -863,12 +887,12 @@ export default function InventoryPage() {
                   >
                     <div className="aspect-square bg-muted/40 relative flex items-center justify-center overflow-hidden border-b border-border">
                       {displayImage ? (
-                        <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
+                        <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out", totalStock <= 0 && "opacity-40 grayscale")} />
                       ) : (
                         <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
                       )}
                       
-                      {product.stock_quantity <= 0 && (
+                      {totalStock <= 0 && (
                         <div className="absolute top-2 left-2 bg-red-500/95 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-widest backdrop-blur-sm z-10">
                           Esgotado
                         </div>
@@ -942,7 +966,7 @@ export default function InventoryPage() {
                              )}
                            </div>
                            <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest opacity-60">
-                             Qtd: {product.stock_quantity}
+                             Qtd: {totalStock}
                            </span>
                         </div>
                       </div>
@@ -956,6 +980,9 @@ export default function InventoryPage() {
                   const rawImage = product.images?.[0] || product.image_url;
                   const displayImage = getProxyUrl(rawImage);
                   const currentPrice = product.sale_price || product.price;
+                  const totalStock = product.variations && product.variations.length > 0
+                    ? product.variations.reduce((acc, v) => acc + (v.stock || 0), 0)
+                    : product.stock_quantity;
                   
                   return (
                     <div key={product.id} 
@@ -964,7 +991,7 @@ export default function InventoryPage() {
                     >
                        <div className="h-12 w-12 min-w-[48px] rounded-lg overflow-hidden bg-muted relative border border-border/50 shadow-inner">
                            {displayImage ? (
-                             <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full", product.stock_quantity <= 0 && "opacity-40 grayscale")} />
+                             <img src={displayImage} alt={product.name} className={cn("object-cover w-full h-full", totalStock <= 0 && "opacity-40 grayscale")} />
                            ) : (
                              <ImageIcon className="absolute inset-0 m-auto text-muted-foreground/30 h-6 w-6" />
                            )}
@@ -973,7 +1000,7 @@ export default function InventoryPage() {
                        <div className="flex-1 min-w-0">
                          <h4 className="text-xs font-bold text-foreground truncate uppercase tracking-tight">{product.name}</h4>
                          <span className="text-[10px] text-muted-foreground flex gap-3 mt-0.5 font-medium uppercase tracking-widest">
-                           <span>Qtd: {product.stock_quantity}</span>
+                           <span>Qtd: {totalStock}</span>
                            {product.sale_price && <span className="text-green-600 dark:text-green-400 font-bold tracking-tighter">Oferta</span>}
                          </span>
                        </div>

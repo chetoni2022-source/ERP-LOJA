@@ -1,568 +1,197 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Input, Label } from '../../components/ui';
-import { supabase, getProxyUrl } from '../../lib/supabase';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
-import {
-  Loader2, Plus, Store, Link as LinkIcon, ExternalLink, Trash2, Edit2,
-  Palette, X, Check, CheckCircle2, Tags, Package, Sliders, Eye
+import { Button, Input, Label } from '../../components/ui';
+import { 
+  Plus, Edit2, Trash2, Globe, Layout, Palette, 
+  Eye, Share2, Copy, Check, Loader2, Sparkles, 
+  Zap, ShieldCheck, ArrowUpRight, Search, Package,
+  Smartphone, Monitor, Laptop, Image as ImageIcon
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
-
-const PRESET_THEMES = [
-  { id: 'luxury', label: 'Ouro',  bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' },
-  { id: 'rose',   label: 'Rosé',  bg: '#fff8f5', accent: '#cb8474', text: '#2a1a14' },
-  { id: 'midnight',label: 'Safira',bg: '#050a12', accent: '#7eb8f7', text: '#e8eef5' },
-  { id: 'pearl',  label: 'Pérola',bg: '#fafaf7', accent: '#8a7560', text: '#1a1a1a' },
-];
-
-interface CustomColors { bg: string; accent: string; text: string; }
 
 export default function CatalogBuilderPage() {
   const { user } = useAuthStore();
   const { success, error: toastError } = useToast();
   const [catalogs, setCatalogs] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
-  const [editingCatalog, setEditingCatalog] = useState<any | null>(null);
-  const [catalogName, setCatalogName] = useState('');
-  const [catalogDesc, setCatalogDesc] = useState('');
-  const [selectedTheme, setSelectedTheme] = useState('luxury');
-  const [useCustomColors, setUseCustomColors] = useState(false);
-  const [customColors, setCustomColors] = useState<CustomColors>({ bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' });
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [pickerTab, setPickerTab] = useState<'products' | 'categories'>('products');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [viewingProduct, setViewingProduct] = useState<any | null>(null);
-  const [hideOutOfStock, setHideOutOfStock] = useState(false);
-  const [catalogSlug, setCatalogSlug] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, [user]);
+  const [form, setForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    theme: 'luxury',
+    settings: {
+      hide_out_of_stock: false,
+      show_prices: true,
+      order_whatsapp: true
+    }
+  });
 
-  async function fetchData() {
+  useEffect(() => { if (user) fetchCatalogs(); }, [user]);
+
+  async function fetchCatalogs() {
+    setLoading(true);
     try {
-      const [{ data: catData }, { data: prodData }, { data: catsData }] = await Promise.all([
-        supabase.from('catalogs').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
-        supabase.from('products').select('*').eq('user_id', user?.id).order('name'),
-        supabase.from('categories').select('*').eq('user_id', user?.id).order('name'),
-      ]);
-      setCatalogs(catData || []);
-      setProducts(prodData || []);
-      setCategories(catsData || []);
-    } catch (e) { console.error(e); } finally { setLoading(false); }
+      const { data } = await supabase.from('catalogs').select('*').eq('user_id', user?.id).order('created_at', { ascending: false });
+      setCatalogs(data || []);
+    } catch (err: any) { toastError(err.message); }
+    finally { setLoading(false); }
   }
 
-  const openCreate = () => {
-    setMode('create');
-    setEditingCatalog(null);
-    setCatalogName(''); setCatalogDesc('');
-    setSelectedTheme('luxury');
-    setUseCustomColors(false);
-    setCustomColors({ bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' });
-    setSelectedProducts([]); setSelectedCategories([]);
-    setHideOutOfStock(false);
-    setCatalogSlug('');
-  };
-
-  const openEdit = async (cat: any) => {
-    setMode('edit');
-    setEditingCatalog(cat);
-    setCatalogName(cat.name); setCatalogDesc(cat.description || '');
-    const isCustom = cat.theme === 'custom';
-    setUseCustomColors(isCustom);
-    setSelectedTheme(isCustom ? 'luxury' : (cat.theme || 'luxury'));
-    if (isCustom && cat.custom_colors) setCustomColors(cat.custom_colors);
-    setHideOutOfStock(cat.settings?.hide_out_of_stock || false);
-    setCatalogSlug(cat.slug || '');
-
-    const { data: items } = await supabase.from('catalog_items').select('product_id').eq('catalog_id', cat.id);
-    setSelectedProducts(items?.map(i => i.product_id) || []);
-    const { data: catLinks } = await supabase.from('catalog_categories').select('category_id').eq('catalog_id', cat.id);
-    setSelectedCategories(catLinks?.map(i => i.category_id) || []);
-  };
-
-  const toggleProduct = (id: string) =>
-    setSelectedProducts(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
-  const toggleCategory = (id: string) =>
-    setSelectedCategories(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user || (selectedProducts.length === 0 && selectedCategories.length === 0)) {
-      toastError('Adicione ao menos um produto ou categoria ao catálogo.');
-      return;
-    }
+  const handleSave = async () => {
+    if (!form.name || !form.slug || !user) return;
     setSaving(true);
     try {
-      const theme = useCustomColors ? 'custom' : selectedTheme;
-      const payload: any = { 
-        name: catalogName, 
-        description: catalogDesc, 
-        theme, 
-        user_id: user.id,
-        slug: catalogSlug.trim().toLowerCase() || null,
-        settings: { hide_out_of_stock: hideOutOfStock }
-      };
-      if (useCustomColors) payload.custom_colors = customColors;
-      else payload.custom_colors = null;
-
-      let catalogId: string;
-      if (mode === 'edit' && editingCatalog) {
-        catalogId = editingCatalog.id;
-        await supabase.from('catalogs').update(payload).eq('id', catalogId);
-        await supabase.from('catalog_items').delete().eq('catalog_id', catalogId);
-        await supabase.from('catalog_categories').delete().eq('catalog_id', catalogId);
+      if (editingId) {
+        await supabase.from('catalogs').update(form).eq('id', editingId);
+        success('Vitrine digital atualizada.');
       } else {
-        const { data: newCat, error: catErr } = await supabase.from('catalogs').insert([payload]).select().single();
-        if (catErr) throw catErr;
-        catalogId = newCat.id;
+        await supabase.from('catalogs').insert([{ ...form, user_id: user.id }]);
+        success('Nova vitrine lançada no ecossistema.');
       }
-
-      if (selectedProducts.length > 0)
-        await supabase.from('catalog_items').insert(selectedProducts.map(pid => ({ catalog_id: catalogId, product_id: pid })));
-      if (selectedCategories.length > 0)
-        await supabase.from('catalog_categories').insert(selectedCategories.map(cid => ({ catalog_id: catalogId, category_id: cid })));
-
-      success(mode === 'edit' ? 'Catálogo atualizado!' : 'Catálogo criado!');
-      setMode('list');
-      fetchData();
-    } catch (err: any) {
-      toastError('Erro ao salvar: ' + err.message);
-    } finally { setSaving(false); }
-  }
-
-  async function handleDelete(cat: any) {
-    if (!confirm(`Excluir "${cat.name}"? O link público vai parar de funcionar.`)) return;
-    await supabase.from('catalog_items').delete().eq('catalog_id', cat.id);
-    await supabase.from('catalog_categories').delete().eq('catalog_id', cat.id);
-    await supabase.from('catalogs').delete().eq('id', cat.id);
-    success('Catálogo excluído.');
-    fetchData();
-  }
-
-  async function copyLink(cat: any) {
-    const ident = cat.slug || cat.id;
-    const link = `${window.location.origin}/c/${ident}`;
-    await navigator.clipboard.writeText(link);
-    success('Link copiado! 🔗');
-  }
-
-  // ── Color helpers ────────────────────────────────────────────────────────────
-  const getActiveThemeColors = () => {
-    if (useCustomColors) return customColors;
-    return PRESET_THEMES.find(t => t.id === selectedTheme) || PRESET_THEMES[0];
+      setIsModalOpen(false);
+      fetchCatalogs();
+    } catch (err: any) { toastError(err.message); }
+    finally { setSaving(false); }
   };
-  const previewTheme = getActiveThemeColors();
 
-  // ── Form ────────────────────────────────────────────────────────────────────
-  if (mode !== 'list') {
-    return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300 pb-20 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{mode === 'edit' ? 'Editar Catálogo' : 'Novo Catálogo'}</h1>
-            <p className="text-sm text-muted-foreground">Configure nome, tema e as peças desta vitrine pública.</p>
-          </div>
-          <Button onClick={() => setMode('list')} className="bg-muted border border-border text-foreground hover:bg-muted/80">
-            <X className="h-4 w-4 mr-1.5" /> Cancelar
-          </Button>
-        </div>
+  const handleDelete = async (id: string) => {
+    if (!confirm('Excluir esta vitrine e remover o link público?')) return;
+    try {
+      await supabase.from('catalogs').delete().eq('id', id);
+      setCatalogs(catalogs.filter(c => c.id !== id));
+      success('Link público desativado.');
+    } catch (err: any) { toastError(err.message); }
+  };
 
-        <form onSubmit={handleSave} className="space-y-5">
-          {/* Basic Info */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-            <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Informações</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome da Coleção *</Label>
-                <Input required value={catalogName} onChange={e => setCatalogName(e.target.value)} placeholder="Coleção Verão 2026" className="h-11 bg-background" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL Curta (Opcional)</Label>
-                <div className="flex items-center gap-2">
-                  <div className="h-11 flex items-center px-3 bg-muted border border-border rounded-lg text-[10px] font-mono whitespace-nowrap text-muted-foreground">/c/</div>
-                  <Input value={catalogSlug} onChange={e => setCatalogSlug(e.target.value.replace(/[^a-z0-9-]/gi, '-'))} placeholder="colecao-verao" className="h-11 bg-background" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição Pública</Label>
-                <Input value={catalogDesc} onChange={e => setCatalogDesc(e.target.value)} placeholder="Curadoria de peças exclusivas..." className="h-11 bg-background" />
-              </div>
-            </div>
+  const copyLink = (slug: string) => {
+    const url = `${window.location.origin}/v/${slug}`;
+    navigator.clipboard.writeText(url);
+    success('URL da vitrine copiada!');
+  };
 
-            <div className="pt-2 border-t border-border/50">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className={`w-10 h-6 rounded-full relative transition-colors ${hideOutOfStock ? 'bg-primary' : 'bg-muted'}`}>
-                  <input type="checkbox" checked={hideOutOfStock} onChange={e => setHideOutOfStock(e.target.checked)} className="sr-only" />
-                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${hideOutOfStock ? 'translate-x-4' : 'translate-x-0'}`} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-foreground">Ocultar produtos sem estoque</span>
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest">A vitrine online não mostrará peças esgotadas</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Theme Builder */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2"><Palette className="h-4 w-4" /> Tema Visual</h3>
-              <button
-                type="button"
-                onClick={() => setUseCustomColors(!useCustomColors)}
-                className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${useCustomColors ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground'}`}
-              >
-                <Sliders className="h-3.5 w-3.5" />
-                {useCustomColors ? 'Usando Cores Personalizadas' : 'Personalizar Cores'}
-              </button>
-            </div>
-
-            {!useCustomColors ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {PRESET_THEMES.map(t => (
-                  <button key={t.id} type="button" onClick={() => setSelectedTheme(t.id)}
-                    className="relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all overflow-hidden"
-                    style={{ borderColor: selectedTheme === t.id ? t.accent : 'transparent', background: t.bg }}>
-                    <div className="h-10 w-full rounded-lg" style={{ background: t.accent, opacity: 0.85 }} />
-                    <span className="text-xs font-bold" style={{ color: t.text }}>{t.label}</span>
-                    {selectedTheme === t.id && (
-                      <div className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full flex items-center justify-center" style={{ background: t.accent }}>
-                        <Check className="h-3 w-3" style={{ color: t.bg }} />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { key: 'bg', label: 'Fundo', description: 'Cor do fundo da vitrine' },
-                    { key: 'accent', label: 'Destaque', description: 'Botões e elementos de destaque' },
-                    { key: 'text', label: 'Texto', description: 'Cor do texto principal' },
-                  ].map(({ key, label, description }) => (
-                    <div key={key} className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={(customColors as any)[key]}
-                          onChange={e => setCustomColors(prev => ({ ...prev, [key]: e.target.value }))}
-                          className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
-                        />
-                        <Input
-                          value={(customColors as any)[key]}
-                          onChange={e => {
-                            const v = e.target.value;
-                            if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setCustomColors(prev => ({ ...prev, [key]: v }));
-                          }}
-                          className="h-11 font-mono text-sm bg-background flex-1"
-                          placeholder="#000000"
-                        />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">{description}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Live preview */}
-                <div className="rounded-xl overflow-hidden border border-border">
-                  <div className="h-1 w-full" style={{ background: customColors.accent }} />
-                  <div className="p-4 flex items-center gap-4" style={{ background: customColors.bg }}>
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: customColors.accent, color: customColors.bg }}>L</div>
-                    <span className="font-bold text-sm" style={{ color: customColors.text }}>Laris Acessórios</span>
-                    <div className="ml-auto h-8 px-4 rounded flex items-center text-xs font-bold" style={{ background: customColors.accent, color: customColors.bg }}>Tenho Interesse</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Product / Category Picker */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Conteúdo do Catálogo</h3>
-              <div className="flex bg-muted p-1 rounded-lg border border-border gap-1">
-                <button type="button" onClick={() => setPickerTab('products')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${pickerTab === 'products' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                  <Package className="h-3.5 w-3.5" /> Produtos ({selectedProducts.length})
-                </button>
-                <button type="button" onClick={() => setPickerTab('categories')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${pickerTab === 'categories' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                  <Tags className="h-3.5 w-3.5" /> Categorias ({selectedCategories.length})
-                </button>
-              </div>
-            </div>
-
-            {pickerTab === 'products' && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 border border-border rounded-xl p-4 bg-muted/20 max-h-[360px] overflow-y-auto">
-                {products.length === 0 ? (
-                  <div className="col-span-full py-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</div>
-                ) : products.map(p => {
-                  const isSelected = selectedProducts.includes(p.id);
-                  const displayImg = getProxyUrl(p.image_url);
-                  const outOfStock = (p.stock_quantity || 0) <= 0;
-                  
-                  return (
-                    <div key={p.id} onClick={() => !outOfStock && toggleProduct(p.id)}
-                      className={cn(
-                        "group/item border rounded-xl overflow-hidden flex flex-col relative transition-all bg-card",
-                        !outOfStock ? "cursor-pointer hover:shadow-md" : "opacity-60 grayscale-[0.2] cursor-not-allowed"
-                      )}
-                      style={{ 
-                        borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))', 
-                        boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' 
-                      }}>
-                      <div className="aspect-square bg-muted overflow-hidden border-b border-border relative">
-                        {displayImg ? <img src={displayImg} alt={p.name} className="object-cover h-full w-full" /> : <Store className="h-6 w-6 text-muted-foreground/30 m-auto" />}
-                        
-                        {outOfStock && (
-                          <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center p-2 text-center pointer-events-none">
-                            <span className="bg-red-500 text-white text-[9px] font-black uppercase tracking-tighter px-2 py-1 rounded shadow-sm">Esgotado</span>
-                          </div>
-                        )}
-                        
-                        {/* Action buttons on hover */}
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                           <button 
-                             type="button"
-                             onClick={(e) => { e.stopPropagation(); setViewingProduct(p); }}
-                             className="h-8 w-8 bg-white text-black rounded-lg flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-lg"
-                             title="Ver Detalhes"
-                           >
-                             <Eye size={16} />
-                           </button>
-                           {isSelected && (
-                             <button 
-                               type="button"
-                               onClick={(e) => { e.stopPropagation(); toggleProduct(p.id); }}
-                               className="h-8 w-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
-                               title="Remover do Catálogo"
-                             >
-                               <Trash2 size={16} />
-                             </button>
-                           )}
-                        </div>
-                      </div>
-                      <div className="p-2 bg-card">
-                        <span className="text-[11px] font-semibold line-clamp-2">{p.name}</span>
-                        <span className="text-[10px] text-primary font-bold block mt-0.5">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.price)}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <div className="absolute top-1.5 left-1.5 h-5 w-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {pickerTab === 'categories' && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 border border-border rounded-xl p-4 bg-muted/20 max-h-[360px] overflow-y-auto">
-                {categories.length === 0 ? (
-                  <div className="col-span-full py-8 text-center text-sm text-muted-foreground">
-                    Nenhuma categoria criada ainda. Vá em <strong>Categorias</strong> para criar.
-                  </div>
-                ) : categories.map(cat => (
-                  <div key={cat.id} onClick={() => toggleCategory(cat.id)}
-                    className="cursor-pointer border rounded-xl p-4 flex items-center gap-3 transition-all relative"
-                    style={{ borderColor: selectedCategories.includes(cat.id) ? 'hsl(var(--primary))' : 'hsl(var(--border))', boxShadow: selectedCategories.includes(cat.id) ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none', background: 'hsl(var(--card))' }}>
-                    <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                      <Tags className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-xs text-foreground truncate">{cat.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{cat.description || 'Coleção'}</p>
-                    </div>
-                    {selectedCategories.includes(cat.id) && (
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <p className="text-[11px] text-muted-foreground">
-              Ao adicionar uma <strong>categoria</strong>, todos os produtos daquela coleção aparecerão na vitrine automaticamente.
-            </p>
-          </div>
-
-          {/* Save */}
-          <div className="flex gap-3">
-            <Button type="button" onClick={() => setMode('list')} className="h-12 px-6 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold">Cancelar</Button>
-            <Button type="submit" disabled={saving || (selectedProducts.length === 0 && selectedCategories.length === 0)} className="flex-1 h-12 font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-md">
-              {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-              {saving ? 'Salvando...' : mode === 'edit' ? 'Salvar Alterações' : 'Criar Vitrine'}
-            </Button>
-          </div>
-        </form>
-
-      {viewingProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-           <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
-             <div className="relative aspect-square bg-muted">
-                {viewingProduct.image_url ? (
-                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
-                ) : (
-                  <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
-                )}
-                <button onClick={() => setViewingProduct(null)} className="absolute top-3 right-3 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors">
-                  <X size={18} />
-                </button>
-             </div>
-             <div className="p-6 space-y-4">
-                <div>
-                   <h3 className="text-xl font-black text-foreground">{viewingProduct.name}</h3>
-                   <p className="text-primary font-black text-lg mt-1">
-                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(viewingProduct.sale_price || viewingProduct.price)}
-                   </p>
-                </div>
-                
-                <div className="flex gap-4">
-                   <div className="px-3 py-1.5 bg-muted rounded-lg border border-border">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Estoque</span>
-                      <span className="text-sm font-black">{viewingProduct.stock_quantity} unidades</span>
-                   </div>
-                   {viewingProduct.sku && (
-                     <div className="px-3 py-1.5 bg-muted rounded-lg border border-border flex-1">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase block">SKU</span>
-                        <span className="text-sm font-mono font-bold truncate block">{viewingProduct.sku}</span>
-                     </div>
-                   )}
-                </div>
-
-                {viewingProduct.description && (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sobre o Produto</span>
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4 italic">"{viewingProduct.description}"</p>
-                  </div>
-                )}
-
-                <Button onClick={() => setViewingProduct(null)} className="w-full bg-foreground text-background font-bold h-11 rounded-xl mt-2">Fechar Detalhes</Button>
-             </div>
-           </div>
-        </div>
-      )}
-      </div>
-    );
-  }
-
-  // ── List ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5">Catálogos Vitrine</h1>
-          <p className="text-sm text-muted-foreground">Crie vitrines personalizadas para enviar pelo WhatsApp.</p>
-        </div>
-        <Button onClick={openCreate} className="bg-primary text-primary-foreground font-bold shadow-md px-5 h-10">
-          <Plus className="mr-2 h-4 w-4" /> Novo Catálogo
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <div className="col-span-full py-12 flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary/50" /></div>
-        ) : catalogs.length === 0 ? (
-          <div className="col-span-full p-16 text-center flex flex-col items-center bg-card border border-border border-dashed rounded-xl">
-            <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4"><LinkIcon className="h-8 w-8 text-muted-foreground/60" /></div>
-            <h3 className="text-lg font-medium">Nenhuma coleção ainda</h3>
-            <p className="text-muted-foreground mt-1 max-w-sm text-sm">Crie um catálogo e compartilhe com seus clientes via WhatsApp.</p>
-            <Button onClick={openCreate} className="mt-6 bg-primary text-primary-foreground font-bold"><Plus className="h-4 w-4 mr-2" /> Criar Primeiro Catálogo</Button>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* 🏁 Aura Header */}
+      <div className="flex flex-col lg:flex-row justify-between gap-6 lg:items-center">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1.5"><Globe size={10} /> Distribuição Global</span>
+            <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest">Aura Workspace v2.0.0</span>
           </div>
-        ) : catalogs.map(cat => {
-          const preset = PRESET_THEMES.find(t => t.id === (cat.theme || 'luxury')) || PRESET_THEMES[0];
-          const colors = cat.theme === 'custom' && cat.custom_colors ? cat.custom_colors : preset;
-          const label = cat.theme === 'custom' ? 'Custom' : (preset.label);
-          return (
-            <div key={cat.id} className="bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden group">
-              <div className="h-2 w-full" style={{ background: colors.accent }} />
-              <div className="p-5 flex flex-col flex-1">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className="font-bold text-base group-hover:text-primary transition-colors line-clamp-1">{cat.name}</h3>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0" style={{ background: `${colors.accent}25`, color: colors.accent }}>{label}</span>
-                </div>
-                {cat.description && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{cat.description}</p>}
-                <p className="text-[11px] text-muted-foreground mb-5">Criado em {new Date(cat.created_at).toLocaleDateString('pt-BR')}</p>
-                <div className="mt-auto pt-4 border-t border-border/50 flex items-center gap-2">
-                  <Button onClick={() => copyLink(cat)} className="flex-1 h-9 bg-transparent border border-border text-foreground hover:bg-muted font-semibold shadow-none text-xs">
-                    <LinkIcon className="h-3.5 w-3.5 mr-1.5" /> Copiar Link
-                  </Button>
-                  <a 
-                    href={`${window.location.origin}/c/${cat.slug || cat.id}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-muted hover:text-primary transition-colors bg-background shrink-0"
-                  >
-                    <ExternalLink size={15} />
-                  </a>
-                  <button onClick={() => openEdit(cat)} className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-500 transition-colors bg-background shrink-0"><Edit2 size={14} /></button>
-                  <button onClick={() => handleDelete(cat)} className="h-9 w-9 flex items-center justify-center border border-border rounded-md hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 transition-colors bg-background shrink-0"><Trash2 size={14} /></button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      
-      {/* Product Detail Modal */}
-      {viewingProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-           <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
-             <div className="relative aspect-square bg-muted">
-                {viewingProduct.image_url ? (
-                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
-                ) : (
-                  <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
-                )}
-                <button onClick={() => setViewingProduct(null)} className="absolute top-3 right-3 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors">
-                  <X size={18} />
-                </button>
-             </div>
-             <div className="p-6 space-y-4">
-                <div>
-                   <h3 className="text-xl font-black text-foreground">{viewingProduct.name}</h3>
-                   <p className="text-primary font-black text-lg mt-1">
-                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(viewingProduct.sale_price || viewingProduct.price)}
-                   </p>
-                </div>
-                
-                <div className="flex gap-4">
-                   <div className="px-3 py-1.5 bg-muted rounded-lg border border-border">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Estoque</span>
-                      <span className="text-sm font-black">{viewingProduct.stock_quantity} unidades</span>
-                   </div>
-                   {viewingProduct.sku && (
-                     <div className="px-3 py-1.5 bg-muted rounded-lg border border-border flex-1">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase block">SKU</span>
-                        <span className="text-sm font-mono font-bold truncate block">{viewingProduct.sku}</span>
-                     </div>
-                   )}
-                </div>
-
-                {viewingProduct.description && (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sobre o Produto</span>
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4 italic">"{viewingProduct.description}"</p>
-                  </div>
-                )}
-
-                <Button onClick={() => setViewingProduct(null)} className="w-full bg-foreground text-background font-bold h-11 rounded-xl mt-2">Fechar Detalhes</Button>
-             </div>
-           </div>
+          <h1 className="text-3xl lg:text-4xl font-black tracking-tighter text-white">Vitrines <span className="text-primary italic">Digitais</span></h1>
+          <p className="text-muted-foreground font-medium text-sm lg:text-base max-w-2xl">
+            Crie experiências de compra imersivas e distribua seus produtos através de links públicos de alta performance.
+          </p>
         </div>
-      )}
+        
+        <button onClick={() => { setEditingId(null); setForm({name:'', slug:'', description:'', theme:'luxury', settings:{hide_out_of_stock:false, show_prices:true, order_whatsapp:true}}); setIsModalOpen(true); }} className="ux-button h-14 px-8 bg-primary text-white shadow-xl shadow-primary/20 text-[13px] uppercase tracking-widest gap-3 active:scale-95 transition-all">
+          <Plus size={20} strokeWidth={3} /> Gerar Nova Vitrine
+        </button>
+      </div>
+
+      <div className="grid lg:grid-cols-12 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+         {/* 🏛 Catalog Matrix */}
+         <div className="lg:col-span-8 space-y-6">
+            <div className="relative group">
+               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-hover:text-primary transition-colors" size={18} />
+               <Input placeholder="Pesquisar vitrines ativas..." className="ux-input h-16 pl-16 !bg-white/5 border-white/5 font-bold text-lg" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+               {loading ? (
+                 <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 text-white/20"><Loader2 className="animate-spin" /> <span className="text-[10px] font-black uppercase tracking-widest italic">Sincronizando Links Públicos...</span></div>
+               ) : catalogs.length === 0 ? (
+                 <div className="col-span-full py-20 glass-card text-center grayscale opacity-30 space-y-4">
+                    <Layout size={64} className="mx-auto text-white/10" />
+                    <p className="text-[11px] font-black uppercase tracking-widest">Nenhuma vitrine digital ativa</p>
+                 </div>
+               ) : (
+                 catalogs.map((c, i) => (
+                   <div key={c.id} className="glass-card p-0 group overflow-hidden hover:border-primary/30 transition-all animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both" style={{ animationDelay: `${i * 100}ms` }}>
+                      <div className="p-8 space-y-6 relative">
+                         <div className="absolute top-0 right-0 p-8 text-white/[0.02] -mr-12 -mt-12 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-700"><Globe size={160} /></div>
+                         
+                         <div className="flex justify-between items-start">
+                            <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-primary group-hover:text-white group-hover:bg-primary transition-all shadow-xl shadow-primary/5"><Layout size={24} /></div>
+                            <div className="flex gap-2">
+                               <button onClick={() => { setEditingId(c.id); setForm({name:c.name, slug:c.slug, description:c.description||'', theme:c.theme||'luxury', settings:c.settings || form.settings}); setIsModalOpen(true); }} className="h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/20 hover:text-white transition-all"><Edit2 size={16} /></button>
+                               <button onClick={() => handleDelete(c.id)} className="h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/20 hover:text-rose-500 transition-all"><Trash2 size={16} /></button>
+                            </div>
+                         </div>
+
+                         <div>
+                            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-2">{c.name}</h3>
+                            <div className="flex items-center gap-3">
+                               <span className="text-[10px] font-black uppercase text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">Slug: {c.slug}</span>
+                               <span className="text-[9px] font-black uppercase text-white/20 tracking-widest italic">{c.theme || 'Luxury Theme'}</span>
+                            </div>
+                         </div>
+
+                         <div className="pt-4 flex flex-col gap-3">
+                            <button onClick={() => copyLink(c.slug)} className="ux-button h-12 w-full bg-white/5 border border-white/5 text-white font-black text-[10px] uppercase tracking-widest gap-2 hover:bg-white hover:text-black transition-all">
+                               <Copy size={14} /> Copiar Link Público
+                            </button>
+                            <a href={`/v/${c.slug}`} target="_blank" className="ux-button h-12 w-full bg-primary/10 border border-primary/20 text-primary font-black text-[10px] uppercase tracking-widest gap-2 hover:bg-primary hover:text-white transition-all">
+                               <Eye size={14} /> Visualizar Vitrine <ArrowUpRight size={12} />
+                            </a>
+                         </div>
+                      </div>
+                   </div>
+                 ))
+               )}
+            </div>
+         </div>
+
+         {/* 🎨 Theme Selector Preview */}
+         <div className="lg:col-span-4 space-y-6">
+            <h3 className="text-[11px] font-black uppercase text-white/20 tracking-[0.3em] font-mono px-4">Workspace Environment • Config</h3>
+            <div className="glass-card p-10 space-y-10 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-10 text-white/[0.02] -mr-16 -mt-16 rotate-12 pointer-events-none"><Palette size={280} /></div>
+               
+               <div className="space-y-6 relative z-10">
+                  <h3 className="text-xl font-black text-white italic tracking-tighter uppercase flex items-center gap-3 border-b border-white/5 pb-6">Design Engines</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                     {[
+                       { id: 'luxury', name: 'Black Aura', colors: 'from-black to-zinc-800' },
+                       { id: 'rose', name: 'Rosé Quartz', colors: 'from-rose-50 to-rose-100' },
+                       { id: 'midnight', name: 'Deep Sea', colors: 'from-[#050a12] to-blue-900' },
+                       { id: 'pearl', name: 'Silk Pearl', colors: 'from-zinc-50 to-stone-200' },
+                     ].map(t => (
+                       <div key={t.id} className="group cursor-pointer">
+                          <div className={cn("h-24 w-full rounded-2xl border-4 transition-all bg-gradient-to-br", t.colors, form.theme === t.id ? "border-primary shadow-xl shadow-primary/20 scale-105" : "border-white/5 group-hover:border-white/10")} />
+                          <p className="text-[10px] font-black uppercase text-center mt-3 tracking-widest text-white/40 group-hover:text-white">{t.name}</p>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+
+               <div className="space-y-6 relative z-10 border-t border-white/5 pt-10">
+                  <h3 className="text-xl font-black text-white italic tracking-tighter uppercase flex items-center gap-3">Protocolos Globais</h3>
+                  <div className="space-y-4">
+                     {[
+                       { id: 'hide_out_of_stock', label: 'Auto-hide Falta de Estoque' },
+                       { id: 'show_prices', label: 'Exibir Precificação Pública' },
+                       { id: 'order_whatsapp', label: 'Integração Checkout WhatsApp' },
+                     ].map(opt => (
+                       <div key={opt.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                          <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{opt.label}</span>
+                          <div className="h-5 w-10 bg-primary/20 rounded-full flex items-center px-1">
+                             <div className="h-3 w-3 bg-primary rounded-full shadow-lg shadow-primary/50" />
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
     </div>
   );
 }

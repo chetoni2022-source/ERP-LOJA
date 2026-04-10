@@ -1,328 +1,156 @@
-import React, { useState, useEffect } from 'react';
-import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Loader2, ShieldCheck, Zap, Mail, ArrowLeft, KeyRound } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../stores/authStore';
+import { useToast } from '../../contexts/ToastContext';
+import { Button, Input, Label, Card } from '../../components/ui';
+import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles, Zap, ShieldAlert, CheckCircle2, Globe, Heart } from 'lucide-react';
 
-const AUTH_STYLES = `
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes auraMove {
-    0% { transform: scale(1) translate(0, 0); }
-    50% { transform: scale(1.2) translate(-2%, 2%); }
-    100% { transform: scale(1) translate(0, 0); }
-  }
-  @keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-  }
-  body { 
-    margin: 0; 
-    -webkit-font-smoothing: antialiased; 
-    background-color: #030712; 
-    overflow: hidden;
-  }
-  .focus-ring:focus {
-    border-color: #E91E8C !important;
-    box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.15) !important;
-  }
-`;
-
-type AuthView = 'login' | 'signup' | 'forgot';
+const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
 export default function AuthPage() {
-  const [view, setView] = useState<AuthView>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const [brand, setBrand] = useState<{name:string;logo:string|null;favicon:string|null}>({name:'Aura Workspace',logo:null,favicon:null});
+  
+  const [form, setForm] = useState({ email: '', password: '', fullName: '' });
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { success, error: toastError } = useToast();
 
-  const [brand, setBrand] = useState<{name: string, logo: string | null, favicon: string | null}>({ 
-    name: 'LARIS ACESSÓRIOS', 
-    logo: null,
-    favicon: null
-  });
+  useEffect(() => { if (user) navigate('/'); }, [user, navigate]);
 
   useEffect(() => {
-    async function loadBranding() {
-      try {
-        const { data: settings } = await supabase
-          .from('store_settings')
-          .select('store_name, logo_url, favicon_url')
-          .limit(1)
-          .maybeSingle();
-        
-        if (settings) {
-          const proxyLogo = getProxyUrl(settings.logo_url);
-          const proxyFavicon = getProxyUrl(settings.favicon_url);
-
-          setBrand({
-            name: settings.store_name || 'LARIS ACESSÓRIOS',
-            logo: proxyLogo,
-            favicon: proxyFavicon
-          });
-          
-          if (proxyFavicon) {
-             let link: HTMLLinkElement = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-             if (!link) { link = document.createElement('link'); link.rel = 'shortcut icon'; document.head.appendChild(link); }
-             link.type = 'image/x-icon';
-             link.crossOrigin = "anonymous";
-             link.href = `${proxyFavicon}?v=${Date.now()}`;
-          }
+    supabase.from('store_settings').select('store_name, logo_url, favicon_url').limit(1).maybeSingle().then(({ data }) => {
+      if (data) {
+        setBrand({ name: data.store_name || 'Aura Workspace', logo: data.logo_url, favicon: data.favicon_url });
+        if (data.favicon_url) {
+          const l = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          if (l) l.href = data.favicon_url;
         }
-      } catch (e) {
-        console.error("Error loading branding:", e);
       }
-    }
-    loadBranding();
+    });
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccessMsg(null);
-    
     try {
-      if (view === 'login') {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
-        navigate('/dashboard');
-      } else if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
-        if (signUpError) throw signUpError;
-        setSuccessMsg('Confirme seu e-mail para ativar sua conta administrativa.');
-        setView('login');
-      } else if (view === 'forgot') {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+      if (recoveryMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(form.email, { redirectTo: `${window.location.origin}/auth` });
+        if (error) throw error;
+        success('Elo de recuperação enviado! Verifique seu e-mail.');
+        setRecoveryMode(false);
+      } else if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
+        if (error) throw error;
+        success(`Bem-vindo de volta, ${form.email.split('@')[0]}!`);
+      } else {
+        const { data, error } = await supabase.auth.signUp({ 
+            email: form.email, 
+            password: form.password,
+            options: { data: { full_name: form.fullName } }
         });
-        if (resetError) throw resetError;
-        setSuccessMsg('Link de recuperação enviado.');
-        setView('login');
+        if (error) throw error;
+        if (data.user) {
+            await supabase.from('profiles').insert([{ id: data.user.id, full_name: form.fullName, role: 'admin' }]);
+            success('Bem-vindo ao ecossistema Aura! Seu ambiente está pronto.');
+        }
       }
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro inesperado');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { toastError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      padding: '24px',
-      position: 'relative',
-      overflow: 'hidden',
-      fontFamily: "'Inter', sans-serif"
-    }}>
-      {/* ── Background Aura ── */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 0,
-        background: 'radial-gradient(circle at 50% 50%, #111827 0%, #030712 100%)'
-      }} />
-      
-      <div style={{
-        position: 'absolute',
-        top: '20%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100vw',
-        height: '100vh',
-        background: 'radial-gradient(circle at center, rgba(233, 30, 140, 0.08) 0%, transparent 60%)',
-        zIndex: 1,
-        animation: 'auraMove 10s infinite ease-in-out',
-        filter: 'blur(80px)'
-      }} />
-
-      {/* ── Content ── */}
-      <div style={{
-        width: '100%',
-        maxWidth: '440px',
-        zIndex: 3,
-        animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
-      }}>
-        
-        {/* Superior: Logo Pod */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ 
-            display: 'inline-flex',
-            padding: '12px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-            marginBottom: '20px',
-            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)'
-          }}>
-            {brand.logo ? (
-               <img 
-                 src={brand.logo} 
-                 alt="Logo" 
-                 style={{ height: '48px', width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1))' }} 
-               />
-            ) : brand.favicon ? (
-               <img src={brand.favicon} alt="Favicon" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
-            ) : (
-               <Zap size={32} color="#E91E8C" />
-            )}
-          </div>
-          
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff', margin: '0 0 8px 0', letterSpacing: '-0.04em' }}>
-            {view === 'forgot' ? 'Recuperar Acesso' : brand.name}
-          </h1>
-          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
-            {view === 'login' && 'O controle total do seu império começa aqui'}
-            {view === 'signup' && 'Crie sua conta administrativa em segundos'}
-            {view === 'forgot' && 'Insira seu e-mail para receber um link seguro'}
-          </p>
-        </div>
-
-        {/* Card: Glassmorphism */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          padding: '48px',
-          borderRadius: '32px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-        }}>
-          {error && (
-            <div style={{
-              background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', padding: '14px', borderRadius: '14px',
-              fontSize: '13px', fontWeight: 600, marginBottom: '24px', border: '1px solid rgba(239, 68, 68, 0.2)',
-              animation: 'shake 0.4s ease-in-out', textAlign: 'center'
-            }}>
-              {error}
-            </div>
-          )}
-
-          {successMsg && (
-            <div style={{
-              background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', padding: '14px', borderRadius: '14px',
-              fontSize: '13px', fontWeight: 600, marginBottom: '24px', border: '1px solid rgba(16, 185, 129, 0.2)',
-              textAlign: 'center'
-            }}>
-              {successMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.3)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Endereço de E-mail
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={20} color="rgba(255,255,255,0.2)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Seu e-mail corporativo"
-                  className="focus-ring"
-                  style={{
-                    width: '100%', padding: '14px 16px 14px 48px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)',
-                    fontSize: '15px', color: '#fff', outline: 'none', transition: 'all 0.3s', boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.02)'
-                  }}
-                />
-              </div>
-            </div>
-
-            {view !== 'forgot' && (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Senha de Acesso
-                  </label>
-                  {view === 'login' && (
-                    <button type="button" onClick={() => setView('forgot')} style={{ background: 'none', border: 'none', padding: 0, color: '#E91E8C', fontSize: '11px', fontWeight: 800, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.8 }}>
-                      Esqueci
-                    </button>
-                  )}
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <KeyRound size={20} color="rgba(255,255,255,0.2)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="focus-ring"
-                    style={{
-                      width: '100%', padding: '14px 16px 14px 48px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)',
-                      fontSize: '15px', color: '#fff', outline: 'none', transition: 'all 0.3s', boxSizing: 'border-box',
-                      background: 'rgba(255, 255, 255, 0.02)'
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%', padding: '16px', 
-                background: view === 'forgot' ? '#ffffff' : '#E91E8C', 
-                color: view === 'forgot' ? '#000000' : '#ffffff',
-                border: 'none', borderRadius: '18px', fontSize: '16px', fontWeight: 800,
-                cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s',
-                marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                boxShadow: view === 'forgot' ? 'none' : '0 10px 25px -5px rgba(233, 30, 140, 0.4)'
-              }}
-              onMouseEnter={e => {
-                if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={22} />
-              ) : (
-                <>
-                  {view === 'login' && 'Acessar Painel'}
-                  {view === 'signup' && 'Criar Minha Conta'}
-                  {view === 'forgot' && 'Enviar Recuperação'}
-                </>
-              )}
-            </button>
-          </form>
-
-          <footer style={{ marginTop: '32px', textAlign: 'center' }}>
-             <button
-                type="button"
-                onClick={() => setView(view === 'login' ? 'signup' : 'login')}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                {view === 'login' ? 'Criar nova conta admin' : 'Voltar para o acesso'}
-              </button>
-          </footer>
-        </div>
-
-        {/* Rodapé: Trust Badge */}
-        <div style={{ marginTop: '40px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-           <div style={{ height: '1px', width: '24px', background: 'rgba(255,255,255,0.05)' }} />
-           <ShieldCheck size={16} color="rgba(255,255,255,0.15)" />
-           <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.15)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-             Encrypted Enterprise Access
-           </span>
-           <div style={{ height: '1px', width: '24px', background: 'rgba(255,255,255,0.05)' }} />
-        </div>
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden text-white font-sans selection:bg-primary/30">
+      {/* 🔮 Aura Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: AUTH_STYLES }} />
+      <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-700">
+        {/* Branding Area */}
+        <div className="text-center mb-10 space-y-4">
+           {brand.logo ? (
+             <img src={brand.logo} className="h-16 mx-auto object-contain drop-shadow-2xl" alt={brand.name} />
+           ) : (
+             <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border border-primary/20 shadow-2xl shadow-primary/10">
+                <Sparkles size={32} className="text-primary animate-pulse" />
+             </div>
+           )}
+           <div className="space-y-1">
+              <h1 className="text-4xl font-black tracking-tighter italic uppercase text-white">{brand.name}</h1>
+              <p className="text-white/30 text-[10px] uppercase font-bold tracking-[0.3em] font-mono">Enterprise SaaS Ecosystem</p>
+           </div>
+        </div>
+
+        {/* Auth Interface */}
+        <div className="glass-card !p-10 border-white/5 shadow-2xl relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-10 text-white/[0.02] -mr-16 -mt-16 rotate-12 pointer-events-none"><ShieldCheck size={280} /></div>
+           
+           <div className="mb-8 flex justify-between items-center">
+              <h2 className="text-2xl font-black italic tracking-tighter text-white">
+                 {recoveryMode ? 'Recuperação' : isLogin ? 'Acesso' : 'Registro'} <span className="text-primary">{recoveryMode ? 'de Elo' : 'Aura'}</span>
+              </h2>
+           </div>
+
+           <form onSubmit={handleAuth} className="space-y-6 relative z-10">
+              {!isLogin && !recoveryMode && (
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest pl-1">Nome Completo</Label>
+                   <div className="relative group">
+                      <User className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-hover:text-primary transition-colors" size={18} />
+                      <input required value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} placeholder="Ex: Carolina Silva" className="ux-input h-14 pl-16 !bg-white/5 border-white/5 focus:border-primary/40 font-bold" />
+                   </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest pl-1">Identificador de E-mail</Label>
+                 <div className="relative group">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-hover:text-primary transition-colors" size={18} />
+                    <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="seu@email.com" className="ux-input h-14 pl-16 !bg-white/5 border-white/5 focus:border-primary/40 font-bold" />
+                 </div>
+              </div>
+
+              {!recoveryMode && (
+                <div className="space-y-2">
+                   <div className="flex justify-between items-center px-1">
+                      <Label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Senha Criptografada</Label>
+                      {isLogin && <button type="button" onClick={() => setRecoveryMode(true)} className="text-[10px] font-black uppercase text-primary tracking-widest hover:brightness-125">Perdi o Elo</button>}
+                   </div>
+                   <div className="relative group">
+                      <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-hover:text-primary transition-colors" size={18} />
+                      <input required type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" className="ux-input h-14 pl-16 !bg-white/5 border-white/5 focus:border-primary/40 font-bold" />
+                   </div>
+                </div>
+              )}
+
+              <Button type="submit" disabled={loading} className="ux-button h-16 w-full bg-primary text-white font-black uppercase text-[12px] tracking-[0.2em] shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-all">
+                 {loading ? <Loader2 className="animate-spin" /> : recoveryMode ? 'Enviar Link de Resgate' : isLogin ? 'Sincronizar Acesso' : 'Ativar Ecossistema'}
+                 {!loading && <ArrowRight size={18} strokeWidth={3} />}
+              </Button>
+           </form>
+
+           {/* Alternate Action */}
+           <div className="mt-8 pt-8 border-t border-white/5 text-center">
+              <button 
+                onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }}
+                className="text-white/30 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all"
+              >
+                 {recoveryMode ? 'Voltar ao Login' : isLogin ? 'Não possui acesso? Ativar novo ERP' : 'Já possui um elo? Entrar no sistema'}
+              </button>
+           </div>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="mt-12 flex justify-center gap-12 text-white/20">
+           <div className="flex items-center gap-2"><ShieldCheck size={14} /><span className="text-[9px] font-black uppercase tracking-widest">Criptografia AES-256</span></div>
+           <div className="flex items-center gap-2"><Zap size={14} /><span className="text-[9px] font-black uppercase tracking-widest">Cloud Sync Realtime</span></div>
+        </div>
+      </div>
     </div>
   );
 }

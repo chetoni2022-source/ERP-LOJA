@@ -238,6 +238,9 @@ export default function DashboardPage() {
   const [stockData, setStockData] = useState<any[]>(cachedData?.stockData || []);
   const [leadSourceData, setLeadSourceData] = useState<any[]>(cachedData?.leadSourceData || []);
   const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
+  const [categoryData, setCategoryData] = useState<any[]>(cachedData?.categoryData || []);
+  const [stockHealthStats, setStockHealthStats] = useState<any>(cachedData?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
+  const [topCustomers, setTopCustomers] = useState<any[]>(cachedData?.topCustomers || []);
 
   // Inventory Potential States
   const [stockProjections, setStockProjections] = useState<any>(cachedData?.stockProjections || {
@@ -263,7 +266,7 @@ export default function DashboardPage() {
 
       const { data: products } = await supabase
         .from('products')
-        .select('id, name, stock_quantity, image_url, images, price, sale_price, cost_price, shopee_price, tiktok_price')
+        .select('id, name, stock_quantity, image_url, images, price, sale_price, cost_price, shopee_price, tiktok_price, category_id, categories(name)')
         .eq('user_id', user.id)
         .order('stock_quantity', { ascending: false });
 
@@ -271,6 +274,15 @@ export default function DashboardPage() {
         setStockData(products);
         setTotalProducts(products.length);
         setLowStockCount(products.filter(p => p.stock_quantity < 5).length);
+
+        // --- STOCK HEALTH CALCULATION ---
+        const health = products.reduce((acc: any, p: any) => {
+          if (p.stock_quantity <= 0) acc.out++;
+          else if (p.stock_quantity < 5) acc.low++;
+          else acc.healthy++;
+          return acc;
+        }, { healthy: 0, low: 0, out: 0 });
+        setStockHealthStats(health);
 
         // --- INVENTORY POTENTIAL CALCULATION ---
         let totalRev = 0;
@@ -347,7 +359,7 @@ export default function DashboardPage() {
 
       const { data: sales } = await supabase
         .from('sales')
-        .select(`*, products(name, image_url, images)`)
+        .select(`*, products(name, image_url, images, category_id, categories(name))`)
         .eq('user_id', user.id)
         .gte('created_at', startDT.toISOString())
         .lte('created_at', endDT.toISOString())
@@ -409,6 +421,24 @@ export default function DashboardPage() {
           return acc;
         }, {});
         setLeadSourceData(Object.entries(sourceCount).map(([name, value]) => ({ name, value })));
+
+        // Category Distribution
+        const catDist = sales.reduce((acc: any, sale: any) => {
+          const catName = (sale.products as any)?.categories?.name || 'Sem Categoria';
+          acc[catName] = (acc[catName] || 0) + sale.total_price;
+          return acc;
+        }, {});
+        setCategoryData(Object.entries(catDist).map(([name, value]) => ({ name, value })));
+
+        // Top Customers (Ranking LTV)
+        const custDist = sales.reduce((acc: any, sale: any) => {
+          const custName = sale.customer_name || 'Consumidor Final';
+          if (!acc[custName]) acc[custName] = { name: custName, total: 0, count: 0 };
+          acc[custName].total += sale.total_price;
+          acc[custName].count += 1;
+          return acc;
+        }, {});
+        setTopCustomers(Object.values(custDist).sort((a: any, b: any) => b.total - a.total).slice(0, 5));
 
         // Last month comparison
         const now = new Date();
@@ -814,46 +844,173 @@ export default function DashboardPage() {
                 </h3>
               </div>
               <div className="space-y-3 md:space-y-4">
-                {topProducts.map((p, i) => (
+                {topProducts.length > 0 ? topProducts.map((p, i) => (
                   <div key={i} className="flex items-center justify-between group">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 md:h-10 md:w-10 bg-muted rounded-full flex items-center justify-center font-black text-muted-foreground text-[10px] md:text-sm border border-border group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
+                      <div className="h-8 w-8 md:h-10 md:w-10 bg-muted rounded-full flex items-center justify-center font-black text-muted-foreground text-[10px] md:text-sm border border-border group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all text-white">
                         {i + 1}
                       </div>
                       <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{p.name}</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 text-white">
                       <div className="flex flex-col items-end">
                         <span className="text-[11px] md:text-sm font-black text-foreground">{p.quantity} unid.</span>
                         <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">{formatCurrency(p.revenue)}</span>
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-xs text-muted-foreground italic text-center py-4">Sem dados</p>
+                )}
               </div>
 
               <div className="mt-8 mb-4 border-t border-border pt-6">
                 <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-emerald-500 mr-2" /> Top Lucreativos
+                  <Users className="h-4 w-4 md:h-5 md:w-5 text-violet-500 mr-2" /> Top Clientes (LTV)
                 </h3>
               </div>
               <div className="space-y-3 md:space-y-4">
-                {topProfitableProducts.map((p, i) => (
+                {topCustomers.length > 0 ? topCustomers.map((c, i) => (
                   <div key={i} className="flex items-center justify-between group">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 md:h-10 md:w-10 bg-emerald-500/10 rounded-full flex items-center justify-center font-black text-emerald-600 text-[10px] md:text-sm border border-emerald-500/20 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                      <div className="h-8 w-8 md:h-10 md:w-10 bg-violet-500/10 rounded-full flex items-center justify-center font-black text-violet-600 text-[10px] md:text-sm border border-violet-500/20 group-hover:bg-violet-500 group-hover:text-white transition-all text-white">
                         {i + 1}
                       </div>
-                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{p.name}</span>
+                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{c.name}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-right">
+                    <div className="flex items-center gap-4 text-right text-white">
                        <div className="flex flex-col">
-                         <span className="text-[11px] md:text-sm font-black text-emerald-600">{formatCurrency(p.profit)}</span>
-                         <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">Lucro Líquido</span>
+                         <span className="text-[11px] md:text-sm font-black text-violet-600">{formatCurrency(c.total)}</span>
+                         <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">{c.count} compras</span>
                        </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-xs text-muted-foreground italic text-center py-4">Sem dados</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* New Rows: Category Dist & Stock Health */}
+          <div className="grid gap-4 md:gap-6 md:grid-cols-2">
+            {/* Category Performance */}
+            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[400px]">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
+                  <Tags className="h-4 w-4 md:h-5 md:w-5 text-primary mr-2" /> Receita por Categoria
+                </h3>
+              </div>
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-6 overflow-hidden">
+                <div className="h-full w-full max-w-[200px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {categoryData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={['#C9A96E', '#7EB8F7', '#CB8474', '#8A7560', '#A8A29E'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                             return (
+                               <div className="bg-card border border-border p-3 rounded-xl shadow-2xl">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{payload[0].name}</p>
+                                 <p className="text-sm font-black text-foreground">{formatCurrency(payload[0].value as number)}</p>
+                               </div>
+                             );
+                          }
+                          return null;
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-2 w-full pr-2">
+                  {categoryData.length > 0 ? categoryData.slice(0, 8).map((cat, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#C9A96E', '#7EB8F7', '#CB8474', '#8A7560', '#A8A29E'][i % 5] }} />
+                        <span className="text-[11px] font-bold text-foreground truncate max-w-[100px]">{cat.name}</span>
+                      </div>
+                      <span className="text-[11px] font-black text-foreground">{formatCurrency(cat.value)}</span>
+                    </div>
+                  )) : (
+                    <p className="text-[10px] text-muted-foreground italic text-center py-10 uppercase tracking-widest">Sem categorias vinculadas</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stock Health */}
+            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[400px]">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
+                  <PackageSearch className="h-4 w-4 md:h-5 md:w-5 text-orange-500 mr-2" /> Saúde do Inventário
+                </h3>
+              </div>
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-6 overflow-hidden">
+                <div className="h-full w-full max-w-[200px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Saudável', value: stockHealthStats.healthy, color: '#10b981' },
+                          { name: 'Alerta', value: stockHealthStats.low, color: '#f59e0b' },
+                          { name: 'Esgotado', value: stockHealthStats.out, color: '#ef4444' }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                         <Cell key="cell-h" fill="#10b981" />
+                         <Cell key="cell-l" fill="#f59e0b" />
+                         <Cell key="cell-o" fill="#ef4444" />
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-4 w-full">
+                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex justify-between items-center group">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Saudável</span>
+                      <span className="text-xl font-black text-emerald-700">{stockHealthStats.healthy} itens</span>
+                    </div>
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                      <CheckCircle2 size={16} />
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-orange-500/5 border border-orange-500/10 flex justify-between items-center group">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Abaixo de 5 un.</span>
+                      <span className="text-xl font-black text-orange-700">{stockHealthStats.low} itens</span>
+                    </div>
+                    <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600">
+                      <AlertCircle size={16} />
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex justify-between items-center group">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Sem Estoque</span>
+                      <span className="text-xl font-black text-red-700">{stockHealthStats.out} itens</span>
+                    </div>
+                    <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-600">
+                      <X size={16} />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

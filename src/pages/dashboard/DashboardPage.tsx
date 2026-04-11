@@ -784,7 +784,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[300px] md:min-h-[380px] w-full mt-4">
+              <div className="flex-1 min-h-[220px] md:min-h-[260px] w-full mt-4">
                 {salesData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>

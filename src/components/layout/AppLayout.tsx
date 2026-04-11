@@ -180,8 +180,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Sidebar (Desktop + Drawer Mobile) ─────────────── */}
       <aside className={cn(
-        'flex-col border-r border-border bg-card transition-all duration-500 z-50 shadow-sm fixed md:relative h-full',
-        collapsed ? 'w-20 hidden md:flex' : 'w-[280px]',
+        'flex-col border-r border-border bg-card transition-all duration-500 z-50 shadow-sm fixed md:relative h-full overflow-hidden',
+        collapsed ? 'w-20 hidden md:flex' : 'w-[240px]',
         mobileMenuOpen ? 'flex translate-x-0' : '-translate-x-full md:translate-x-0 md:flex',
       )}>
         {/* Close drawer on mobile */}
@@ -233,7 +233,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -241,14 +241,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               end={item.path === '/inventory'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) => cn(
-                'flex items-center gap-4 px-4 py-3 rounded-lg text-xs font-black uppercase tracking-[0.1em] transition-all duration-200 group/nav',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.1em] transition-all duration-200 group/nav',
                 isActive
-                  ? 'bg-zinc-950 text-white shadow-lg shadow-zinc-200'
+                  ? 'bg-zinc-950 text-white shadow-md shadow-zinc-200/50'
                   : 'text-zinc-500 hover:bg-zinc-100/50 hover:text-zinc-900'
               )}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon size={18} className={cn('shrink-0 transition-transform duration-300', !collapsed && 'group-hover/nav:scale-110')} />
+              <item.icon size={16} className={cn('shrink-0 transition-transform duration-300', !collapsed && 'group-hover/nav:scale-110')} />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           ))}

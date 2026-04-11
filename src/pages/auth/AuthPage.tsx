@@ -83,16 +83,16 @@ export default function AuthPage() {
         />
       </div>
 
-      {/* ⚡ The Obsidian Portal Card (Compact Edition) */}
-      <div className="w-full max-w-[340px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
+      {/* ⚡ The Obsidian Portal Card (Nano Edition) */}
+      <div className="w-full max-w-[320px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
           
-          <div className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-7 sm:p-8 relative overflow-hidden group">
+          <div className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2rem] p-6 sm:p-7 relative overflow-hidden group">
             {/* Subtle light reflection */}
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
             
             <div className="space-y-8 text-center relative z-10">
               {settings?.logo_url && (
-                <div className="flex items-center justify-center mb-6 h-12 relative group/logo">
+                <div className="flex items-center justify-center mb-6 h-10 relative group/logo">
                    {/* 💎 Logo Halo Effect */}
                    <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-3xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-1000 scale-150" />
                    
@@ -106,10 +106,10 @@ export default function AuthPage() {
               )}
               
               <div className="space-y-1">
-                <h1 className="text-2xl sm:text-3xl font-black text-black tracking-[-0.05em] leading-[0.9] uppercase italic">
+                <h1 className="text-xl sm:text-2xl font-black text-black tracking-[-0.05em] leading-[0.9] uppercase italic">
                   {welcomeText}
                 </h1>
-                <p className="text-[9px] text-zinc-400 font-bold tracking-[0.3em] uppercase max-w-[200px] mx-auto leading-relaxed">
+                <p className="text-[8px] text-zinc-400 font-bold tracking-[0.3em] uppercase max-w-[180px] mx-auto leading-relaxed">
                   {subtitleText}
                 </p>
               </div>

@@ -577,19 +577,6 @@ export default function DashboardPage() {
         <div className="p-16 flex justify-center"><Loader2 className="animate-spin h-10 w-10 text-primary/50" /></div>
       ) : (
         <>
-          {/* Dashboard Logo e Branding */}
-          {settings?.logo_url && (
-            <div className="flex items-center justify-center mb-6 h-12">
-               <img 
-                 src={settings.logo_url} 
-                 crossOrigin="anonymous"
-                 className="max-h-full w-auto object-contain drop-shadow-md" 
-                 alt={settings.store_name || "Logo"} 
-                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
-               />
-            </div>
-          )}
-
           {/* Monthly Goal Bar */}
           {monthlyGoal > 0 && (
             <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm">
@@ -805,32 +792,42 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[180px] w-full mt-4">
+              <div className="flex-1 min-h-[200px] md:min-h-[220px] w-full mt-4">
                 {salesData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%" minHeight={180}>
+                  <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                     <ComposedChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="3" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
                       <XAxis dataKey="date" stroke="#888" fontSize={9} tickLine={false} axisLine={false} fontWeight="black" tickMargin={12} />
                       <YAxis stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} fontWeight="black" tickMargin={10} width={50} />
-                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }} />
+                      <Tooltip 
+                        content={<CustomRevenueTooltip />} 
+                        cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        animationDuration={200}
+                      />
                       <Area 
                         type="monotone"
                         dataKey="profit" 
                         stroke="none"
                         fill="url(#profitGradient)"
                         animationDuration={1500}
+                        activeDot={false}
                       />
                       <Line
                         type="monotone"
                         dataKey="profit"
                         stroke="#10b981"
-                        strokeWidth={4}
+                        strokeWidth={5}
+                        filter="url(#glow)"
                         dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
                         activeDot={{ r: 6, fill: '#fff', stroke: '#10b981', strokeWidth: 3 }}
                         animationDuration={1000}

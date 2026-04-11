@@ -3,7 +3,7 @@ import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award, Info, Users, Tags, CheckCircle2 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { Button } from '../../components/ui';
 
 // ─── Help Tooltip ───────────────────────────────────────────────────────────
@@ -284,7 +284,7 @@ export default function DashboardPage() {
         setStockHealthStats(health);
 
         // --- INVENTORY POTENTIAL CALCULATION ---
-        let totalRev = 0;
+        let totalInventoryRevenue = 0;
         let totalProfitSite = 0;
         let totalProfitShopee = 0;
         let totalProfitTiktok = 0;
@@ -314,7 +314,7 @@ export default function DashboardPage() {
           const taxValueShopee = shopeeP * (global_tax / 100);
           const taxValueTiktok = tiktokP * (global_tax / 100);
 
-          totalRev += siteP * qty;
+          totalInventoryRevenue += siteP * qty;
           totalInv += cost * qty;
           
           // Profit calculations per unit (Consider commission caps and global taxes)
@@ -335,16 +335,16 @@ export default function DashboardPage() {
         });
 
         const projectionData = {
-          revenue: totalRev,
+          revenue: totalInventoryRevenue,
           profitSite: totalProfitSite,
           profitShopee: totalProfitShopee,
           profitTiktok: totalProfitTiktok,
           profitBest: totalBestProfit,
           investment: totalInv,
           chartData: [
-            { name: 'Site', Venda: totalRev, Lucro: totalProfitSite, color: 'var(--primary)' },
-            { name: 'Shopee', Venda: totalRev, Lucro: totalProfitShopee, color: '#f53d2d' },
-            { name: 'TikTok Shop', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
+            { name: 'Site', Venda: totalInventoryRevenue, Lucro: totalProfitSite, color: 'var(--primary)' },
+            { name: 'Shopee', Venda: totalInventoryRevenue, Lucro: totalProfitShopee, color: '#f53d2d' },
+            { name: 'TikTok Shop', Venda: totalInventoryRevenue, Lucro: totalProfitTiktok, color: '#000000' }
           ]
         };
         setStockProjections(projectionData);
@@ -469,16 +469,16 @@ export default function DashboardPage() {
             leadSourceData: Object.entries(sourceCount).map(([n, v]) => ({ name: n, value: v })),
             totalProfit: thisMonthProfit,
             stockProjections: {
-              revenue: totalRev,
+              revenue: totalInventoryRevenue,
               profitSite: totalProfitSite,
               profitShopee: totalProfitShopee,
               profitTiktok: totalProfitTiktok,
               profitBest: totalBestProfit,
               investment: totalInv,
               chartData: [
-                { name: 'Site', Venda: totalRev, Lucro: totalProfitSite, color: 'var(--primary)' },
-                { name: 'Shopee', Venda: totalRev, Lucro: totalProfitShopee, color: '#f53d2d' },
-                { name: 'TikTok Shop', Venda: totalRev, Lucro: totalProfitTiktok, color: '#000000' }
+                { name: 'Site', Venda: totalInventoryRevenue, Lucro: totalProfitSite, color: 'var(--primary)' },
+                { name: 'Shopee', Venda: totalInventoryRevenue, Lucro: totalProfitShopee, color: '#f53d2d' },
+                { name: 'TikTok Shop', Venda: totalInventoryRevenue, Lucro: totalProfitTiktok, color: '#000000' }
               ]
             }
           });

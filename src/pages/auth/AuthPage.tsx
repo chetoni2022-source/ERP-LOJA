@@ -74,12 +74,12 @@ export default function AuthPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-zinc-100/50 rounded-full blur-[100px]" />
         <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-blue-50/20 rounded-full blur-[80px]" />
         
-        {/* 🌌 High-Tech Background Asset */}
+        {/* 🌌 High-Tech Logistics & Inventory Background */}
         <img 
-          src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" 
-          alt="High-Tech Background" 
+          src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop" 
+          alt="Smart Logistics & Stock Background" 
           crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover opacity-[0.05] select-none pointer-events-none mix-blend-overlay"
+          className="absolute inset-0 w-full h-full object-cover opacity-[0.08] select-none pointer-events-none mix-blend-overlay"
         />
       </div>
 

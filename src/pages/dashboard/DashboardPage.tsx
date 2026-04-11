@@ -769,8 +769,8 @@ export default function DashboardPage() {
 
           {/* Charts */}
           <div className="grid gap-4 md:gap-6 md:grid-cols-7">
-            {/* Profit & Revenue Chart */}
-            <div className="md:col-span-4 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden group/chart">
+            {/* Profit & Revenue Chart - Full width Row */}
+            <div className="md:col-span-7 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col relative overflow-hidden group/chart h-[400px]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl opacity-0 group-hover/chart:opacity-100 transition-opacity" />
               <div className="mb-3 flex justify-between items-start">
                 <div>
@@ -845,57 +845,83 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Top Products */}
-            <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col">
-              <div className="mb-4">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  <Award className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 mr-2" /> Top Produtos (Qtd)
-                </h3>
+            {/* Top Products - Elite Leaderboard (3D Style) */}
+            <div className="md:col-span-3 bg-card border-t-4 border-t-yellow-500/30 border border-border rounded-xl shadow-lg p-4 md:p-6 flex flex-col hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group/ranking">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-lg md:text-xl text-foreground flex items-center">
+                    <Award className="h-5 w-5 text-yellow-500 mr-2 animate-bounce" /> 
+                    Produtos Elite
+                  </h3>
+                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Ranking por Volume</p>
+                </div>
               </div>
-              <div className="space-y-3 md:space-y-4">
+              
+              <div className="space-y-4">
                 {topProducts.length > 0 ? topProducts.map((p, i) => (
-                  <div key={i} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 md:h-10 md:w-10 bg-muted rounded-full flex items-center justify-center font-black text-muted-foreground text-[10px] md:text-sm border border-border group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all text-white">
-                        {i + 1}
+                  <div key={i} className="flex items-center justify-between group/item p-3 rounded-2xl hover:bg-muted/30 border border-transparent hover:border-border transition-all cursor-default">
+                    <div className="flex items-center gap-4">
+                      <div className={`h-10 w-10 flex items-center justify-center rounded-xl font-black text-sm relative shadow-sm ${
+                        i === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-600 text-white shadow-yellow-500/20' : 
+                        i === 1 ? 'bg-gradient-to-br from-zinc-200 to-zinc-400 text-zinc-800' : 
+                        i === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-orange-500/20' : 
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                         {i + 1}
+                         {i < 3 && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full flex items-center justify-center shadow-sm">
+                            <div className="h-1.5 w-1.5 bg-black rounded-full animate-pulse" />
+                         </div>}
                       </div>
-                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{p.name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-foreground">{p.name}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground tracking-tighter uppercase">{p.quantity} Unidades vendidas</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-white">
-                      <div className="flex flex-col items-end">
-                        <span className="text-[11px] md:text-sm font-black text-foreground">{p.quantity} unid.</span>
-                        <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">{formatCurrency(p.revenue)}</span>
-                      </div>
+                    <div className="text-right">
+                       <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(p.revenue)}</span>
                     </div>
                   </div>
                 )) : (
-                  <p className="text-xs text-muted-foreground italic text-center py-4">Sem dados</p>
+                  <div className="h-40 flex items-center justify-center opacity-20"><Award size={48} /></div>
                 )}
               </div>
+            </div>
 
-              <div className="mt-8 mb-4 border-t border-border pt-6">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  <Users className="h-4 w-4 md:h-5 md:w-5 text-violet-500 mr-2" /> Top Clientes (LTV)
-                </h3>
+            {/* Top Patients/Customers - LTV Podium (3D Style) */}
+            <div className="md:col-span-4 bg-card border-t-4 border-t-violet-500/30 border border-border rounded-xl shadow-lg p-4 md:p-6 flex flex-col hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-lg md:text-xl text-foreground flex items-center">
+                    <Users className="h-5 w-5 text-violet-500 mr-2" /> 
+                    Compradores Ouro
+                  </h3>
+                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Potencial de LTV (Retenção)</p>
+                </div>
               </div>
-              <div className="space-y-3 md:space-y-4">
+
+              <div className="space-y-4">
                 {topCustomers.length > 0 ? topCustomers.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 md:h-10 md:w-10 bg-violet-500/10 rounded-full flex items-center justify-center font-black text-violet-600 text-[10px] md:text-sm border border-violet-500/20 group-hover:bg-violet-500 group-hover:text-white transition-all text-white">
-                        {i + 1}
+                  <div key={i} className="flex items-center justify-between group/item p-3 rounded-2xl hover:bg-violet-500/5 border border-transparent hover:border-violet-500/10 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className={`h-10 w-10 flex items-center justify-center rounded-xl font-black text-sm relative transition-all group-hover/item:rotate-6 ${
+                        i === 0 ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'bg-muted text-muted-foreground'
+                      }`}>
+                         {i === 0 ? '🏆' : i + 1}
                       </div>
-                      <span className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[120px] md:max-w-none">{c.name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-foreground">{c.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-violet-500/70 border border-violet-500/20 px-1.5 rounded-sm uppercase tracking-tighter">{c.count} Pedidos</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-right text-white">
-                       <div className="flex flex-col">
-                         <span className="text-[11px] md:text-sm font-black text-violet-600">{formatCurrency(c.total)}</span>
-                         <span className="text-[9px] md:text-[10px] text-muted-foreground font-black uppercase tracking-widest">{c.count} compras</span>
-                       </div>
+                    <div className="text-right flex flex-col">
+                       <span className="text-sm font-black text-violet-600">{formatCurrency(c.total)}</span>
+                       <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest leading-none">VPD Total</span>
                     </div>
                   </div>
                 )) : (
-                  <p className="text-xs text-muted-foreground italic text-center py-4">Sem dados</p>
+                  <div className="h-40 flex items-center justify-center opacity-20"><Users size={48} /></div>
                 )}
               </div>
             </div>

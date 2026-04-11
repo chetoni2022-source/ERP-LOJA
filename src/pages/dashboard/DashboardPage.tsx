@@ -3,7 +3,7 @@ import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award, Info, Users, Tags, CheckCircle2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { Button } from '../../components/ui';
 
 // ─── Help Tooltip ───────────────────────────────────────────────────────────
@@ -784,38 +784,29 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[160px] md:min-h-[180px] w-full mt-4">
+              <div className="flex-1 min-h-[140px] md:min-h-[160px] w-full mt-4">
                 {salesData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                    <AreaChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#059669" stopOpacity={1} />
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
-                        <filter id="3dShadow" x="-20%" y="-20%" width="140%" height="140%">
-                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#10b981" floodOpacity="0.3" />
-                        </filter>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
                       <XAxis dataKey="date" stroke="#888" fontSize={9} tickLine={false} axisLine={false} fontWeight="black" tickMargin={12} />
                       <YAxis stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} fontWeight="black" tickMargin={10} width={50} />
-                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} />
-                      <Bar 
+                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.1 }} />
+                      <Area 
+                        type="monotone"
                         dataKey="profit" 
-                        shape={<RoundedBar />}
-                        maxBarSize={40}
+                        stroke="#10b981"
+                        strokeWidth={4}
+                        fill="url(#profitGradient)"
                         animationDuration={1500}
-                        filter="url(#3dShadow)"
-                      >
-                        {salesData.map((_, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={index === salesData.length - 1 ? '#10b981' : 'url(#profitGradient)'} 
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
+                      />
+                    </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-4 border-dashed border-border/50 rounded-[2rem] bg-muted/5 p-10 animate-in fade-in duration-700">

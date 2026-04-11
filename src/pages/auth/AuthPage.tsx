@@ -73,6 +73,14 @@ export default function AuthPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-zinc-100/50 rounded-full blur-[100px]" />
         <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-blue-50/20 rounded-full blur-[80px]" />
+        
+        {/* 🌌 High-Tech Background Asset */}
+        <img 
+          src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" 
+          alt="High-Tech Background" 
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-cover opacity-[0.05] select-none pointer-events-none mix-blend-overlay"
+        />
       </div>
 
       {/* ⚡ The Obsidian Portal Card */}

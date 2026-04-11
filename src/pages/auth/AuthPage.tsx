@@ -7,10 +7,11 @@ import { Button, Input, Label } from '../../components/ui';
 import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles } from 'lucide-react';
 
 const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
-  luxury:   { bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' },
-  rose:     { bg: '#fff8f5', accent: '#cb8474', text: '#2a1a14' },
-  midnight: { bg: '#050a12', accent: '#7eb8f7', text: '#e8eef5' },
-  pearl:    { bg: '#fafaf7', accent: '#8a7560', text: '#1a1a1a' },
+const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
+  luxury:   { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },
+  rose:     { bg: '#fafafa', accent: '#0c0a09', text: '#0c0a09' },
+  midnight: { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },
+  pearl:    { bg: '#fafafa', accent: '#0c0a09', text: '#0c0a09' },
 };
 
 export default function AuthPage() {
@@ -91,20 +92,20 @@ export default function AuthPage() {
 
       <div className="w-full max-w-[400px] relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
         {/* Logo/Branding */}
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-4">
           {settings?.logo_url ? (
-            <img src={settings.logo_url} className="h-12 mx-auto object-contain" alt="Logo" />
+            <img src={settings.logo_url} className="h-10 mx-auto object-contain" alt="Logo" />
           ) : (
-            <div className="h-14 w-14 mx-auto rounded-2xl flex items-center justify-center bg-white/5 border border-white/10">
-              <Sparkles size={28} style={{ color: theme.accent }} />
+            <div className="h-12 w-12 mx-auto rounded-xl flex items-center justify-center bg-white/5 border border-white/10">
+              <Sparkles size={24} style={{ color: theme.accent }} />
             </div>
           )}
           <div className="space-y-1">
-            <h1 className="text-2xl font-black tracking-tight" style={{ color: theme.text }}>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: theme.text }}>
               {settings?.store_name || 'Aura Workspace'}
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-30">
-              Gestão de Alta Performance
+            <p className="text-[9px] uppercase tracking-[0.4em] font-black opacity-30">
+              SISTEMA DE GESTÃO MODERNO
             </p>
           </div>
         </div>
@@ -179,7 +180,7 @@ export default function AuthPage() {
             <Button 
               type="submit" 
               disabled={loading} 
-              className="w-full h-12 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+              className="w-full h-11 rounded-lg bg-white text-black font-black text-xs tracking-[0.15em] uppercase hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
               style={{ backgroundColor: theme.accent, color: theme.isDark ? '#000' : '#fff' }}
             >
               {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (

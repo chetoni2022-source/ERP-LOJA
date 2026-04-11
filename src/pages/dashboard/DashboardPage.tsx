@@ -238,7 +238,6 @@ export default function DashboardPage() {
   const [stockData, setStockData] = useState<any[]>(cachedData?.stockData || []);
   const [leadSourceData, setLeadSourceData] = useState<any[]>(cachedData?.leadSourceData || []);
   const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
-  const [categoryData, setCategoryData] = useState<any[]>(cachedData?.categoryData || []);
   const [stockHealthStats, setStockHealthStats] = useState<any>(cachedData?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
   const [topCustomers, setTopCustomers] = useState<any[]>(cachedData?.topCustomers || []);
 
@@ -421,14 +420,6 @@ export default function DashboardPage() {
           return acc;
         }, {});
         setLeadSourceData(Object.entries(sourceCount).map(([name, value]) => ({ name, value })));
-
-        // Category Distribution
-        const catDist = sales.reduce((acc: any, sale: any) => {
-          const catName = (sale.products as any)?.categories?.name || 'Sem Categoria';
-          acc[catName] = (acc[catName] || 0) + sale.total_price;
-          return acc;
-        }, {});
-        setCategoryData(Object.entries(catDist).map(([name, value]) => ({ name, value })));
 
         // Top Customers (Ranking LTV)
         const custDist = sales.reduce((acc: any, sale: any) => {
@@ -892,122 +883,55 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* New Rows: Category Dist & Stock Health */}
-          <div className="grid gap-4 md:gap-6 md:grid-cols-2">
-            {/* Category Performance */}
-            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[400px]">
+          {/* Stock Health Row */}
+          <div className="grid gap-4 md:gap-6 md:grid-cols-1">
+             <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[300px]">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  <Tags className="h-4 w-4 md:h-5 md:w-5 text-primary mr-2" /> Receita por Categoria
+                  <PackageSearch className="h-4 w-4 md:h-5 md:w-5 text-primary mr-2" /> Saúde do Inventário
                 </h3>
               </div>
-              <div className="flex-1 flex flex-col md:flex-row items-center gap-6 overflow-hidden">
-                <div className="h-full w-full max-w-[200px] shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {categoryData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={['#C9A96E', '#7EB8F7', '#CB8474', '#8A7560', '#A8A29E'][index % 5]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                             return (
-                               <div className="bg-card border border-border p-3 rounded-xl shadow-2xl">
-                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{payload[0].name}</p>
-                                 <p className="text-sm font-black text-foreground">{formatCurrency(payload[0].value as number)}</p>
-                               </div>
-                             );
-                          }
-                          return null;
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex-1 overflow-y-auto space-y-2 w-full pr-2">
-                  {categoryData.length > 0 ? categoryData.slice(0, 8).map((cat, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-border/50">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#C9A96E', '#7EB8F7', '#CB8474', '#8A7560', '#A8A29E'][i % 5] }} />
-                        <span className="text-[11px] font-bold text-foreground truncate max-w-[100px]">{cat.name}</span>
-                      </div>
-                      <span className="text-[11px] font-black text-foreground">{formatCurrency(cat.value)}</span>
-                    </div>
-                  )) : (
-                    <p className="text-[10px] text-muted-foreground italic text-center py-10 uppercase tracking-widest">Sem categorias vinculadas</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Stock Health */}
-            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[400px]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
-                  <PackageSearch className="h-4 w-4 md:h-5 md:w-5 text-orange-500 mr-2" /> Saúde do Inventário
-                </h3>
-              </div>
-              <div className="flex-1 flex flex-col md:flex-row items-center gap-6 overflow-hidden">
-                <div className="h-full w-full max-w-[200px] shrink-0">
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-12 overflow-hidden">
+                <div className="h-full w-full max-w-[180px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Saudável', value: stockHealthStats.healthy, color: '#10b981' },
-                          { name: 'Alerta', value: stockHealthStats.low, color: '#f59e0b' },
-                          { name: 'Esgotado', value: stockHealthStats.out, color: '#ef4444' }
+                          { name: 'Saudável', value: stockHealthStats.healthy },
+                          { name: 'Alerta', value: stockHealthStats.low },
+                          { name: 'Esgotado', value: stockHealthStats.out }
                         ]}
                         cx="50%"
                         cy="50%"
                         innerRadius={55}
-                        outerRadius={80}
+                        outerRadius={75}
                         paddingAngle={5}
                         dataKey="value"
                       >
-                         <Cell key="cell-h" fill="#10b981" />
-                         <Cell key="cell-l" fill="#f59e0b" />
-                         <Cell key="cell-o" fill="#ef4444" />
+                         <Cell key="cell-h" fill="var(--primary)" />
+                         <Cell key="cell-l" fill="#71717a" />
+                         <Cell key="cell-o" fill="#27272a" />
                       </Pie>
-                      <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex-1 space-y-4 w-full">
-                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex justify-between items-center group">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                  <div className="p-4 rounded-2xl bg-muted/20 border border-border flex justify-between items-center">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Saudável</span>
-                      <span className="text-xl font-black text-emerald-700">{stockHealthStats.healthy} itens</span>
-                    </div>
-                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                      <CheckCircle2 size={16} />
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-2">Saudável</span>
+                      <span className="text-2xl font-black text-foreground">{stockHealthStats.healthy}</span>
                     </div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-orange-500/5 border border-orange-500/10 flex justify-between items-center group">
+                  <div className="p-4 rounded-2xl bg-muted/20 border border-border flex justify-between items-center">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Abaixo de 5 un.</span>
-                      <span className="text-xl font-black text-orange-700">{stockHealthStats.low} itens</span>
-                    </div>
-                    <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600">
-                      <AlertCircle size={16} />
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-2">Atenção</span>
+                      <span className="text-2xl font-black text-foreground">{stockHealthStats.low}</span>
                     </div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex justify-between items-center group">
+                  <div className="p-4 rounded-2xl bg-muted/20 border border-border flex justify-between items-center">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Sem Estoque</span>
-                      <span className="text-xl font-black text-red-700">{stockHealthStats.out} itens</span>
-                    </div>
-                    <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-600">
-                      <X size={16} />
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-2">Esgotado</span>
+                      <span className="text-2xl font-black text-foreground">{stockHealthStats.out}</span>
                     </div>
                   </div>
                 </div>

@@ -72,6 +72,7 @@ export default function AuthPage() {
       <img 
         src="https://images.unsplash.com/photo-1614165936126-22485f58bc16?q=80&w=2070&auto=format&fit=crop" 
         alt="Aesthetic Background" 
+        crossOrigin="anonymous"
         className="absolute inset-0 w-full h-full object-cover opacity-[0.15] select-none pointer-events-none mix-blend-luminosity transition-opacity duration-1000"
         onLoad={(e) => { e.currentTarget.style.opacity = '0.15'; }}
         onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -85,6 +86,7 @@ export default function AuthPage() {
               <div className="flex items-center justify-center mb-4 h-10">
                  <img 
                    src={settings.logo_url} 
+                   crossOrigin="anonymous"
                    className="max-h-full w-auto object-contain drop-shadow-sm" 
                    alt={settings.store_name || "Logo"} 
                    onError={(e) => { e.currentTarget.style.display = 'none'; }}

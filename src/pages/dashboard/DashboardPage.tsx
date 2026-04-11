@@ -3,7 +3,7 @@ import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award, Info, Users, Tags, CheckCircle2 } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { Button } from '../../components/ui';
 
 // ─── Help Tooltip ───────────────────────────────────────────────────────────
@@ -258,6 +258,15 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(async (sd?: string, ed?: string) => {
     if (!user) return;
+    
+    // Variables for inventory potential (Moved to top scope to avoid ReferenceError)
+    let totalInventoryRevenue = 0;
+    let totalProfitSite = 0;
+    let totalProfitShopee = 0;
+    let totalProfitTiktok = 0;
+    let totalInv = 0;
+    let totalBestProfit = 0;
+
     try {
       // Monthly goal and Marketplace Taxes
       const { data: settings } = await supabase.from('store_settings').select('*').eq('user_id', user.id).limit(1).maybeSingle();
@@ -284,12 +293,6 @@ export default function DashboardPage() {
         setStockHealthStats(health);
 
         // --- INVENTORY POTENTIAL CALCULATION ---
-        let totalInventoryRevenue = 0;
-        let totalProfitSite = 0;
-        let totalProfitShopee = 0;
-        let totalProfitTiktok = 0;
-        let totalInv = 0;
-        let totalBestProfit = 0;
 
         // Marketplace Fees (from store_settings or defaults)
         const shopee_comm = settings?.shopee_commission_pct ?? 20;
@@ -569,6 +572,19 @@ export default function DashboardPage() {
         <div className="p-16 flex justify-center"><Loader2 className="animate-spin h-10 w-10 text-primary/50" /></div>
       ) : (
         <>
+          {/* Dashboard Logo e Branding */}
+          {settings?.logo_url && (
+            <div className="flex items-center justify-center mb-6 h-12">
+               <img 
+                 src={settings.logo_url} 
+                 crossOrigin="anonymous"
+                 className="max-h-full w-auto object-contain drop-shadow-md" 
+                 alt={settings.store_name || "Logo"} 
+                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
+               />
+            </div>
+          )}
+
           {/* Monthly Goal Bar */}
           {monthlyGoal > 0 && (
             <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm">
@@ -784,29 +800,37 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[140px] md:min-h-[160px] w-full mt-4">
+              <div className="flex-1 min-h-[180px] w-full mt-4">
                 {salesData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%" minHeight={180}>
+                    <ComposedChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
                       <XAxis dataKey="date" stroke="#888" fontSize={9} tickLine={false} axisLine={false} fontWeight="black" tickMargin={12} />
                       <YAxis stroke="#888" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} fontWeight="black" tickMargin={10} width={50} />
-                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.1 }} />
+                      <Tooltip content={<CustomRevenueTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }} />
                       <Area 
                         type="monotone"
                         dataKey="profit" 
-                        stroke="#10b981"
-                        strokeWidth={4}
+                        stroke="none"
                         fill="url(#profitGradient)"
                         animationDuration={1500}
                       />
-                    </AreaChart>
+                      <Line
+                        type="monotone"
+                        dataKey="profit"
+                        stroke="#10b981"
+                        strokeWidth={4}
+                        dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 6, fill: '#fff', stroke: '#10b981', strokeWidth: 3 }}
+                        animationDuration={1000}
+                      />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground border-4 border-dashed border-border/50 rounded-[2rem] bg-muted/5 p-10 animate-in fade-in duration-700">

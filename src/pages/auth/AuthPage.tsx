@@ -3,18 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
-import { Button, Input, Label, Card } from '../../components/ui';
-import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles, Zap, ShieldAlert, CheckCircle2, Globe, Heart } from 'lucide-react';
-
-const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
-
-interface StoreSettings {
-  store_name: string | null;
-  logo_url: string | null;
-  favicon_url: string | null;
-  theme: string | null;
-  custom_colors: any | null;
-}
+import { Button, Input, Label } from '../../components/ui';
+import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles } from 'lucide-react';
 
 const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
   luxury:   { bg: '#0a0a0a', accent: '#c9a96e', text: '#f5f0eb' },
@@ -27,37 +17,30 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
-  const [settings, setSettings] = useState<StoreSettings | null>(null);
-  
+  const [settings, setSettings] = useState<any>(null);
   const [form, setForm] = useState({ email: '', password: '', fullName: '' });
+  
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { success, error: toastError } = useToast();
 
-  useEffect(() => { if (user) navigate('/'); }, [user, navigate]);
+  useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
 
   useEffect(() => {
     supabase.from('store_settings').select('*').limit(1).maybeSingle().then(({ data }) => {
-      if (data) {
-        setSettings(data);
-        if (data.favicon_url) {
-          const l = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-          if (l) l.href = data.favicon_url;
-        }
-      }
+      if (data) setSettings(data);
     });
   }, []);
 
-  const themeVars = useMemo(() => {
+  const theme = useMemo(() => {
     const t = settings?.theme || 'luxury';
     const preset = THEME_PRESETS[t] || THEME_PRESETS.luxury;
-    
-    // If custom colors exist, they override the preset
     const colors = settings?.custom_colors || {};
     return {
        bg: colors.bg || preset.bg,
        accent: colors.accent || preset.accent,
-       text: colors.text || preset.text
+       text: colors.text || preset.text,
+       isDark: t === 'luxury' || t === 'midnight'
     };
   }, [settings]);
 
@@ -68,22 +51,21 @@ export default function AuthPage() {
       if (recoveryMode) {
         const { error } = await supabase.auth.resetPasswordForEmail(form.email, { redirectTo: `${window.location.origin}/auth` });
         if (error) throw error;
-        success('Elo de recuperação enviado! Verifique seu e-mail.');
+        success('Link de recuperação enviado com sucesso!');
         setRecoveryMode(false);
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
         if (error) throw error;
-        success(`Bem-vindo de volta, ${form.email.split('@')[0]}!`);
       } else {
-        const { data, error } = await supabase.auth.signUp({ 
-            email: form.email, 
-            password: form.password,
-            options: { data: { full_name: form.fullName } }
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: { data: { full_name: form.fullName } }
         });
-        if (error) throw error;
+        if (signUpError) throw signUpError;
         if (data.user) {
-            await supabase.from('profiles').insert([{ id: data.user.id, full_name: form.fullName, role: 'admin' }]);
-            success('Bem-vindo ao ecossistema Aura! Seu ambiente está pronto.');
+          await supabase.from('profiles').insert([{ id: data.user.id, full_name: form.fullName, role: 'admin' }]);
+          success('Conta criada com sucesso!');
         }
       }
     } catch (err: any) { toastError(err.message); }
@@ -92,151 +74,139 @@ export default function AuthPage() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-primary/30 transition-colors duration-1000"
-      style={{ backgroundColor: themeVars.bg, color: themeVars.text }}
+      className="min-h-screen flex flex-col items-center justify-center p-6 font-sans transition-colors duration-700"
+      style={{ backgroundColor: theme.bg, color: theme.text }}
     >
-      {/* 🔮 Dynamic Aura Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-         <div 
-           className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full blur-[120px] animate-pulse opacity-20" 
-           style={{ backgroundColor: themeVars.accent }} 
-         />
-         <div 
-           className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full blur-[120px] animate-pulse opacity-10" 
-           style={{ backgroundColor: themeVars.accent, animationDelay: '2s' }} 
-         />
+      {/* 🌑 Subtle Background Gradient */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-30">
+        <div 
+          className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] rounded-full blur-[150px]"
+          style={{ background: `radial-gradient(circle, ${theme.accent} 0%, transparent 70%)` }}
+        />
+        <div 
+          className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-[150px]"
+          style={{ background: `radial-gradient(circle, ${theme.accent} 0%, transparent 70%)` }}
+        />
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-700">
-        {/* Branding Area */}
-        <div className="text-center mb-10 space-y-4">
-           {settings?.logo_url ? (
-             <img src={settings.logo_url} className="h-16 mx-auto object-contain drop-shadow-2xl" alt={settings.store_name || 'Store'} />
-           ) : (
-             <div 
-               className="h-16 w-16 rounded-2xl flex items-center justify-center mx-auto border shadow-2xl transition-all"
-               style={{ backgroundColor: `${themeVars.accent}15`, borderColor: `${themeVars.accent}30`, boxShadow: `0 20px 40px ${themeVars.accent}15` }}
-             >
-                <Sparkles size={32} style={{ color: themeVars.accent }} className="animate-pulse" />
-             </div>
-           )}
-           <div className="space-y-1">
-              <h1 className="text-4xl font-black tracking-tighter italic uppercase transition-colors" style={{ color: themeVars.text }}>
-                {settings?.store_name || 'Aura Workspace'}
-              </h1>
-              <p className="opacity-30 text-[10px] uppercase font-bold tracking-[0.3em] font-mono">Enterprise SaaS Ecosystem</p>
-           </div>
+      <div className="w-full max-w-[400px] relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        {/* Logo/Branding */}
+        <div className="text-center space-y-6">
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} className="h-12 mx-auto object-contain" alt="Logo" />
+          ) : (
+            <div className="h-14 w-14 mx-auto rounded-2xl flex items-center justify-center bg-white/5 border border-white/10">
+              <Sparkles size={28} style={{ color: theme.accent }} />
+            </div>
+          )}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black tracking-tight" style={{ color: theme.text }}>
+              {settings?.store_name || 'Aura Workspace'}
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-30">
+              Gestão de Alta Performance
+            </p>
+          </div>
         </div>
 
-        {/* Auth Interface */}
-        <div 
-          className="glass-card !p-10 shadow-2xl relative overflow-hidden border-white/5"
-          style={{ backgroundColor: 'transparent', backdropFilter: 'blur(32px)', border: `1px solid ${themeVars.text}10` }}
-        >
-           <div className="absolute top-0 right-0 p-10 opacity-[0.02] -mr-16 -mt-16 rotate-12 pointer-events-none" style={{ color: themeVars.text }}>
-             <ShieldCheck size={280} />
-           </div>
-           
-           <div className="mb-8 flex justify-between items-center">
-              <h2 className="text-2xl font-black italic tracking-tighter">
-                 {recoveryMode ? 'Recuperação' : isLogin ? 'Acesso' : 'Registro'} 
-                 <span className="ml-2" style={{ color: themeVars.accent }}>
-                   {recoveryMode ? 'de Elo' : 'Aura'}
-                 </span>
-              </h2>
-           </div>
+        {/* Login Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl">
+          <div className="mb-8">
+            <h2 className="text-xl font-bold">
+              {recoveryMode ? 'Recuperar Senha' : isLogin ? 'Login' : 'Criar Conta'}
+            </h2>
+            <p className="text-sm opacity-40 mt-1">
+              {recoveryMode ? 'Enviaremos um link para o seu e-mail.' : 'Bem-vindo ao centro de comando.'}
+            </p>
+          </div>
 
-           <form onSubmit={handleAuth} className="space-y-6 relative z-10">
-              {!isLogin && !recoveryMode && (
-                <div className="space-y-2">
-                   <Label className="text-[10px] font-black uppercase opacity-30 tracking-widest pl-1">Nome Completo</Label>
-                   <div className="relative group">
-                      <User className="absolute left-6 top-1/2 -translate-y-1/2 opacity-20 group-hover:opacity-100 transition-all transition-colors" size={18} style={{ color: themeVars.accent }} />
-                      <input 
-                        required 
-                        value={form.fullName} 
-                        onChange={e => setForm({ ...form, fullName: e.target.value })} 
-                        placeholder="Ex: Carolina Silva" 
-                        className="ux-input h-14 pl-16 font-bold"
-                        style={{ backgroundColor: `${themeVars.text}05`, borderColor: `${themeVars.text}10`, color: themeVars.text }}
-                      />
-                   </div>
-                </div>
-              )}
-
+          <form onSubmit={handleAuth} className="space-y-5">
+            {!isLogin && !recoveryMode && (
               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase opacity-30 tracking-widest pl-1">Identificador de E-mail</Label>
-                 <div className="relative group">
-                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 opacity-20 group-hover:opacity-100 transition-all" size={18} style={{ color: themeVars.accent }} />
-                    <input 
-                      required 
-                      type="email" 
-                      value={form.email} 
-                      onChange={e => setForm({ ...form, email: e.target.value })} 
-                      placeholder="seu@email.com" 
-                      className="ux-input h-14 pl-16 font-bold"
-                      style={{ backgroundColor: `${themeVars.text}05`, borderColor: `${themeVars.text}10`, color: themeVars.text }}
-                    />
-                 </div>
-              </div>
-
-              {!recoveryMode && (
-                <div className="space-y-2">
-                   <div className="flex justify-between items-center px-1">
-                      <Label className="text-[10px] font-black uppercase opacity-30 tracking-widest">Senha Criptografada</Label>
-                      {isLogin && (
-                        <button 
-                          type="button" 
-                          onClick={() => setRecoveryMode(true)} 
-                          className="text-[10px] font-black uppercase tracking-widest hover:brightness-125"
-                          style={{ color: themeVars.accent }}
-                        >
-                          Perdi o Elo
-                        </button>
-                      )}
-                   </div>
-                   <div className="relative group">
-                      <Lock className="absolute left-6 top-1/2 -translate-y-1/2 opacity-20 group-hover:opacity-100 transition-all" size={18} style={{ color: themeVars.accent }} />
-                      <input 
-                        required 
-                        type="password" 
-                        value={form.password} 
-                        onChange={e => setForm({ ...form, password: e.target.value })} 
-                        placeholder="••••••••" 
-                        className="ux-input h-14 pl-16 font-bold"
-                        style={{ backgroundColor: `${themeVars.text}05`, borderColor: `${themeVars.text}10`, color: themeVars.text }}
-                      />
-                   </div>
+                <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold ml-1">Nome</Label>
+                <div className="relative group">
+                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
+                  <Input 
+                    required 
+                    value={form.fullName} 
+                    onChange={e => setForm({...form, fullName: e.target.value})} 
+                    placeholder="Seu nome completo" 
+                    className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm"
+                  />
                 </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold ml-1">E-mail</Label>
+              <div className="relative group">
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
+                <Input 
+                  required 
+                  type="email" 
+                  value={form.email} 
+                  onChange={e => setForm({...form, email: e.target.value})} 
+                  placeholder="exemplo@email.com" 
+                  className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm text-white"
+                />
+              </div>
+            </div>
+
+            {!recoveryMode && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold">Senha</Label>
+                  {isLogin && (
+                    <button type="button" onClick={() => setRecoveryMode(true)} className="text-[10px] uppercase tracking-widest font-bold hover:opacity-80 transition-opacity" style={{ color: theme.accent }}>
+                      Esqueci a senha
+                    </button>
+                  )}
+                </div>
+                <div className="relative group">
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
+                  <Input 
+                    required 
+                    type="password" 
+                    value={form.password} 
+                    onChange={e => setForm({...form, password: e.target.value})} 
+                    placeholder="••••••••" 
+                    className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm text-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-12 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+              style={{ backgroundColor: theme.accent, color: theme.isDark ? '#000' : '#fff' }}
+            >
+              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
+                <>
+                  {recoveryMode ? 'Enviar Instruções' : isLogin ? 'Entrar' : 'Começar Agora'}
+                  {!loading && <ArrowRight size={16} />}
+                </>
               )}
+            </Button>
+          </form>
 
-              <Button 
-                type="submit" 
-                disabled={loading} 
-                className="ux-button h-16 w-full font-black uppercase text-[12px] tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all"
-                style={{ backgroundColor: themeVars.accent, color: themeVars.bg, boxShadow: `0 20px 40px ${themeVars.accent}30` }}
-              >
-                 {loading ? <Loader2 className="animate-spin" /> : recoveryMode ? 'Enviar Link de Resgate' : isLogin ? 'Sincronizar Acesso' : 'Ativar Ecossistema'}
-                 {!loading && <ArrowRight size={18} strokeWidth={3} />}
-              </Button>
-           </form>
-
-           {/* Alternate Action */}
-           <div className="mt-8 pt-8 border-t border-white/5 text-center">
-              <button 
-                onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }}
-                className="opacity-30 hover:opacity-100 text-[11px] font-black uppercase tracking-widest transition-all"
-                style={{ color: themeVars.text }}
-              >
-                 {recoveryMode ? 'Voltar ao Login' : isLogin ? 'Não possui acesso? Ativar novo ERP' : 'Já possui um elo? Entrar no sistema'}
-              </button>
-           </div>
+          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <button 
+              type="button" 
+              onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }}
+              className="text-[11px] uppercase tracking-widest font-black opacity-40 hover:opacity-100 transition-all"
+            >
+              {recoveryMode ? 'Voltar para o Login' : isLogin ? 'Ainda não tem conta? Criar conta' : 'Já possui conta? Fazer login'}
+            </button>
+          </div>
         </div>
 
-        {/* Trust Indicators */}
-        <div className="mt-12 flex justify-center gap-12 opacity-20" style={{ color: themeVars.text }}>
-           <div className="flex items-center gap-2"><ShieldCheck size={14} /><span className="text-[9px] font-black uppercase tracking-widest">AES-256</span></div>
-           <div className="flex items-center gap-2"><Zap size={14} /><span className="text-[9px] font-black uppercase tracking-widest">Cloud Sync</span></div>
+        {/* Security / Trust */}
+        <div className="flex items-center justify-center gap-6 opacity-20">
+          <div className="flex items-center gap-2"><ShieldCheck size={14} /><span className="text-[9px] font-bold uppercase tracking-widest">AES-256 Crypto</span></div>
+          <div className="h-1 w-1 rounded-full bg-white/20" />
+          <div className="flex items-center gap-2"><Sparkles size={14} /><span className="text-[9px] font-bold uppercase tracking-widest">SaaS Edition</span></div>
         </div>
       </div>
     </div>

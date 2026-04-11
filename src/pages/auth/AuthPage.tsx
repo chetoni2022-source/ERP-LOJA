@@ -83,16 +83,16 @@ export default function AuthPage() {
         />
       </div>
 
-      {/* ⚡ The Obsidian Portal Card */}
-      <div className="w-full max-w-[400px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
+      {/* ⚡ The Obsidian Portal Card (Compact Edition) */}
+      <div className="w-full max-w-[340px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
           
-          <div className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden group">
+          <div className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2.5rem] p-7 sm:p-8 relative overflow-hidden group">
             {/* Subtle light reflection */}
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
             
             <div className="space-y-8 text-center relative z-10">
               {settings?.logo_url && (
-                <div className="flex items-center justify-center mb-10 h-16 relative group/logo">
+                <div className="flex items-center justify-center mb-6 h-12 relative group/logo">
                    {/* 💎 Logo Halo Effect */}
                    <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-3xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-1000 scale-150" />
                    
@@ -105,16 +105,16 @@ export default function AuthPage() {
                 </div>
               )}
               
-              <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl font-black text-black tracking-[-0.05em] leading-[0.9] uppercase italic">
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-black tracking-[-0.05em] leading-[0.9] uppercase italic">
                   {welcomeText}
                 </h1>
-                <p className="text-[10px] text-zinc-400 font-bold tracking-[0.3em] uppercase max-w-[240px] mx-auto leading-relaxed">
+                <p className="text-[9px] text-zinc-400 font-bold tracking-[0.3em] uppercase max-w-[200px] mx-auto leading-relaxed">
                   {subtitleText}
                 </p>
               </div>
 
-              <form onSubmit={handleAuth} className="space-y-5 text-left pt-2">
+              <form onSubmit={handleAuth} className="space-y-4 text-left pt-2">
                 {!isLogin && !recoveryMode && (
                   <div className="group space-y-2">
                     <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1 transition-colors group-focus-within:text-emerald-500">Gestão Direct</Label>

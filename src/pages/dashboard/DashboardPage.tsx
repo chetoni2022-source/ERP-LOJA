@@ -807,13 +807,13 @@ export default function DashboardPage() {
                         cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5 5' }}
                         animationDuration={200}
                       />
-                      <Area 
-                        type="natural"
+                      <Bar 
                         dataKey="profit" 
-                        stroke="none"
-                        fill="url(#profitGradient)"
+                        shape={<RoundedBar />}
+                        fill="#10b981"
+                        fillOpacity={0.15}
                         animationDuration={1500}
-                        activeDot={false}
+                        radius={[6, 6, 0, 0]}
                       />
                       <Line
                         type="natural"

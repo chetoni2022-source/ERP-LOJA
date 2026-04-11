@@ -240,6 +240,7 @@ export default function DashboardPage() {
   const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
   const [stockHealthStats, setStockHealthStats] = useState<any>(cachedData?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
   const [topCustomers, setTopCustomers] = useState<any[]>(cachedData?.topCustomers || []);
+  const [settings, setSettings] = useState<any>(cachedData?.settings || null);
 
   // Inventory Potential States
   const [stockProjections, setStockProjections] = useState<any>(cachedData?.stockProjections || {
@@ -269,8 +270,11 @@ export default function DashboardPage() {
 
     try {
       // Monthly goal and Marketplace Taxes
-      const { data: settings } = await supabase.from('store_settings').select('*').eq('user_id', user.id).limit(1).maybeSingle();
-      if (settings?.monthly_goal) setMonthlyGoal(settings.monthly_goal);
+      const { data: stgs } = await supabase.from('store_settings').select('*').eq('user_id', user.id).limit(1).maybeSingle();
+      if (stgs) {
+        setSettings(stgs);
+        if (stgs.monthly_goal) setMonthlyGoal(stgs.monthly_goal);
+      }
 
       const { data: products } = await supabase
         .from('products')
@@ -471,6 +475,7 @@ export default function DashboardPage() {
             stockData: products || [],
             leadSourceData: Object.entries(sourceCount).map(([n, v]) => ({ name: n, value: v })),
             totalProfit: thisMonthProfit,
+            settings: stgs,
             stockProjections: {
               revenue: totalInventoryRevenue,
               profitSite: totalProfitSite,

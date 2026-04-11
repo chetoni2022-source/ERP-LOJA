@@ -7,7 +7,6 @@ import { Button, Input, Label } from '../../components/ui';
 import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles } from 'lucide-react';
 
 const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
-const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
   luxury:   { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },
   rose:     { bg: '#fafafa', accent: '#0c0a09', text: '#0c0a09' },
   midnight: { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },

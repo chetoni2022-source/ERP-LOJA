@@ -911,6 +911,8 @@ export default function InventoryPage() {
                   const totalStock = product.variations && product.variations.length > 0
                     ? product.variations.reduce((acc, v) => acc + (v.stock || 0), 0)
                     : product.stock_quantity;
+                  const currentPrice = product.sale_price || product.price;
+                  const isDiscount = Boolean(product.sale_price && product.sale_price < product.price);
 
                   return (
                   <div key={product.id} 

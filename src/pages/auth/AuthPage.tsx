@@ -66,115 +66,103 @@ export default function AuthPage() {
       : 'Comece a escala do seu negócio agora';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 selection:bg-primary selection:text-primary-foreground font-sans antialiased">
+    <div className="min-h-screen flex selection:bg-primary selection:text-primary-foreground font-sans antialiased bg-background">
       
-      {/* 🏙️ Sophisticated Background (Radial Depth) */}
-      <div className="fixed inset-0 pointer-events-none opacity-40">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,var(--border)_0%,transparent_50%)]" />
+      {/* 🏙️ Esquerda: Capa Fotográfica Imersiva (High-End Aesthetic) */}
+      <div className="hidden lg:flex w-1/2 relative bg-zinc-950 overflow-hidden">
+        {/* Usando uma joia preta e dourada do Unsplash livre de direitos */}
+        <img 
+          src="https://images.unsplash.com/photo-1599643478514-4a5202300408?q=80&w=2070&auto=format&fit=crop" 
+          alt="Luxury Aesthetic Cover" 
+          className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity duration-1000"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-transparent" />
+        
+        <div className="absolute bottom-10 left-10 right-10 p-10 bg-background/10 backdrop-blur-md border border-white/10 rounded-3xl animate-in slide-in-from-bottom-8 duration-1000 shadow-2xl">
+           <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
+             O futuro da gestão<br/>empresarial de luxo.
+           </h2>
+           <p className="mt-4 text-sm text-zinc-300 font-medium max-w-sm">
+             Aura Elite v6 otimiza operações de alta perfomance enquanto mantém uma fachada invisível e premium.
+           </p>
+        </div>
       </div>
 
-      <div className="w-full max-w-[360px] relative z-10 flex flex-col space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      {/* ⚖️ Direita: Formulário Glassmórfico (O Motor) */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 md:p-24 relative overflow-hidden">
         
-        {/* Header - Editorial Style */}
-        <div className="space-y-6 text-center">
-          {settings?.logo_url && (
-            <div className="flex items-center justify-center mb-8">
-               <img src={settings.logo_url} className="h-10 w-auto object-contain transition-all duration-700" alt="Logo" />
-            </div>
-          )}
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">
-              {welcomeText}
-            </h1>
-            <p className="text-xs text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-60">
-              {subtitleText}
-            </p>
-          </div>
-        </div>
+        <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_0%,var(--border)_0%,transparent_50%)]" />
 
-        {/* Form Section */}
-        <div className="space-y-8">
-          <form onSubmit={handleAuth} className="space-y-5">
+        <div className="w-full max-w-[380px] relative z-10 flex flex-col space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
+          
+          <div className="space-y-5">
+            {settings?.logo_url && (
+              <div className="flex items-center mb-6">
+                 <img src={settings.logo_url} className="h-12 w-auto object-contain drop-shadow-xl" alt="Logo" />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
+                {welcomeText}
+              </h1>
+              <p className="text-xs text-muted-foreground font-bold tracking-widest uppercase opacity-70">
+                {subtitleText}
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-5 bg-card/50 backdrop-blur-xl border border-border/60 p-6 sm:p-8 rounded-3xl shadow-xl">
             {!isLogin && !recoveryMode && (
               <div className="space-y-2">
-                <Label>Nome Completo</Label>
-                <Input 
-                  required 
-                  value={form.fullName} 
-                  onChange={e => setForm({...form, fullName: e.target.value})} 
-                  placeholder="Seu nome" 
-                />
+                <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
+                <Input required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} placeholder="Seu nome" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>E-mail Corporativo</Label>
-              <Input 
-                required 
-                type="email" 
-                value={form.email} 
-                onChange={e => setForm({...form, email: e.target.value})} 
-                placeholder="nome@empresa.com" 
-              />
+              <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Conta de Acesso</Label>
+              <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="nome@empresa.com" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
             </div>
 
             {!recoveryMode && (
               <div className="space-y-2">
-                <div className="flex justify-between items-center px-1">
-                  <Label>Senha</Label>
+                <div className="flex justify-between items-center ml-1 mr-1">
+                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground">Senha Segura</Label>
                   {isLogin && (
-                    <button 
-                      type="button" 
-                      onClick={() => setRecoveryMode(true)} 
-                      className="text-[10px] font-black uppercase tracking-widest text-foreground hover:opacity-50 transition-opacity"
-                    >
-                      Esqueci a senha
+                    <button type="button" onClick={() => setRecoveryMode(true)} className="text-[9px] font-black uppercase tracking-widest text-foreground hover:opacity-50 transition-opacity">
+                      Esqueci a Senha
                     </button>
                   )}
                 </div>
-                <Input 
-                  required 
-                  type="password" 
-                  value={form.password} 
-                  onChange={e => setForm({...form, password: e.target.value})} 
-                  placeholder="••••••••" 
-                />
+                <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium tracking-widest" />
               </div>
             )}
 
-            <div className="pt-3">
-              <Button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full uppercase tracking-[0.2em] shadow-xl shadow-foreground/5"
-              >
-                {loading ? <Loader2 className="animate-spin h-4 w-4" /> : (
+            <div className="pt-4">
+              <Button type="submit" disabled={loading} className="w-full h-12 uppercase font-black text-xs tracking-widest bg-foreground text-background shadow-lg shadow-foreground/10 hover:-translate-y-0.5 transition-all">
+                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
                   <>
-                    {recoveryMode ? 'Recuperar' : isLogin ? 'Acessar Painel' : 'Criar Conta'}
-                    {!loading && <ArrowRight size={14} />}
+                    {recoveryMode ? 'Restaurar Acesso' : isLogin ? 'Acessar Painel' : 'Criar Conta Elite'}
+                    {!loading && <ArrowRight size={16} className="ml-2" />}
                   </>
                 )}
               </Button>
             </div>
+
+            {/* Toggle Switch */}
+            <div className="pt-2 text-center border-t border-border/40 mt-4">
+              <button type="button" onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mt-4">
+                {recoveryMode ? 'Voltar com acesso restrito' : isLogin ? 'Solicitar convite de acesso' : 'Já possui conta? Fazer Login'}
+              </button>
+            </div>
           </form>
 
-          {/* Toggle Login/Sign-up */}
-          <div className="pt-4 text-center">
-            <button 
-              type="button" 
-              onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }}
-              className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {recoveryMode ? 'Voltar para o Login' : isLogin ? 'Não possui conta? Registre-se' : 'Já possui conta? Faça login'}
-            </button>
+          <div className="pt-4 flex items-center justify-between opacity-30">
+            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-foreground">Aura Elite © 2026</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-foreground">Ambiente Seguro</p>
           </div>
-        </div>
 
-        {/* Minimalist Brand Footer */}
-        <div className="pt-12 text-center">
-          <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-30">Powered by Aura elite &copy; 2026</p>
         </div>
-
       </div>
     </div>
   );

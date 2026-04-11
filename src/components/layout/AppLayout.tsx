@@ -175,13 +175,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile Overlay ────────────────────────────────── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200" onClick={() => setMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] md:hidden animate-in fade-in duration-300" onClick={() => setMobileMenuOpen(false)} />
       )}
 
       {/* ── Sidebar (Desktop + Drawer Mobile) ─────────────── */}
       <aside className={cn(
-        'flex-col border-r border-border bg-card transition-all duration-500 z-50 shadow-sm fixed md:relative h-full overflow-hidden',
-        collapsed ? 'w-20 hidden md:flex' : 'w-[240px]',
+        'flex-col border-r border-border bg-card transition-all duration-500 z-[100] shadow-sm fixed md:relative h-full overflow-hidden',
+        collapsed ? 'w-20 hidden md:flex' : 'w-64 max-w-[85vw]',
         mobileMenuOpen ? 'flex translate-x-0' : '-translate-x-full md:translate-x-0 md:flex',
       )}>
         {/* Close drawer on mobile */}

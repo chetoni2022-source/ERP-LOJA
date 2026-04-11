@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tailwindcss/utilities";
 
 @theme {
   --color-background: var(--background);
@@ -23,38 +22,42 @@
   --color-ring: var(--ring);
 
   --font-sans: "Inter", "Helvetica Neue", sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+:root {
+  /* LUXURY DARK PROFESSIONAL - AURA WORKSPACE DEFAULT */
+  --background: #030712;
+  --foreground: #f9fafb;
+  --card: rgba(255, 255, 255, 0.03);
+  --card-foreground: #f9fafb;
+  --popover: #111827;
+  --popover-foreground: #f9fafb;
+  --primary: #E91E8C;
+  --primary-foreground: #ffffff;
+  --secondary: #1f2937;
+  --secondary-foreground: #f9fafb;
+  --muted: #111827;
+  --muted-foreground: #9ca3af;
+  --accent: #111827;
+  --accent-foreground: #f9fafb;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.04);
+  --ring: #E91E8C;
+  --radius: 1rem;
+  
+  /* UX Pro Tokens */
+  --aura-opacity: 0.15;
+  --glass-blur: 16px;
+  --soft-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 @layer base {
-  :root {
-    /* LUXURY DARK PROFESSIONAL - AURA WORKSPACE DEFAULT */
-    --background: #030712;
-    --foreground: #f9fafb;
-    --card: rgba(255, 255, 255, 0.03);
-    --card-foreground: #f9fafb;
-    --popover: #111827;
-    --popover-foreground: #f9fafb;
-    --primary: #E91E8C;
-    --primary-foreground: #ffffff;
-    --secondary: #1f2937;
-    --secondary-foreground: #f9fafb;
-    --muted: #111827;
-    --muted-foreground: #9ca3af;
-    --accent: #111827;
-    --accent-foreground: #f9fafb;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --border: rgba(255, 255, 255, 0.06);
-    --input: rgba(255, 255, 255, 0.04);
-    --ring: #E91E8C;
-    --radius: 1rem;
-    
-    /* UX Pro Tokens */
-    --aura-opacity: 0.15;
-    --glass-blur: 16px;
-    --soft-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-  }
-
   * {
     border-color: var(--border);
     touch-action: manipulation;
@@ -63,7 +66,6 @@
   body, html {
     background-color: var(--background);
     color: var(--foreground);
-    @apply antialiased;
     font-family: var(--font-sans);
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
@@ -92,49 +94,56 @@
     66% { transform: translate(5%, -2%) scale(0.9); }
   }
 
-  /* UX Pro Utility Classes */
-  .glass-card {
-    background: var(--card);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--border);
-    box-shadow: var(--soft-shadow);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .glass-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
-  }
-
-  .ux-input {
-    background: var(--input);
-    border: 1px solid var(--border);
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border-radius: calc(var(--radius) - 0.25rem);
-    transition: all 0.2s;
-    outline: none;
-  }
-
-  .ux-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.1);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .ux-button {
-    @apply inline-flex items-center justify-center font-bold transition-all active:scale-95;
-    border-radius: calc(var(--radius) - 0.25rem);
-  }
-
-  /* Responsive Table Container */
-  .ux-table-container {
-    @apply w-full overflow-x-auto rounded-2xl glass-card;
-  }
-
-  /* Typography Polish */
   h1, h2, h3 {
     @apply font-black tracking-tight;
   }
+}
+
+/* UX Pro Utility Classes */
+.glass-card {
+  background: var(--card);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border);
+  box-shadow: var(--soft-shadow);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.ux-input {
+  background: var(--input);
+  border: 1px solid var(--border);
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: calc(var(--radius) - 0.25rem);
+  transition: all 0.2s;
+  outline: none;
+}
+
+.ux-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ux-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.ux-button:active {
+  transform: scale(0.95);
+}
+
+.ux-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 1rem;
 }

@@ -784,7 +784,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[220px] md:min-h-[260px] w-full mt-4">
+              <div className="flex-1 min-h-[160px] md:min-h-[180px] w-full mt-4">
                 {salesData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
@@ -794,7 +794,7 @@ export default function DashboardPage() {
                           <stop offset="100%" stopColor="#059669" stopOpacity={1} />
                         </linearGradient>
                         <filter id="3dShadow" x="-20%" y="-20%" width="140%" height="140%">
-                          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.2" />
+                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#10b981" floodOpacity="0.3" />
                         </filter>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
@@ -806,6 +806,7 @@ export default function DashboardPage() {
                         shape={<RoundedBar />}
                         maxBarSize={40}
                         animationDuration={1500}
+                        filter="url(#3dShadow)"
                       >
                         {salesData.map((_, index) => (
                           <Cell 

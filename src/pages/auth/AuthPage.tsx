@@ -54,95 +54,86 @@ export default function AuthPage() {
   };
 
   const welcomeText = recoveryMode 
-    ? 'Recuperar acesso' 
+    ? 'Recuperação de Acesso' 
     : isLogin 
-      ? `Bem-vindo à ${settings?.store_name || 'sua plataforma'}` 
-      : 'Crie sua conta';
+      ? `Domine Suas Vendas` 
+      : 'Escale Seu Negócio Hoje';
 
   const subtitleText = recoveryMode 
-    ? 'Insira seu e-mail para receber as instruções' 
+    ? 'Insira as credenciais para restaurar conexão' 
     : isLogin 
-      ? 'Acesse seu painel administrativo' 
-      : 'Comece a escala do seu negócio agora';
+      ? 'Acelere Inteligência de Mercado e Logística' 
+      : 'Ative o painel definitivo para alta conversão';
 
   return (
-    <div className="min-h-screen flex selection:bg-primary selection:text-primary-foreground font-sans antialiased bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4 selection:bg-primary selection:text-primary-foreground font-sans antialiased relative overflow-hidden bg-black">
       
-      {/* 🏙️ Esquerda: Capa Fotográfica Imersiva (High-End Aesthetic) */}
-      <div className="hidden lg:flex w-1/2 relative bg-zinc-950 overflow-hidden">
-        {/* Usando uma joia preta e dourada do Unsplash livre de direitos */}
-        <img 
-          src="https://images.unsplash.com/photo-1599643478514-4a5202300408?q=80&w=2070&auto=format&fit=crop" 
-          alt="Luxury Aesthetic Cover" 
-          className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity duration-1000"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-transparent" />
-        
-        <div className="absolute bottom-10 left-10 right-10 p-10 bg-background/10 backdrop-blur-md border border-white/10 rounded-3xl animate-in slide-in-from-bottom-8 duration-1000 shadow-2xl">
-           <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
-             O futuro da gestão<br/>empresarial de luxo.
-           </h2>
-           <p className="mt-4 text-sm text-zinc-300 font-medium max-w-sm">
-             Aura Elite v6 otimiza operações de alta perfomance enquanto mantém uma fachada invisível e premium.
-           </p>
-        </div>
-      </div>
+      {/* 🌌 Background Dinâmico - Imagem de Perfomance c/ Fallback Seguro */}
+      <img 
+        src="https://images.unsplash.com/photo-1614165936126-22485f58bc16?q=80&w=2070&auto=format&fit=crop" 
+        alt="Aesthetic Background" 
+        className="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none transition-opacity duration-1000"
+        onLoad={(e) => { e.currentTarget.style.opacity = '0.35'; }}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-tr from-background via-background/90 to-black/60 z-0 pointer-events-none" />
 
-      {/* ⚖️ Direita: Formulário Glassmórfico (O Motor) */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 md:p-24 relative overflow-hidden">
-        
-        <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_0%,var(--border)_0%,transparent_50%)]" />
-
-        <div className="w-full max-w-[380px] relative z-10 flex flex-col space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
+      {/* ⚡ Formulário Centralizado Elevado (Glassmorphism Centrado) */}
+      <div className="w-full max-w-[420px] relative z-10 flex flex-col space-y-6 animate-in zoom-in-95 duration-700 bg-card/60 backdrop-blur-2xl border border-white/10 p-8 sm:p-10 rounded-3xl shadow-2xl">
           
-          <div className="space-y-5">
+          <div className="space-y-4 text-center">
             {settings?.logo_url && (
-              <div className="flex items-center mb-6">
-                 <img src={settings.logo_url} className="h-12 w-auto object-contain drop-shadow-xl" alt="Logo" />
+              <div className="flex items-center justify-center mb-6 h-12">
+                 <img 
+                   src={settings.logo_url} 
+                   className="max-h-full w-auto object-contain drop-shadow-xl" 
+                   alt={settings.store_name || "Logo"} 
+                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                 />
               </div>
             )}
-            <div className="space-y-1.5">
-              <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
                 {welcomeText}
               </h1>
-              <p className="text-xs text-muted-foreground font-bold tracking-widest uppercase opacity-70">
+              <p className="text-[10px] sm:text-xs text-zinc-400 font-bold tracking-[0.2em] uppercase opacity-80 mt-2 mx-auto max-w-xs">
                 {subtitleText}
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-5 bg-card/50 backdrop-blur-xl border border-border/60 p-6 sm:p-8 rounded-3xl shadow-xl">
+          <form onSubmit={handleAuth} className="space-y-5 pt-4">
             {!isLogin && !recoveryMode && (
               <div className="space-y-2">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
-                <Input required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} placeholder="Seu nome" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
+                <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1">Nome de Gestão</Label>
+                <Input required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} placeholder="Seu nome" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Conta de Acesso</Label>
-              <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="nome@empresa.com" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
+              <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1">E-Mail Operacional</Label>
+              <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ceo@empresa.com" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
             </div>
 
             {!recoveryMode && (
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1 mr-1">
-                  <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground">Senha Segura</Label>
+                  <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400">Chave de Segurança</Label>
                   {isLogin && (
-                    <button type="button" onClick={() => setRecoveryMode(true)} className="text-[9px] font-black uppercase tracking-widest text-foreground hover:opacity-50 transition-opacity">
+                    <button type="button" onClick={() => setRecoveryMode(true)} className="text-[9px] font-black uppercase tracking-widest text-white hover:text-primary transition-colors">
                       Esqueci a Senha
                     </button>
                   )}
                 </div>
-                <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="h-12 bg-background/80 shadow-none focus-visible:ring-primary ring-offset-0 transition-all font-medium tracking-widest" />
+                <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium tracking-widest" />
               </div>
             )}
 
-            <div className="pt-4">
-              <Button type="submit" disabled={loading} className="w-full h-12 uppercase font-black text-xs tracking-widest bg-foreground text-background shadow-lg shadow-foreground/10 hover:-translate-y-0.5 transition-all">
+            <div className="pt-6">
+              <Button type="submit" disabled={loading} className="w-full h-14 uppercase font-black text-xs tracking-widest bg-white text-black shadow-lg hover:shadow-white/20 hover:scale-[1.02] active:scale-95 transition-all">
                 {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
                   <>
-                    {recoveryMode ? 'Restaurar Acesso' : isLogin ? 'Acessar Painel' : 'Criar Conta Elite'}
+                    {recoveryMode ? 'Desbloquear Restrição' : isLogin ? 'INICIAR TRAÇÃO' : 'FORMAR IMPÉRIO'}
                     {!loading && <ArrowRight size={16} className="ml-2" />}
                   </>
                 )}
@@ -150,19 +141,18 @@ export default function AuthPage() {
             </div>
 
             {/* Toggle Switch */}
-            <div className="pt-2 text-center border-t border-border/40 mt-4">
-              <button type="button" onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mt-4">
-                {recoveryMode ? 'Voltar com acesso restrito' : isLogin ? 'Solicitar convite de acesso' : 'Já possui conta? Fazer Login'}
+            <div className="pt-4 text-center mt-4">
+              <button type="button" onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }} className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors mt-2">
+                {recoveryMode ? 'Voltar para base Segura' : isLogin ? 'Não possuí permissão? Solicite acesso!' : 'Já tem o núcleo criado? Fazer Login Ouro'}
               </button>
             </div>
           </form>
 
-          <div className="pt-4 flex items-center justify-between opacity-30">
-            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-foreground">Aura Elite © 2026</p>
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-foreground">Ambiente Seguro</p>
+          <div className="pt-6 pb-2 flex items-center justify-between opacity-50 border-t border-white/10 mt-6">
+            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-300">Aura Elite © 2026</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-300 flex items-center gap-1"><Store size={10} /> Edge Server</p>
           </div>
 
-        </div>
       </div>
     </div>
   );

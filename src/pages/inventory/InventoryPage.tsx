@@ -1084,7 +1084,7 @@ export default function InventoryPage() {
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}} />
           
-          <div className="bg-card w-full max-w-5xl md:rounded-2xl shadow-2xl border-t md:border border-border flex flex-col z-10 h-[92dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-300">
+          <div className="bg-card w-full max-w-5xl md:rounded-2xl shadow-2xl border-t md:border border-border flex flex-col z-10 h-[90dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-300 transition-all">
             {/* ── HEADER ── */}
             <div className="px-5 py-4 border-b border-border bg-card flex justify-between items-center shrink-0">
               {/* Mobile drag handle */}

@@ -57,29 +57,31 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white/80 dark:bg-black/80 border border-border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] rounded-2xl p-4 min-w-[280px] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
-          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em]">{label}</span>
-          <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            <TrendingUp size={10} className="text-emerald-500" />
-            <span className="text-[9px] font-black text-emerald-600 uppercase">Em Alta</span>
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Lucro Líquido</p>
-              <h4 className="text-xl font-black text-emerald-500 tracking-tighter">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.profit)}</h4>
-            </div>
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-               <BadgeDollarSign size={16} />
+      <div className="w-full max-w-[300px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
+        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-3xl border border-white/50 dark:border-white/10 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] rounded-[1.5rem] p-6 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
+            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em]">{label}</span>
+            <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <TrendingUp size={10} className="text-emerald-500" />
+              <span className="text-[9px] font-black text-emerald-600 uppercase">Em Alta</span>
             </div>
           </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Lucro Líquido</p>
+                <h4 className="text-xl font-black text-emerald-500 tracking-tighter">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.profit)}</h4>
+              </div>
+              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                 <BadgeDollarSign size={16} />
+              </div>
+            </div>
 
-          <div className="pt-2 border-t border-border/50 flex justify-between items-center opacity-60">
-             <span className="text-[9px] font-bold text-muted-foreground uppercase">Receita Bruta</span>
-             <span className="text-[11px] font-black text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}</span>
+            <div className="pt-2 border-t border-border/50 flex justify-between items-center opacity-60">
+               <span className="text-[9px] font-bold text-muted-foreground uppercase">Receita Bruta</span>
+               <span className="text-[11px] font-black text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -808,21 +810,23 @@ export default function DashboardPage() {
                         animationDuration={200}
                       />
                       <Area 
-                        type="natural"
+                        type="stepAfter"
                         dataKey="profit" 
-                        stroke="none"
+                        stroke="#fbbf24"
+                        strokeWidth={2}
                         fill="url(#profitGradient)"
                         animationDuration={1500}
                         activeDot={false}
                       />
                       <Line
-                        type="natural"
+                        type="stepAfter"
                         dataKey="profit"
-                        stroke="#10b981"
-                        strokeWidth={5}
+                        stroke="#fbbf24"
+                        strokeWidth={3}
+                        strokeDasharray="5 5"
                         filter="url(#glow)"
                         dot={false}
-                        activeDot={{ r: 6, fill: '#fff', stroke: '#10b981', strokeWidth: 3 }}
+                        activeDot={{ r: 6, fill: '#fff', stroke: '#fbbf24', strokeWidth: 3 }}
                         animationDuration={1000}
                       />
                     </ComposedChart>

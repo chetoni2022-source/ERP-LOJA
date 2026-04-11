@@ -83,38 +83,22 @@ export default function AuthPage() {
         />
       </div>
 
-      {/* ⚡ The Obsidian Portal Card (Nano Edition) */}
-      <div className="w-full max-w-[320px] relative z-10 flex flex-col animate-in slide-in-from-bottom-5 duration-700">
-          
-          <div className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[2rem] p-6 sm:p-7 relative overflow-hidden group">
-            {/* Subtle light reflection */}
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-            
-            <div className="space-y-8 text-center relative z-10">
+      {/* ⚡ The Nano Box Portal (v6.9 Rupture) */}
+      <div className="w-full max-w-[300px] relative z-10 flex flex-col animate-in zoom-in-95 duration-500">
+          <div className="bg-white border border-zinc-200 shadow-2xl rounded-2xl p-6 relative overflow-hidden">
+            <div className="space-y-6 text-center">
               {settings?.logo_url && (
-                <div className="flex items-center justify-center mb-6 h-10 relative group/logo">
-                   {/* 💎 Logo Halo Effect */}
-                   <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-3xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-1000 scale-150" />
-                   
-                   <img 
-                     src={settings.logo_url} 
-                     crossOrigin="anonymous"
-                     className="max-h-full w-auto object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-all duration-1000 hover:scale-110 relative z-10 animate-float" 
-                     alt={settings.store_name || "Logo"} 
-                   />
+                <div className="flex items-center justify-start h-8 mb-4 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all">
+                   <img src={settings.logo_url} crossOrigin="anonymous" className="h-full w-auto object-contain" alt="Logo" />
                 </div>
               )}
               
-              <div className="space-y-1">
-                <h1 className="text-xl sm:text-2xl font-black text-black tracking-[-0.05em] leading-[0.9] uppercase italic">
-                  {welcomeText}
-                </h1>
-                <p className="text-[8px] text-zinc-400 font-bold tracking-[0.3em] uppercase max-w-[180px] mx-auto leading-relaxed">
-                  {subtitleText}
-                </p>
+              <div className="text-left">
+                <h1 className="text-xl font-black text-black tracking-tight uppercase leading-none mb-1">Acesso</h1>
+                <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Aura Elite 2026</p>
               </div>
 
-              <form onSubmit={handleAuth} className="space-y-4 text-left pt-2">
+              <form onSubmit={handleAuth} className="space-y-4 text-left">
                 {!isLogin && !recoveryMode && (
                   <div className="group space-y-2">
                     <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1 transition-colors group-focus-within:text-emerald-500">Gestão Direct</Label>

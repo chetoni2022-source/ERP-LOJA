@@ -57,38 +57,31 @@ const CustomRevenueTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card/80 border border-border shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-2xl p-4 min-w-[280px] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em]">{label}</p>
-          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-        </div>
-        <p className="font-black text-3xl text-foreground mb-4 tracking-tighter">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}
-        </p>
-        {data.items?.length > 0 && (
-          <div className="space-y-3 pt-4 border-t border-border/50">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Destaques do Dia:</span>
-            {data.items.slice(0, 3).map((item: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 bg-muted/30 p-2 rounded-xl border border-border/30 hover:bg-muted/50 transition-colors group">
-                <div className="h-12 w-12 rounded-lg bg-card overflow-hidden flex-shrink-0 border border-border relative">
-                  {item.image ? (
-                    <img src={getProxyUrl(item.image) || ''} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                  ) : (
-                    <PackageSearch className="w-full h-full p-2 text-muted-foreground/40" />
-                  )}
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-[11px] font-bold text-foreground truncate">{item.name}</span>
-                  <div className="flex justify-between items-center mt-0.5">
-                    <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded">{item.quantity}x</span>
-                    <span className="text-[10px] font-black text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.revenue)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {data.items.length > 3 && <div className="text-[10px] text-center text-muted-foreground font-black pt-1 tracking-widest uppercase">+ {data.items.length - 3} itens</div>}
+      <div className="bg-white/80 dark:bg-black/80 border border-border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] rounded-2xl p-4 min-w-[280px] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
+          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em]">{label}</span>
+          <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            <TrendingUp size={10} className="text-emerald-500" />
+            <span className="text-[9px] font-black text-emerald-600 uppercase">Em Alta</span>
           </div>
-        )}
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Lucro Líquido</p>
+              <h4 className="text-xl font-black text-emerald-500 tracking-tighter">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.profit)}</h4>
+            </div>
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+               <BadgeDollarSign size={16} />
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border/50 flex justify-between items-center opacity-60">
+             <span className="text-[9px] font-bold text-muted-foreground uppercase">Receita Bruta</span>
+             <span className="text-[11px] font-black text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}</span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -815,7 +808,7 @@ export default function DashboardPage() {
                         animationDuration={200}
                       />
                       <Area 
-                        type="monotone"
+                        type="natural"
                         dataKey="profit" 
                         stroke="none"
                         fill="url(#profitGradient)"
@@ -823,12 +816,12 @@ export default function DashboardPage() {
                         activeDot={false}
                       />
                       <Line
-                        type="monotone"
+                        type="natural"
                         dataKey="profit"
                         stroke="#10b981"
-                        strokeWidth={5}
+                        strokeWidth={4}
                         filter="url(#glow)"
-                        dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                        dot={false}
                         activeDot={{ r: 6, fill: '#fff', stroke: '#10b981', strokeWidth: 3 }}
                         animationDuration={1000}
                       />

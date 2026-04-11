@@ -92,11 +92,14 @@ export default function AuthPage() {
             
             <div className="space-y-8 text-center relative z-10">
               {settings?.logo_url && (
-                <div className="flex items-center justify-center mb-6 h-12">
+                <div className="flex items-center justify-center mb-10 h-16 relative group/logo">
+                   {/* 💎 Logo Halo Effect */}
+                   <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-3xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-1000 scale-150" />
+                   
                    <img 
                      src={settings.logo_url} 
                      crossOrigin="anonymous"
-                     className="max-h-full w-auto object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.05)] transition-transform duration-500 hover:scale-105" 
+                     className="max-h-full w-auto object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.1)] transition-all duration-1000 hover:scale-110 relative z-10 animate-float" 
                      alt={settings.store_name || "Logo"} 
                    />
                 </div>

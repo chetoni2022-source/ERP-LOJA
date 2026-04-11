@@ -22,42 +22,56 @@
   --color-ring: var(--ring);
 
   --font-sans: "Inter", "Helvetica Neue", sans-serif;
-  
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
-}
-
-:root {
-  /* LUXURY DARK PROFESSIONAL - AURA WORKSPACE DEFAULT */
-  --background: #030712;
-  --foreground: #f9fafb;
-  --card: rgba(255, 255, 255, 0.03);
-  --card-foreground: #f9fafb;
-  --popover: #111827;
-  --popover-foreground: #f9fafb;
-  --primary: #E91E8C;
-  --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #f9fafb;
-  --muted: #111827;
-  --muted-foreground: #9ca3af;
-  --accent: #111827;
-  --accent-foreground: #f9fafb;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.04);
-  --ring: #E91E8C;
-  --radius: 1rem;
-  
-  /* UX Pro Tokens */
-  --aura-opacity: 0.15;
-  --glass-blur: 16px;
-  --soft-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 @layer base {
+  :root {
+    /* LUXURY LIGHT THEME (v1.0.5) */
+    --background: #F8F8F7;
+    --foreground: #1c1917;
+    --card: #FFFFFF;
+    --card-foreground: #1c1917;
+    --popover: #FFFFFF;
+    --popover-foreground: #1c1917;
+    --primary: #1C1917;
+    --primary-foreground: #FFFFFF;
+    --secondary: #E9E9E8;
+    --secondary-foreground: #1c1917;
+    --muted: #EEEEED;
+    --muted-foreground: #78716C;
+    --accent: #EFEFEE;
+    --accent-foreground: #1C1917;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #E5E5E4;
+    --input: #E5E5E4;
+    --ring: #1c1917;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    /* LUXURY DARK THEME (v1.0.5) */
+    --background: #0C0A09;
+    --foreground: #FAFAF9;
+    --card: #151312;
+    --card-foreground: #FAFAF9;
+    --popover: #151312;
+    --popover-foreground: #FAFAF9;
+    --primary: #FAFAF9;
+    --primary-foreground: #0C0A09;
+    --secondary: #292524;
+    --secondary-foreground: #FAFAF9;
+    --muted: #221F1E;
+    --muted-foreground: #A8A29E;
+    --accent: #221F1E;
+    --accent-foreground: #FAFAF9;
+    --destructive: #7F1D1D;
+    --destructive-foreground: #FAFAF9;
+    --border: #292523;
+    --input: #292523;
+    --ring: #FAFAF9;
+  }
+
   * {
     border-color: var(--border);
     touch-action: manipulation;
@@ -66,67 +80,38 @@
   body, html {
     background-color: var(--background);
     color: var(--foreground);
+    @apply antialiased;
     font-family: var(--font-sans);
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
-    letter-spacing: -0.011em;
-  }
-
-  /* Aura Background Global */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 40%;
-    width: 60vw;
-    height: 60vh;
-    background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
-    opacity: var(--aura-opacity);
-    filter: blur(120px);
-    z-index: -1;
-    pointer-events: none;
-    animation: auraMove 40s infinite ease-in-out;
-  }
-
-  @keyframes auraMove {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(-5%, 5%) scale(1.1); }
-    66% { transform: translate(5%, -2%) scale(0.9); }
-  }
-
-  h1, h2, h3 {
-    @apply font-black tracking-tight;
   }
 }
 
-/* UX Pro Utility Classes */
+/* 💎 Aura Professional Utilities (Preserved for Login) */
 .glass-card {
-  background: var(--card);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--border);
-  box-shadow: var(--soft-shadow);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
+  padding: 2.5rem;
+  border-radius: 2rem;
 }
 
 .ux-input {
-  background: var(--input);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: calc(var(--radius) - 0.25rem);
+  border-radius: 0.5rem;
   transition: all 0.2s;
   outline: none;
+  color: white;
 }
 
 .ux-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.1);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -136,14 +121,18 @@
   justify-content: center;
   font-weight: 700;
   transition: all 0.2s;
+  border-radius: 0.5rem;
 }
 
 .ux-button:active {
   transform: scale(0.95);
 }
 
-.ux-table-container {
-  width: 100%;
-  overflow-x: auto;
-  border-radius: 1rem;
+@keyframes auraPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+.animate-pulse {
+  animation: auraPulse 4s infinite ease-in-out;
 }

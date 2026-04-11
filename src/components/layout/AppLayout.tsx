@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, PackageSearch, BadgeDollarSign, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, Store, Link as LinkIcon, Tags, Menu, X,
-  Users, UserCircle2, Calculator, ShieldCheck
+  Users, UserCircle2, Calculator
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
@@ -12,22 +12,24 @@ import { Button } from '../ui';
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Painel Geral', path: '/dashboard' },
-  { icon: PackageSearch, label: 'Gestão de Estoque', path: '/inventory' },
-  { icon: Calculator, label: 'Lucratividade', path: '/inventory/analytics' },
+  { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
+  { icon: PackageSearch, label: 'Estoque', path: '/inventory' },
+  { icon: Calculator, label: 'Lucros', path: '/inventory/analytics' },
   { icon: Tags, label: 'Categorias', path: '/categories' },
-  { icon: BadgeDollarSign, label: 'Fluxo de Vendas', path: '/sales' },
-  { icon: UserCircle2, label: 'Base de Clientes', path: '/customers' },
-  { icon: LinkIcon, label: 'Catálogos Digitais', path: '/catalogs' },
-  { icon: Users, label: 'Equipe Admin', path: '/team' },
-  { icon: Settings, label: 'Configurações', path: '/settings' },
+  { icon: BadgeDollarSign, label: 'Vendas', path: '/sales' },
+  { icon: UserCircle2, label: 'Clientes', path: '/customers' },
+  { icon: LinkIcon, label: 'Catálogos', path: '/catalogs' },
+  { icon: Users, label: 'Equipe', path: '/team' },
+  { icon: Settings, label: 'Ajustes', path: '/settings' },
 ];
 
+// Bottom nav shows only the most important 5 items on mobile
 const bottomNavItems = [
-  { icon: LayoutDashboard, label: 'Início', path: '/dashboard' },
+  { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
   { icon: PackageSearch, label: 'Estoque', path: '/inventory' },
   { icon: BadgeDollarSign, label: 'Vendas', path: '/sales' },
-  { icon: Menu, label: 'Mais', path: '__menu__' },
+  { icon: UserCircle2, label: 'Clientes', path: '/customers' },
+  { icon: Menu, label: 'Menu', path: '__menu__' },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,29 +41,97 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [brand, setBrand] = useState<{ 
     name: string; 
     logo: string | null;
+    logoW: number;
+    logoH: number;
+    logoFit: string;
+    logoPos: string;
+    isDefault: boolean;
   }>({ 
-    name: 'Laris ERP', 
-    logo: null
+    name: 'Laris Acessórios', 
+    logo: null,
+    logoW: 200,
+    logoH: 80,
+    logoFit: 'contain',
+    logoPos: 'center',
+    isDefault: true
   });
 
   useEffect(() => {
     if (!user) return;
+
     const fetchSettings = async () => {
       const { data } = await supabase.from('store_settings')
-        .select('store_name, logo_url, favicon_url')
+        .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
         .eq('user_id', user.id)
         .limit(1).maybeSingle();
 
       if (data) {
-        const proxyLogo = getProxyUrl(data.logo_url);
-        setBrand({ 
-          name: data.store_name || 'Laris ERP', 
-          logo: proxyLogo
-        });
-        if (data.store_name) document.title = data.store_name + ' | Professional ERP';
+        applySettings(data);
+      } else {
+        resetSettings();
       }
     };
+
+    const applySettings = (data: any) => {
+      const proxyLogo = getProxyUrl(data.logo_url);
+      const proxyFavicon = getProxyUrl(data.favicon_url);
+
+      setBrand({ 
+        name: data.store_name || 'Laris ERP', 
+        logo: proxyLogo,
+        logoW: data.logo_width || 200,
+        logoH: data.logo_height || 80,
+        logoFit: data.logo_fit || 'contain',
+        logoPos: data.logo_position || 'center',
+        isDefault: !data.logo_url && (data.store_name === 'Laris Acessórios' || !data.store_name)
+      });
+
+      if (proxyFavicon) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+        link.crossOrigin = "anonymous";
+        link.href = `${proxyFavicon}?v=${Date.now()}`;
+      }
+      if (data.store_name) {
+        document.title = data.store_name + ' | Laris ERP';
+      }
+    };
+
+    const resetSettings = () => {
+      setBrand({ 
+        name: 'Laris Acessórios', 
+        logo: null,
+        logoW: 200,
+        logoH: 80,
+        logoFit: 'contain',
+        logoPos: 'center',
+        isDefault: true
+      });
+    };
+
     fetchSettings();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'store_settings',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Realtime settings update:', payload.new);
+          if (payload.new) applySettings(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleSignOut = async () => {
@@ -69,154 +139,180 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     navigate('/auth');
   };
 
+  const handleBottomNavClick = (path: string) => {
+    if (path === '__menu__') {
+      setMobileMenuOpen(true);
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-background overflow-hidden relative w-full text-foreground selection:bg-primary/30 selection:text-white">
-      
+    <div className="flex h-screen bg-background overflow-hidden relative w-full">
       {/* ── Mobile Top Bar ────────────────────────────────── */}
-      <header className="md:hidden flex items-center justify-between px-6 h-16 shrink-0 glass-card !rounded-none border-x-0 border-t-0 z-40 fixed top-0 w-full">
-          <div className="flex items-center gap-3">
+      <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-card border-b border-border z-30 fixed top-0 w-full shadow-sm">
+          <div className="flex items-center gap-3 overflow-hidden h-full py-1">
           {brand.logo ? (
-            <img src={brand.logo} alt="Logo" crossOrigin="anonymous" className="h-8 w-auto max-w-[100px] object-contain" />
+            <img 
+              src={brand.logo} 
+              alt="Logo" 
+              crossOrigin="anonymous"
+              style={{
+                height: 'auto',
+                maxHeight: 32, // Fixed height for top bar
+                width: 'auto',
+                maxWidth: 120,
+                objectFit: brand.logoFit as any,
+                objectPosition: brand.logoPos
+              }}
+            />
           ) : (
-            <Store className="h-6 w-6 text-primary" />
+            <Store className="h-5 w-5 text-primary" />
           )}
-          <span className="font-black text-sm tracking-tight">{brand.name}</span>
+          <span className="font-black text-sm truncate text-foreground tracking-tight">{brand.name}</span>
         </div>
-        <div className="bg-primary/10 p-2 rounded-full border border-primary/20">
-          <UserCircle2 size={18} className="text-primary" />
-        </div>
-      </header>
+      </div>
 
-      {/* ── Sidebar (Desktop) ─────────────────────────────── */}
+      {/* ── Mobile Overlay ────────────────────────────────── */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
+      {/* ── Sidebar (Desktop + Drawer Mobile) ─────────────── */}
       <aside className={cn(
-        'hidden md:flex flex-col glass-card !rounded-none border-y-0 border-l-0 transition-all duration-500 z-50 overflow-hidden relative',
-        collapsed ? 'w-20' : 'w-72'
+        'flex-col border-r border-border bg-card transition-all duration-300 z-50 shadow-md fixed md:relative h-full',
+        collapsed ? 'w-20 hidden md:flex' : 'w-64',
+        mobileMenuOpen ? 'flex translate-x-0' : '-translate-x-full md:translate-x-0 md:flex',
       )}>
-        {/* Decorative Aura Spot in Sidebar */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/10 blur-[60px] pointer-events-none" />
+        {/* Close drawer on mobile */}
+        <div className="absolute top-3 right-3 md:hidden z-10">
+          <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-muted/80 rounded-md text-foreground backdrop-blur-sm"><X size={18} /></button>
+        </div>
 
-        {/* Branding Container */}
-        <div className="p-8 pb-6 flex items-center justify-center min-h-[120px] relative">
+        {/* Branding */}
+        <div className="flex items-center justify-center p-4 pt-14 md:pt-4 border-b border-border/40 shrink-0 md:min-h-[88px]">
           {!collapsed ? (
-            <div className="w-full animate-in fade-in slide-in-from-left duration-700">
-               {brand.logo ? (
-                 <img src={brand.logo} alt="Logo" className="max-h-16 w-auto max-w-full mx-auto" />
-               ) : (
-                 <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5 shadow-2xl">
-                    <Store className="text-primary" size={24} />
-                    <span className="font-black text-lg tracking-tighter">{brand.name}</span>
-                 </div>
-               )}
+            <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-1000 group">
+              {brand.logo ? (
+                <div className="relative">
+                  {/* Subtle glow effect behind logo on hover */}
+                  <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                  
+                  <NavLink to="/dashboard" className="relative p-1 block">
+                    <div className="overflow-hidden transition-all duration-500 group-hover:-translate-y-1">
+                      <img 
+                        src={brand.logo} 
+                        alt="Logo" 
+                        crossOrigin="anonymous"
+                        style={{
+                          height: 'auto',
+                          maxHeight: brand.logoH,
+                          width: 'auto',
+                          maxWidth: brand.logoW,
+                          objectFit: brand.logoFit as any,
+                          objectPosition: brand.logoPos
+                        }}
+                        className="rounded-lg"
+                      />
+                    </div>
+                  </NavLink>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-3xl mb-2 shadow-inner border border-primary/5 transition-all duration-500 group-hover:scale-105 group-hover:bg-primary/15">
+                  <div className="text-primary"><Store size={28} className="drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]" /></div>
+                  <span className="font-black text-[18px] tracking-tight truncate text-foreground">{brand.name}</span>
+                </div>
+              )}
+              <div className="mt-2 h-0.5 w-4 bg-primary/20 rounded-full transition-all duration-500 group-hover:w-8 group-hover:bg-primary/40" />
             </div>
           ) : (
-            <Store size={24} className="text-primary animate-pulse" />
+            <div className="hidden md:flex items-center justify-center w-full">
+              {brand.logo ? <img src={brand.logo} alt="Logo" className="h-8 w-auto max-w-[40px] object-contain" /> : <Store size={20} className="text-primary" />}
+            </div>
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
+              end={item.path === '/inventory'}
+              onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) => cn(
-                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all duration-300 group',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150',
                 isActive
-                  ? 'bg-primary text-white shadow-[0_10px_20px_-5px_rgba(233,30,140,0.3)]'
-                  : 'text-muted-foreground hover:bg-white/5 hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
+              title={collapsed ? item.label : undefined}
             >
-              <item.icon size={18} className={cn('shrink-0 transition-transform duration-300 group-hover:scale-110')} />
+              <item.icon size={19} className="shrink-0" />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           ))}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-6 border-t border-white/5 space-y-3">
-          <button
+        {/* Footer */}
+        <div className="p-3 border-t border-border/50 shrink-0 space-y-1.5">
+          <Button
+            className="w-full justify-start text-muted-foreground hover:text-red-500 hover:bg-red-500/10 border-transparent bg-transparent shadow-none font-semibold"
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-4 py-3 w-full text-sm font-bold text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
           >
-            <LogOut size={18} />
-            {!collapsed && <span>Encerrar Sessão</span>}
-          </button>
-          
+            <LogOut size={17} className={cn('mr-2', collapsed && 'mr-0')} />
+            {!collapsed && 'Sair da Conta'}
+          </Button>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex justify-center py-2 text-white/20 hover:text-white transition-colors"
+            className="w-full hidden md:flex justify-center py-2 text-muted-foreground hover:text-foreground transition-colors hover:bg-muted rounded-md"
           >
-            {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
           </button>
         </div>
       </aside>
 
-      {/* ── Mobile Sidebar Drawer ─────────────────────────── */}
-      {mobileMenuOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] md:hidden" onClick={() => setMobileMenuOpen(false)} />
-          <div className="fixed right-0 top-0 bottom-0 w-[80%] glass-card !rounded-l-3xl !rounded-r-none z-[70] md:hidden animate-in slide-in-from-right duration-500 overflow-y-auto p-8 shadow-2xl">
-             <div className="flex items-center justify-between mb-10">
-                <span className="font-black text-xl uppercase tracking-tighter">Menu Global</span>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-white/5 rounded-full"><X size={20}/></button>
-             </div>
-             <div className="space-y-2">
-                {navItems.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={({ isActive }) => cn(
-                      'flex items-center gap-4 p-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all',
-                      isActive ? 'bg-primary text-white' : 'text-white/40'
-                    )}
-                  >
-                    <item.icon size={20} />
-                    {item.label}
-                  </NavLink>
-                ))}
-             </div>
-             <div className="mt-12 pt-8 border-t border-white/5">
-                <button onClick={handleSignOut} className="flex items-center gap-3 text-red-400 p-4 font-black uppercase tracking-widest text-[13px]">
-                   <LogOut size={20} /> Sair do Sistema
-                </button>
-             </div>
+      {/* ── Main ──────────────────────────────────────────── */}
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
+        {brand.isDefault && location.pathname !== '/settings' && (
+          <div className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shrink-0">
+                <Settings size={16} className="animate-spin-slow" />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-foreground">Sua plataforma está quase pronta! 🚀</p>
+                <p className="text-[11px] text-muted-foreground">Configure o nome da sua empresa e o seu logotipo para começar com estilo profissional.</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => navigate('/settings')}
+              className="h-9 px-4 text-xs font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 border-none"
+            >
+              Configurar Agora
+            </Button>
           </div>
-        </>
-      )}
-
-      {/* ── Main Workspace ────────────────────────────────── */}
-      <main className="flex-1 overflow-x-hidden overflow-y-auto pt-20 md:pt-10 pb-20 md:pb-10 px-6 md:px-12 w-full relative z-10">
-        <div className="max-w-7xl mx-auto min-h-full">
-           {children}
-        </div>
-
-        {/* Internal Trust Footer (Desktop) */}
-        <div className="hidden md:flex items-center justify-between mt-20 opacity-20 border-t border-white/5 pt-10">
-           <div className="flex items-center gap-3">
-              <ShieldCheck size={16} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Professional Enterprise Edition v2.0.0</span>
-           </div>
-           <span className="text-[10px] font-black uppercase tracking-[0.2em]">{brand.name} @ 2026</span>
-        </div>
+        )}
+        {children}
       </main>
 
-      {/* ── Bottom Nav (Mobile Only) ──────────────────────── */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 z-50 glass-card !rounded-3xl border-white/10 h-16 flex items-stretch shadow-2xl safe-area-inset-bottom">
+      {/* ── Bottom Navigation Bar (Mobile Only) ───────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex items-stretch h-16 shadow-lg safe-area-inset-bottom">
         {bottomNavItems.map((item) => {
-          const isActive = item.path !== '__menu__' && location.pathname.startsWith(item.path);
+          const isActive = item.path !== '__menu__' && location.pathname === item.path;
           const isMenu = item.path === '__menu__';
           return (
             <button
               key={item.path}
-              onClick={() => isMenu ? setMobileMenuOpen(true) : navigate(item.path)}
+              onClick={() => handleBottomNavClick(item.path)}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1 transition-all',
-                isActive ? 'text-primary scale-110' : 'text-white/30'
+                'flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground',
+                isMenu && mobileMenuOpen ? 'text-primary' : undefined
               )}
             >
-              <item.icon size={22} className={cn(isActive ? 'drop-shadow-[0_0_10px_rgba(233,30,140,0.5)]' : '')} />
-              <span className="text-[9px] font-black uppercase tracking-wider">{item.label}</span>
+              <item.icon size={20} className={cn('mb-0.5', isActive ? 'text-primary' : 'text-muted-foreground')} />
+              {item.label}
             </button>
           );
         })}

@@ -83,22 +83,22 @@ export default function AuthPage() {
         />
       </div>
 
-      {/* ⚡ The Nano Box Portal (v6.9 Rupture) */}
+      {/* ⚡ The Nano Box Portal (v7.0 Mobile Optimized) */}
       <div className="w-full max-w-[300px] relative z-10 flex flex-col animate-in zoom-in-95 duration-500">
-          <div className="bg-white border border-zinc-200 shadow-2xl rounded-2xl p-6 relative overflow-hidden">
-            <div className="space-y-6 text-center">
+          <div className="bg-white border border-zinc-200 shadow-2xl rounded-2xl p-5 sm:p-6 relative overflow-hidden">
+            <div className="space-y-4 sm:space-y-6 text-center">
               {settings?.logo_url && (
-                <div className="flex items-center justify-start h-8 mb-4 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all">
+                <div className="flex items-center justify-start h-6 sm:h-8 mb-2 sm:mb-4 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all">
                    <img src={settings.logo_url} crossOrigin="anonymous" className="h-full w-auto object-contain" alt="Logo" />
                 </div>
               )}
               
               <div className="text-left">
-                <h1 className="text-xl font-black text-black tracking-tight uppercase leading-none mb-1">Acesso</h1>
-                <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Aura Elite 2026</p>
+                <h1 className="text-lg sm:text-xl font-black text-black tracking-tight uppercase leading-none mb-0.5">Acesso</h1>
+                <p className="text-[7px] sm:text-[8px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Aura Elite 2026</p>
               </div>
 
-              <form onSubmit={handleAuth} className="space-y-4 text-left">
+              <form onSubmit={handleAuth} className="space-y-3 sm:space-y-4 text-left">
                 {!isLogin && !recoveryMode && (
                   <div className="group space-y-2">
                     <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1 transition-colors group-focus-within:text-emerald-500">Gestão Direct</Label>

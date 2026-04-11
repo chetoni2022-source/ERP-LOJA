@@ -420,10 +420,12 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={savingBrand||(!storeName&&!logoFile&&!faviconFile&&!monthlyGoal)}
-                className="w-full h-12 text-sm font-black tracking-wide shadow-lg bg-primary text-primary-foreground">
-                {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade Visual
-              </Button>
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-2">
+                <Button type="submit" disabled={savingBrand||(!storeName&&!logoFile&&!faviconFile&&!monthlyGoal)}
+                  className="w-full h-12 text-sm font-black tracking-wide shadow-lg bg-primary text-primary-foreground transition-all active:scale-95">
+                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade Visual
+                </Button>
+              </div>
             </form>
           </div>
           </div>
@@ -509,10 +511,12 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-muted-foreground">Define de onde a logo é "ancorada" ao cortar (modo Cobrir).</p>
               </div>
 
-              <Button onClick={handleSaveDisplaySettings} disabled={savingDisplay}
-                className="w-full h-11 font-black uppercase tracking-wider bg-primary text-primary-foreground shadow-md">
-                {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição da Logo
-              </Button>
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0">
+                <Button onClick={handleSaveDisplaySettings} disabled={savingDisplay}
+                  className="w-full h-11 font-black uppercase tracking-wider bg-primary text-primary-foreground shadow-md transition-all active:scale-95">
+                  {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição da Logo
+                </Button>
+              </div>
             </div>
           </div>
           </div>
@@ -583,10 +587,12 @@ export default function SettingsPage() {
                          </div>
                       </div>
                     </div>
-                    <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl mt-2 transition-transform active:scale-95">
-                       {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                       Salvar Marketplace Taxas
-                    </Button>
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0">
+                      <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl transition-all active:scale-95">
+                         {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+                         Salvar Marketplace Taxas
+                      </Button>
+                    </div>
                   </form>
                 </div>
              </div>

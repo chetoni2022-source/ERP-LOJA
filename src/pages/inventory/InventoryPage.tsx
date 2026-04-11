@@ -2251,19 +2251,19 @@ export default function InventoryPage() {
 
             </div>{/* end body flex */}
 
-            <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 mt-auto">
-              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest" onClick={() => {setIsModalOpen(false); resetForm();}}>
+            <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 sticky bottom-0 z-50 md:relative md:mt-auto">
+              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest shrink-0" onClick={() => {setIsModalOpen(false); resetForm();}}>
                 Voltar
               </Button>
               {editingProduct && (
                  <Button type="button" onClick={() => {
                      if (!weight || !images.length) toastError("Preencha dimensões e coloque fotos para publicar.");
                      else success("Shopee Hub não ativado. Cadastre as chaves de integração primeiro.");
-                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 h-12 md:h-14 font-black uppercase tracking-widest text-xs">
+                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 h-12 md:h-14 font-black uppercase tracking-widest text-xs min-w-[100px]">
                    Subir Shopee
                  </Button>
               )}
-              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto" disabled={saving || (!name && images.length === 0)}>
+              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto transition-all active:scale-95" disabled={saving || (!name && images.length === 0)}>
                 {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
                 {editingProduct ? 'Salvar' : 'Cadastrar'}
               </Button>

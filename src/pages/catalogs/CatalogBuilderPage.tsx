@@ -398,10 +398,10 @@ export default function CatalogBuilderPage() {
             </p>
           </div>
 
-          {/* Save */}
-          <div className="flex gap-3">
-            <Button type="button" onClick={() => setMode('list')} className="h-12 px-6 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold">Cancelar</Button>
-            <Button type="submit" disabled={saving || (selectedProducts.length === 0 && selectedCategories.length === 0)} className="flex-1 h-12 font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-md">
+          {/* Save (Sticky on Mobile) */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border flex gap-3 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-6 z-50">
+            <Button type="button" onClick={() => setMode('list')} className="h-12 px-6 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shrink-0">Cancelar</Button>
+            <Button type="submit" disabled={saving || (selectedProducts.length === 0 && selectedCategories.length === 0)} className="flex-1 h-12 font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-md transition-all active:scale-95">
               {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
               {saving ? 'Salvando...' : mode === 'edit' ? 'Salvar Alterações' : 'Criar Vitrine'}
             </Button>

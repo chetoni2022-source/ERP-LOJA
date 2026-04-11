@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Input, Label } from '../../components/ui';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Store } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -106,13 +106,13 @@ export default function AuthPage() {
             {!isLogin && !recoveryMode && (
               <div className="space-y-2">
                 <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1">Nome de Gestão</Label>
-                <Input required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} placeholder="Seu nome" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
+                <Input required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} placeholder="Seu nome" className="h-12 !bg-zinc-900/80 !text-white !border-zinc-700 shadow-inner focus-visible:!ring-white ring-offset-0 transition-all font-medium" />
               </div>
             )}
 
             <div className="space-y-2">
               <Label className="uppercase text-[9px] font-black tracking-widest text-zinc-400 ml-1">E-Mail Operacional</Label>
-              <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ceo@empresa.com" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium" />
+              <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ceo@empresa.com" className="h-12 !bg-zinc-900/80 !text-white !border-zinc-700 shadow-inner focus-visible:!ring-white ring-offset-0 transition-all font-medium" />
             </div>
 
             {!recoveryMode && (
@@ -125,16 +125,16 @@ export default function AuthPage() {
                     </button>
                   )}
                 </div>
-                <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="h-12 bg-black/40 text-white border-white/10 shadow-inner focus-visible:ring-primary ring-offset-0 transition-all font-medium tracking-widest" />
+                <Input required type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="h-12 !bg-zinc-900/80 !text-white !border-zinc-700 shadow-inner focus-visible:!ring-white ring-offset-0 transition-all font-medium tracking-widest" />
               </div>
             )}
 
             <div className="pt-6">
-              <Button type="submit" disabled={loading} className="w-full h-14 uppercase font-black text-xs tracking-widest bg-white text-black shadow-lg hover:shadow-white/20 hover:scale-[1.02] active:scale-95 transition-all">
+              <Button type="submit" disabled={loading} className="w-full h-14 uppercase font-black text-xs tracking-widest !bg-white hover:!bg-zinc-200 !text-black shadow-lg hover:shadow-white/20 hover:scale-[1.02] active:scale-95 transition-all border-none">
                 {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
                   <>
-                    {recoveryMode ? 'Desbloquear Restrição' : isLogin ? 'INICIAR TRAÇÃO' : 'FORMAR IMPÉRIO'}
-                    {!loading && <ArrowRight size={16} className="ml-2" />}
+                    <span className="flex-1 text-center font-black">{recoveryMode ? 'Desbloquear Restrição' : isLogin ? 'INICIAR TRAÇÃO' : 'FORMAR IMPÉRIO'}</span>
+                    {!loading && <ArrowRight size={16} className="absolute right-6" />}
                   </>
                 )}
               </Button>

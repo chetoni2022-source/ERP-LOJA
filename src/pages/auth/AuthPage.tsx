@@ -1,23 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Input, Label } from '../../components/ui';
-import { Loader2, ArrowRight, ShieldCheck, Mail, Lock, User, Sparkles } from 'lucide-react';
-
-const THEME_PRESETS: Record<string, { bg: string, accent: string, text: string }> = {
-  luxury:   { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },
-  rose:     { bg: '#fafafa', accent: '#0c0a09', text: '#0c0a09' },
-  midnight: { bg: '#0c0a09', accent: '#fafafa', text: '#fafaf9' },
-  pearl:    { bg: '#fafafa', accent: '#0c0a09', text: '#0c0a09' },
-};
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
   const [form, setForm] = useState({ email: '', password: '', fullName: '' });
   
   const navigate = useNavigate();
@@ -25,24 +17,6 @@ export default function AuthPage() {
   const { success, error: toastError } = useToast();
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
-
-  useEffect(() => {
-    supabase.from('store_settings').select('*').limit(1).maybeSingle().then(({ data }) => {
-      if (data) setSettings(data);
-    });
-  }, []);
-
-  const theme = useMemo(() => {
-    const t = settings?.theme || 'luxury';
-    const preset = THEME_PRESETS[t] || THEME_PRESETS.luxury;
-    const colors = settings?.custom_colors || {};
-    return {
-       bg: colors.bg || preset.bg,
-       accent: colors.accent || preset.accent,
-       text: colors.text || preset.text,
-       isDark: t === 'luxury' || t === 'midnight'
-    };
-  }, [settings]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,141 +47,120 @@ export default function AuthPage() {
   };
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 font-sans transition-colors duration-700"
-      style={{ backgroundColor: theme.bg, color: theme.text }}
-    >
-      {/* 🌑 Subtle Background Gradient */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-30">
-        <div 
-          className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] rounded-full blur-[150px]"
-          style={{ background: `radial-gradient(circle, ${theme.accent} 0%, transparent 70%)` }}
-        />
-        <div 
-          className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-[150px]"
-          style={{ background: `radial-gradient(circle, ${theme.accent} 0%, transparent 70%)` }}
-        />
+    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 selection:bg-zinc-900 selection:text-white font-sans antialiased">
+      
+      {/* 🏙️ Sophisticated Background (Radial Depth) */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.02)_0%,transparent_50%)]" />
       </div>
 
-      <div className="w-full max-w-[400px] relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-        {/* Logo/Branding */}
-        <div className="text-center space-y-4">
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} className="h-10 mx-auto object-contain" alt="Logo" />
-          ) : (
-            <div className="h-12 w-12 mx-auto rounded-xl flex items-center justify-center bg-white/5 border border-white/10">
-              <Sparkles size={24} style={{ color: theme.accent }} />
-            </div>
-          )}
+      <div className="w-full max-w-[360px] relative z-10 flex flex-col space-y-12 animate-in fade-in duration-700">
+        
+        {/* Header - Editorial Style */}
+        <div className="space-y-4 text-center">
+          <div className="flex items-center justify-center mb-6">
+             <div className="h-10 w-10 rounded-full bg-zinc-900 flex items-center justify-center text-white font-black text-xs tracking-tighter">A</div>
+          </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: theme.text }}>
-              {settings?.store_name || 'Aura Workspace'}
+            <h1 className="text-2xl font-black text-zinc-900 tracking-tight">
+              {recoveryMode ? 'Recuperar acesso' : isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
             </h1>
-            <p className="text-[9px] uppercase tracking-[0.4em] font-black opacity-30">
-              SISTEMA DE GESTÃO MODERNO
+            <p className="text-[13px] text-zinc-500 font-medium">
+              {recoveryMode 
+                ? 'Insira seu e-mail para receber as instruções' 
+                : isLogin 
+                  ? 'Acesse sua conta para gerenciar seu negócio' 
+                  : 'Comece a gerenciar suas vendas hoje mesmo'}
             </p>
           </div>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl">
-          <div className="mb-8">
-            <h2 className="text-xl font-bold">
-              {recoveryMode ? 'Recuperar Senha' : isLogin ? 'Login' : 'Criar Conta'}
-            </h2>
-            <p className="text-sm opacity-40 mt-1">
-              {recoveryMode ? 'Enviaremos um link para o seu e-mail.' : 'Bem-vindo ao centro de comando.'}
-            </p>
-          </div>
-
-          <form onSubmit={handleAuth} className="space-y-5">
+        {/* Form Section */}
+        <div className="space-y-8">
+          <form onSubmit={handleAuth} className="space-y-6">
             {!isLogin && !recoveryMode && (
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold ml-1">Nome</Label>
-                <div className="relative group">
-                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
-                  <Input 
-                    required 
-                    value={form.fullName} 
-                    onChange={e => setForm({...form, fullName: e.target.value})} 
-                    placeholder="Seu nome completo" 
-                    className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm"
-                  />
-                </div>
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Nome Completo</Label>
+                <Input 
+                  required 
+                  value={form.fullName} 
+                  onChange={e => setForm({...form, fullName: e.target.value})} 
+                  placeholder="Ex: João Silva" 
+                  className="h-11 bg-white border-zinc-200 text-zinc-900 rounded-lg focus:border-zinc-900 focus:ring-0 transition-all font-medium placeholder:text-zinc-300 text-sm shadow-sm"
+                />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold ml-1">E-mail</Label>
-              <div className="relative group">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
-                <Input 
-                  required 
-                  type="email" 
-                  value={form.email} 
-                  onChange={e => setForm({...form, email: e.target.value})} 
-                  placeholder="exemplo@email.com" 
-                  className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm text-white"
-                />
-              </div>
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Endereço de E-mail</Label>
+              <Input 
+                required 
+                type="email" 
+                value={form.email} 
+                onChange={e => setForm({...form, email: e.target.value})} 
+                placeholder="nome@empresa.com" 
+                className="h-11 bg-white border-zinc-200 text-zinc-900 rounded-lg focus:border-zinc-900 focus:ring-0 transition-all font-medium placeholder:text-zinc-300 text-sm shadow-sm"
+              />
             </div>
 
             {!recoveryMode && (
               <div className="space-y-2">
-                <div className="flex justify-between items-center ml-1">
-                  <Label className="text-[10px] uppercase tracking-widest opacity-40 font-bold">Senha</Label>
+                <div className="flex justify-between items-center px-1">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Senha</Label>
                   {isLogin && (
-                    <button type="button" onClick={() => setRecoveryMode(true)} className="text-[10px] uppercase tracking-widest font-bold hover:opacity-80 transition-opacity" style={{ color: theme.accent }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setRecoveryMode(true)} 
+                      className="text-[10px] font-black uppercase tracking-widest text-zinc-900 hover:opacity-60 transition-opacity"
+                    >
                       Esqueci a senha
                     </button>
                   )}
                 </div>
-                <div className="relative group">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity" style={{ color: theme.accent }} />
-                  <Input 
-                    required 
-                    type="password" 
-                    value={form.password} 
-                    onChange={e => setForm({...form, password: e.target.value})} 
-                    placeholder="••••••••" 
-                    className="h-12 pl-12 bg-black/20 border-white/5 rounded-xl focus:border-white/20 transition-all font-medium text-sm text-white"
-                  />
-                </div>
+                <Input 
+                  required 
+                  type="password" 
+                  value={form.password} 
+                  onChange={e => setForm({...form, password: e.target.value})} 
+                  placeholder="••••••••" 
+                  className="h-11 bg-white border-zinc-200 text-zinc-900 rounded-lg focus:border-zinc-900 focus:ring-0 transition-all font-medium placeholder:text-zinc-300 text-sm shadow-sm"
+                />
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full h-11 rounded-lg bg-white text-black font-black text-xs tracking-[0.15em] uppercase hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
-              style={{ backgroundColor: theme.accent, color: theme.isDark ? '#000' : '#fff' }}
-            >
-              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
-                <>
-                  {recoveryMode ? 'Enviar Instruções' : isLogin ? 'Entrar' : 'Começar Agora'}
-                  {!loading && <ArrowRight size={16} />}
-                </>
-              )}
-            </Button>
+            <div className="pt-2">
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full h-11 bg-zinc-900 text-white font-black text-xs uppercase tracking-[0.2em] rounded-lg hover:bg-zinc-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-zinc-200"
+              >
+                {loading ? <Loader2 className="animate-spin h-4 w-4" /> : (
+                  <>
+                    {recoveryMode ? 'Enviar Link' : isLogin ? 'Entrar no Sistema' : 'Criar minha conta'}
+                    {!loading && <ArrowRight size={14} />}
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+          {/* Toggle Login/Sign-up */}
+          <div className="pt-4 text-center">
             <button 
               type="button" 
               onClick={() => { if(recoveryMode) setRecoveryMode(false); else setIsLogin(!isLogin); }}
-              className="text-[11px] uppercase tracking-widest font-black opacity-40 hover:opacity-100 transition-all"
+              className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-900 transition-colors"
             >
-              {recoveryMode ? 'Voltar para o Login' : isLogin ? 'Ainda não tem conta? Criar conta' : 'Já possui conta? Fazer login'}
+              {recoveryMode ? 'Voltar para o Login' : isLogin ? 'Não possui conta? Registre-se' : 'Já possui conta? Faça login'}
             </button>
           </div>
         </div>
 
-        {/* Security / Trust */}
-        <div className="flex items-center justify-center gap-6 opacity-20">
-          <div className="flex items-center gap-2"><ShieldCheck size={14} /><span className="text-[9px] font-bold uppercase tracking-widest">AES-256 Crypto</span></div>
-          <div className="h-1 w-1 rounded-full bg-white/20" />
-          <div className="flex items-center gap-2"><Sparkles size={14} /><span className="text-[9px] font-bold uppercase tracking-widest">SaaS Edition</span></div>
+        {/* Minimalist Brand Footer (Optional) */}
+        <div className="pt-12 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300">Aura ERP &copy; 2026</p>
         </div>
+
       </div>
     </div>
   );

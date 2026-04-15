@@ -599,7 +599,6 @@ export default function InventoryPage() {
         }) : null,
       };
       
-      console.log("Payload sent to Supabase:", payload);
       // Perform a single, robust save attempt
       if (editingProduct) {
         const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);

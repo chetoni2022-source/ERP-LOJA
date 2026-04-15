@@ -49,13 +49,17 @@ function resolveTheme(catalog: any): Theme {
 
 function fmt(v:number){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v); }
 
-/** Render description: **bold** and ++big++ */
+/** Render description: **bold**, ++big++, and newlines */
 function renderDesc(text: string, accentColor: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\+\+[^+]+\+\+)/g);
-  return parts.map((p, i) => {
-    if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} style={{ color: accentColor, fontWeight: 700 }}>{p.slice(2,-2)}</strong>;
-    if (p.startsWith('++') && p.endsWith('++')) return <span key={i} style={{ fontSize: '1.15em', fontWeight: 500 }}>{p.slice(2,-2)}</span>;
-    return <span key={i}>{p}</span>;
+  return text.split('\n').map((line, lineIdx) => {
+    if (line.trim() === '') return <br key={lineIdx} />;
+    const parts = line.split(/(\*\*[^*]+\*\*|\+\+[^+]+\+\+)/g);
+    const rendered = parts.map((p, i) => {
+      if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} style={{ color: accentColor, fontWeight: 700 }}>{p.slice(2,-2)}</strong>;
+      if (p.startsWith('++') && p.endsWith('++')) return <span key={i} style={{ fontSize: '1.15em', fontWeight: 500 }}>{p.slice(2,-2)}</span>;
+      return <span key={i}>{p}</span>;
+    });
+    return <span key={lineIdx} style={{ display: 'block', minHeight: '1em' }}>{rendered}</span>;
   });
 }
 
@@ -709,9 +713,9 @@ export default function CatalogPublicView() {
               {detailItem.description&&(
                 <div style={{marginBottom:14,marginTop:16}}>
                   <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:6}}>Sobre a Peça</p>
-                  <p style={{fontFamily:theme.sans,fontSize:12,lineHeight:1.75,color:theme.text,opacity:0.85}}>
+                  <div style={{fontFamily:theme.sans,fontSize:13,lineHeight:1.85,color:theme.text,opacity:0.9,whiteSpace:'pre-wrap'}}>
                     {renderDesc(detailItem.description,theme.accent)}
-                  </p>
+                  </div>
                 </div>
               )}
             </div>

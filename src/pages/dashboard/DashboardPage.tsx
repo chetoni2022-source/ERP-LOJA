@@ -787,7 +787,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-h-[200px] md:min-h-[220px] w-full mt-4">
+              <div className="flex-1 min-h-[200px] md:min-h-[220px] w-full mt-4" style={{minWidth:0}}>
                 {salesData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                     <ComposedChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>

@@ -21,55 +21,36 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: "Inter", "Helvetica Neue", sans-serif;
+  --font-sans: "Inter", "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", "Space Mono", monospace;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
 }
 
 @layer base {
   :root {
-    /* AURA ELITE LIGHT (v5.0) - Neutral Sophistication */
-    --background: #fafafa;
-    --foreground: #09090b;
-    --card: #ffffff;
-    --card-foreground: #09090b;
-    --popover: #ffffff;
-    --popover-foreground: #09090b;
-    --primary: #09090b;
-    --primary-foreground: #fafafa;
-    --secondary: #f4f4f5;
-    --secondary-foreground: #09090b;
-    --muted: #f4f4f5;
-    --muted-foreground: #71717a;
-    --accent: #f4f4f5;
-    --accent-foreground: #09090b;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: #e4e4e7;
-    --input: #e4e4e7;
-    --ring: #09090b;
-    --radius: 0.625rem;
-  }
- 
-  .dark {
-    /* AURA ELITE DARK (v5.0) - Deep Luxury */
-    --background: #09090b;
-    --foreground: #fafafa;
-    --card: #09090b;
-    --card-foreground: #fafafa;
-    --popover: #09090b;
-    --popover-foreground: #fafafa;
-    --primary: #fafafa;
-    --primary-foreground: #09090b;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #18181b;
-    --muted-foreground: #a1a1aa;
-    --accent: #18181b;
-    --accent-foreground: #fafafa;
-    --destructive: #7f1d1d;
-    --destructive-foreground: #fafafa;
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #fafafa;
+    /* TMC AR BRANDING - VISIONARY DARK THEME */
+    --background: #0A0A0A;
+    --foreground: #FFFFFF;
+    --card: rgba(17, 17, 17, 0.8);
+    --card-foreground: #FFFFFF;
+    --popover: #0A0A0A;
+    --popover-foreground: #FFFFFF;
+    --primary: #FF6B00;
+    --primary-foreground: #FFFFFF;
+    --secondary: #00A8FF;
+    --secondary-foreground: #FFFFFF;
+    --muted: #1A1A1A;
+    --muted-foreground: #A1A1AA;
+    --accent: #FF6B00;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.05);
+    --ring: #FF6B00;
+    --radius: 0.75rem;
   }
 
   * {
@@ -83,73 +64,86 @@
     @apply antialiased;
     font-family: var(--font-sans);
     -webkit-overflow-scrolling: touch;
-    scrollbar-gutter: stable;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .display-font {
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  .mono-font {
+    font-family: var(--font-mono);
   }
 }
 
-/* ─── SCROLLBAR ELITE (Invisível/Premium) ─── */
+/* 💎 GLASSMORPHISM v2.0 */
+.glass {
+  background: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-bright {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 🚀 CUSTOM UTILITIES */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.3);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 20px rgba(0, 168, 255, 0.3);
+}
+
+.btn-orange {
+  @apply bg-primary text-white font-bold py-3 px-6 rounded-lg transition-all duration-300;
+  @apply hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(255,107,0,0.4)] active:scale-95;
+}
+
+.btn-neon {
+  @apply bg-secondary text-white font-bold py-3 px-6 rounded-lg transition-all duration-300;
+  @apply hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(0,168,255,0.4)] active:scale-95;
+}
+
+.input-glass {
+  @apply bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white outline-none transition-all;
+  @apply focus:border-primary/50 focus:bg-white/10;
+}
+
+/* ─── SCROLLBAR ELITE ─── */
 ::-webkit-scrollbar {
-  width: 0px; /* Oculto por padrão Apple */
-  height: 0px;
+  width: 6px;
   background: transparent;
 }
-* {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
-/* 💎 Aura Elite Professional Utilities */
-.glass-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 2.5rem;
-  border-radius: 1rem;
+/* 🍏 APPLE-LIKE ANIMATIONS */
+@keyframes spring-in {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.ux-input {
-  background: var(--background);
-  border: 1px solid var(--border);
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius);
-  transition: all 0.2s;
-  outline: none;
+.animate-spring {
+  animation: spring-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.ux-input:focus {
-  border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.06);
+@keyframes pulse-orange {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }
 }
 
-.ux-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  transition: all 0.2s;
-  border-radius: 0.5rem;
-}
-
-.ux-button:active {
-  transform: scale(0.95);
-}
-
-@keyframes auraPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.1); }
-}
-
-.animate-pulse {
-  animation: auraPulse 4s infinite ease-in-out;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.animate-float {
-  animation: float 6s infinite ease-in-out;
+.animate-pulse-orange {
+  animation: pulse-orange 2s infinite;
 }

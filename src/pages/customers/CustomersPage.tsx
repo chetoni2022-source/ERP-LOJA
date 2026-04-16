@@ -265,9 +265,16 @@ export default function CustomersPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-2xl border border-border z-10 p-5 animate-in slide-in-from-bottom-4 sm:fade-in sm:zoom-in-95 duration-300">
-            <h3 className="text-lg font-bold text-foreground mb-4">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h3>
-            <div className="space-y-3">
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 flex flex-col max-h-[90svh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-border shrink-0 flex items-center justify-between">
+              <h3 className="text-base font-bold text-foreground">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h3>
+              <button onClick={() => setModalOpen(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
               <div>
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome Completo *</Label>
                 <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Maria Carolina Silva" className="mt-1 h-11" autoFocus />
@@ -286,13 +293,14 @@ export default function CustomersPage() {
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Observações</Label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Preferências, ocasiões especiais..." className="mt-1 w-full h-20 px-3 py-2.5 rounded-lg border border-border bg-background text-sm font-medium text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary" />
               </div>
-              <div className="flex gap-3 pt-3 border-t border-border">
-                <Button onClick={() => setModalOpen(false)} className="flex-1 h-11 bg-muted text-foreground border border-border hover:bg-muted/80">Cancelar</Button>
-                <Button onClick={handleSave} disabled={saving || !form.full_name.trim()} className="flex-1 h-11 font-bold bg-primary hover:bg-primary/90 text-primary-foreground">
-                  {saving ? <Loader2 className="animate-spin h-4 w-4 mr-1" /> : null}
-                  {saving ? 'Salvando...' : 'Salvar'}
-                </Button>
-              </div>
+            </div>
+            {/* Sticky Footer — always visible on mobile */}
+            <div className="p-4 border-t border-border bg-card flex gap-3 shrink-0">
+              <Button onClick={() => setModalOpen(false)} className="flex-1 h-12 bg-muted text-foreground border border-border hover:bg-muted/80 font-bold">Cancelar</Button>
+              <Button onClick={handleSave} disabled={saving || !form.full_name.trim()} className="flex-1 h-12 font-black bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs shadow-md active:scale-95 transition-all">
+                {saving ? <Loader2 className="animate-spin h-4 w-4 mr-1" /> : null}
+                {saving ? 'Salvando...' : editingId ? 'Salvar' : 'Cadastrar'}
+              </Button>
             </div>
           </div>
         </div>

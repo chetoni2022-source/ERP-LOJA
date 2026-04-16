@@ -123,7 +123,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Realtime settings update:', payload.new);
           if (payload.new) applySettings(payload.new);
         }
       )

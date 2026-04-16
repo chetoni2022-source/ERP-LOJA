@@ -1,0 +1,36 @@
+{
+  "folders": [
+    {
+      "name": "🛒 ERP Laris Acessórios",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "window.title": "ERP Laris Acessórios - ${activeEditorShort}",
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "git.openRepositoryInParentFolders": "never",
+    "git.alwaysShowStagedChangesResourceGroup": true,
+    "explorer.confirmDelete": true,
+    "explorer.confirmDragAndDrop": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.git": false
+    },
+    "workbench.colorCustomizations": {
+      "titleBar.activeBackground": "#b5451b",
+      "titleBar.activeForeground": "#ffffff",
+      "titleBar.inactiveBackground": "#8a3414",
+      "activityBar.background": "#8a3414"
+    },
+    "workbench.colorTheme": "Default Dark Modern"
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "dsznajder.es7-react-js-snippets",
+      "dbaeumer.vscode-eslint"
+    ]
+  }
+}

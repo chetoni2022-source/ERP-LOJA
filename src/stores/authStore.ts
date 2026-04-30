@@ -16,10 +16,11 @@ export interface TenantBranding {
 interface AuthState {
   user: User | null;
   loading: boolean;
-  profile: { role: string; full_name: string; tenant_id: string | null } | null;
   branding: TenantBranding | null;
+  previewTenantId: string | null;
   setUser: (user: User | null) => void;
-  loadProfile: (userId: string) => Promise<void>;
+  loadProfile: (userId: string, overrideTenantId?: string) => Promise<void>;
+  setPreviewTenant: (tenantId: string | null) => void;
   signOut: () => Promise<void>;
 }
 
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   profile: null,
   branding: null,
+  previewTenantId: null,
 
   setUser: (user) => {
     set({ user, loading: false });
@@ -38,7 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  loadProfile: async (userId: string) => {
+  loadProfile: async (userId: string, overrideTenantId?: string) => {
     try {
       // Try to update last login timestamp (may fail if profile not created yet)
       await supabase
@@ -52,68 +54,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('id', userId)
         .maybeSingle();
 
-      // If profile doesn't exist yet, create a default one
-      if (!profileData) {
-        const { data: userData } = await supabase.auth.getUser();
-        const email = userData?.user?.email ?? '';
-        const fullName = userData?.user?.user_metadata?.full_name ?? email.split('@')[0];
-        await supabase.from('profiles').upsert({
-          id: userId,
-          full_name: fullName,
-          role: 'user',
-          tenant_id: null,
-        }, { onConflict: 'id' });
+      if (profileData) {
+        set({ profile: profileData });
 
-        // Re-fetch after upsert
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .select('role, full_name, tenant_id')
-          .eq('id', userId)
-          .maybeSingle();
+        // Determine which tenant ID to use (actual or preview)
+        const activeTenantId = overrideTenantId || get().previewTenantId || profileData.tenant_id;
 
-        if (newProfile) set({ profile: newProfile });
-        return;
-      }
+        // Load tenant branding
+        if (activeTenantId) {
+          const { data: brandingData } = await supabase
+            .from('tenant_branding')
+            .select('*')
+            .eq('tenant_id', activeTenantId)
+            .maybeSingle();
 
-      set({ profile: profileData });
+          const { data: tenantData } = await supabase
+            .from('tenants')
+            .select('slug, name')
+            .eq('id', activeTenantId)
+            .maybeSingle();
 
-      // Load tenant branding only if user belongs to a tenant
-      if (profileData.tenant_id) {
-        const { data: brandingData } = await supabase
-          .from('tenant_branding')
-          .select('*')
-          .eq('tenant_id', profileData.tenant_id)
-          .maybeSingle();
+          if (brandingData && tenantData) {
+            const branding: TenantBranding = {
+              tenantId: activeTenantId,
+              tenantSlug: tenantData.slug,
+              storeName: brandingData.store_name || tenantData.name,
+              logoUrl: brandingData.logo_url,
+              faviconUrl: brandingData.favicon_url,
+              loginBgUrl: brandingData.login_bg_url,
+              primaryColor: brandingData.primary_color || '#a855f7',
+              whatsappNumber: brandingData.whatsapp_number,
+            };
+            set({ branding });
 
-        const { data: tenantData } = await supabase
-          .from('tenants')
-          .select('slug, name')
-          .eq('id', profileData.tenant_id)
-          .maybeSingle();
-
-        if (brandingData && tenantData) {
-          const branding: TenantBranding = {
-            tenantId: profileData.tenant_id,
-            tenantSlug: tenantData.slug,
-            storeName: brandingData.store_name || tenantData.name,
-            logoUrl: brandingData.logo_url,
-            faviconUrl: brandingData.favicon_url,
-            loginBgUrl: brandingData.login_bg_url,
-            primaryColor: brandingData.primary_color || '#a855f7',
-            whatsappNumber: brandingData.whatsapp_number,
-          };
-          set({ branding });
-
-          // Apply favicon dynamically
-          if (brandingData.favicon_url) {
-            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-            if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-            link.href = brandingData.favicon_url;
+            // Apply favicon dynamically
+            if (brandingData.favicon_url) {
+              let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+              if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+              link.href = brandingData.favicon_url;
+            }
           }
         }
       }
     } catch (err) {
       console.error('Error loading profile:', err);
+    }
+  },
+
+  setPreviewTenant: (tenantId) => {
+    set({ previewTenantId: tenantId });
+    const user = get().user;
+    if (user) {
+      get().loadProfile(user.id, tenantId || undefined);
     }
   },
 

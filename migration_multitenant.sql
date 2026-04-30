@@ -155,26 +155,38 @@ DROP POLICY IF EXISTS "super_admin_branding_all" ON public.tenant_branding;
 -- POLICIES: products
 CREATE POLICY "tenant_products_all" ON public.products
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_products_all" ON public.products
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: sales
 CREATE POLICY "tenant_sales_all" ON public.sales
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_sales_all" ON public.sales
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: customers
 CREATE POLICY "tenant_customers_all" ON public.customers
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_customers_all" ON public.customers
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: categories
 CREATE POLICY "tenant_categories_all" ON public.categories
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_categories_all" ON public.categories
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: catalogs
 CREATE POLICY "tenant_catalogs_all" ON public.catalogs
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_catalogs_all" ON public.catalogs
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: store_settings
 CREATE POLICY "tenant_store_settings_all" ON public.store_settings
   FOR ALL USING (tenant_id = public.get_user_tenant_id());
+CREATE POLICY "super_admin_store_settings_all" ON public.store_settings
+  FOR ALL USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'super_admin');
 
 -- POLICIES: profiles (cada usuário vê só o próprio perfil, admin vê todos do tenant)
 CREATE POLICY "tenant_profiles_select" ON public.profiles

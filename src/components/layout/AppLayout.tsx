@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTenant } from '../../contexts/TenantContext';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Button } from '../ui';
+import { Eye, ShieldAlert, ArrowLeftCircle } from 'lucide-react';
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
@@ -34,7 +35,7 @@ const bottomNavItems = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, previewTenantId, setPreviewTenant, profile } = useAuthStore();
   const { branding: tenantBranding } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
@@ -117,6 +118,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     };
 
     fetchSettings();
+
+    // Check for preview_tenant param
+    const params = new URLSearchParams(window.location.search);
+    const pTenant = params.get('preview_tenant');
+    if (pTenant && profile?.role === 'super_admin' && pTenant !== previewTenantId) {
+      setPreviewTenant(pTenant);
+    }
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -278,6 +286,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Main ──────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0 max-w-full md:max-w-none overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
+        {/* Preview Mode Banner */}
+        {previewTenantId && profile?.role === 'super_admin' && (
+          <div className="bg-blue-600 px-4 py-2 flex items-center justify-between gap-3 text-white z-[60] sticky top-0 md:relative">
+            <div className="flex items-center gap-2">
+              <Eye size={16} className="animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest">Modo de Visualização: <span className="underline">{effectiveName}</span></span>
+            </div>
+            <button 
+              onClick={() => {
+                setPreviewTenant(null);
+                navigate('/superadmin-laris');
+              }}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              <ArrowLeftCircle size={14} /> Sair da Empresa
+            </button>
+          </div>
+        )}
+
         <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden">
           {isDefault && location.pathname !== '/settings' && (
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-500">

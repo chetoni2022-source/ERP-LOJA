@@ -10,9 +10,10 @@ CREATE TABLE IF NOT EXISTS public.tenants (
   name        text NOT NULL,
   slug        text UNIQUE NOT NULL,          -- ex: 'laris', 'bijou-eco'
   status      text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'trial')),
-  owner_email text,
-  created_at  timestamptz DEFAULT now(),
-  updated_at  timestamptz DEFAULT now()
+  owner_email     text,
+  last_accessed_at timestamptz,
+  created_at      timestamptz DEFAULT now(),
+  updated_at      timestamptz DEFAULT now()
 );
 
 -- ── SEÇÃO 2: BRANDING POR TENANT ────────────────────────────
@@ -43,7 +44,8 @@ ON CONFLICT (slug) DO NOTHING;
 
 -- Tabela: profiles
 ALTER TABLE public.profiles 
-  ADD COLUMN IF NOT EXISTS tenant_id uuid REFERENCES public.tenants(id);
+  ADD COLUMN IF NOT EXISTS tenant_id uuid REFERENCES public.tenants(id),
+  ADD COLUMN IF NOT EXISTS last_login_at timestamptz;
 
 -- Atualizar profiles existentes com o tenant Laris
 UPDATE public.profiles
@@ -109,9 +111,6 @@ AS $$
 $$;
 
 -- ── SEÇÃO 6: POLÍTICAS RLS (Isolamento Automático de Dados) ──
--- Com RLS ativado, cada usuário só vê os dados do seu próprio tenant.
--- Você NÃO precisa mudar nada no código do app — o Supabase filtra automaticamente.
-
 -- Habilitar RLS nas tabelas
 ALTER TABLE public.products       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales          ENABLE ROW LEVEL SECURITY;
@@ -123,13 +122,35 @@ ALTER TABLE public.profiles       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tenants        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tenant_branding ENABLE ROW LEVEL SECURITY;
 
--- REMOVER políticas antigas que possam existir (para recriá-las corretamente)
+-- REMOVER políticas antigas (limpeza para evitar erros de duplicata)
 DROP POLICY IF EXISTS "Users can see own products" ON public.products;
+DROP POLICY IF EXISTS "tenant_products_all" ON public.products;
+
 DROP POLICY IF EXISTS "Users can see own sales" ON public.sales;
+DROP POLICY IF EXISTS "tenant_sales_all" ON public.sales;
+
 DROP POLICY IF EXISTS "Users can see own customers" ON public.customers;
+DROP POLICY IF EXISTS "tenant_customers_all" ON public.customers;
+
 DROP POLICY IF EXISTS "Users can see own categories" ON public.categories;
+DROP POLICY IF EXISTS "tenant_categories_all" ON public.categories;
+
 DROP POLICY IF EXISTS "Users can see own catalogs" ON public.catalogs;
+DROP POLICY IF EXISTS "tenant_catalogs_all" ON public.catalogs;
+
 DROP POLICY IF EXISTS "Users can see own store_settings" ON public.store_settings;
+DROP POLICY IF EXISTS "tenant_store_settings_all" ON public.store_settings;
+
+DROP POLICY IF EXISTS "tenant_profiles_select" ON public.profiles;
+DROP POLICY IF EXISTS "tenant_profiles_insert" ON public.profiles;
+DROP POLICY IF EXISTS "tenant_profiles_update" ON public.profiles;
+
+DROP POLICY IF EXISTS "tenant_self_select" ON public.tenants;
+DROP POLICY IF EXISTS "super_admin_tenants_all" ON public.tenants;
+
+DROP POLICY IF EXISTS "branding_public_read" ON public.tenant_branding;
+DROP POLICY IF EXISTS "branding_tenant_write" ON public.tenant_branding;
+DROP POLICY IF EXISTS "super_admin_branding_all" ON public.tenant_branding;
 
 -- POLICIES: products
 CREATE POLICY "tenant_products_all" ON public.products
@@ -215,6 +236,26 @@ CREATE INDEX IF NOT EXISTS idx_sales_tenant_id       ON public.sales(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_customers_tenant_id   ON public.customers(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_categories_tenant_id  ON public.categories(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_tenant_id    ON public.profiles(tenant_id);
+
+-- ── SEÇÃO 9: FUNÇÃO PARA ATUALIZAR ÚLTIMO ACESSO DA EMPRESA ──
+CREATE OR REPLACE FUNCTION public.update_tenant_last_access()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.tenant_id IS NOT NULL THEN
+    UPDATE public.tenants 
+    SET last_accessed_at = now() 
+    WHERE id = NEW.tenant_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger para atualizar acesso sempre que um usuário logar (detectado por update no profile)
+DROP TRIGGER IF EXISTS tr_update_tenant_access ON public.profiles;
+CREATE TRIGGER tr_update_tenant_access
+  AFTER UPDATE OF last_login_at ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_tenant_last_access();
 
 -- ── CONCLUÍDO ────────────────────────────────────────────────
 -- Após rodar este script:

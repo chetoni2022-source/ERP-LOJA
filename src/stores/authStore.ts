@@ -40,6 +40,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadProfile: async (userId: string) => {
     try {
+      // Update last login timestamp
+      await supabase
+        .from('profiles')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', userId);
+
       const { data: profileData } = await supabase
         .from('profiles')
         .select('role, full_name, tenant_id')

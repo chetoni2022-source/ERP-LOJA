@@ -16,6 +16,7 @@ interface Tenant {
   slug: string;
   status: 'active' | 'suspended' | 'trial';
   owner_email: string | null;
+  last_accessed_at: string | null;
   created_at: string;
   _userCount?: number;
   _productCount?: number;
@@ -410,6 +411,13 @@ export default function SuperAdminPage() {
                         </span>
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Package className="h-3 w-3" />{t._productCount} produto{t._productCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {t.last_accessed_at 
+                            ? `Acesso: ${new Date(t.last_accessed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                            : 'Sem acessos'
+                          }
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           Criado em {new Date(t.created_at).toLocaleDateString('pt-BR')}

@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadProfile: async (userId: string) => {
     try {
-      // Update last login timestamp
+      // Try to update last login timestamp (may fail if profile not created yet)
       await supabase
         .from('profiles')
         .update({ last_login_at: new Date().toISOString() })
@@ -52,42 +52,63 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('id', userId)
         .maybeSingle();
 
-      if (profileData) {
-        set({ profile: profileData });
+      // If profile doesn't exist yet, create a default one
+      if (!profileData) {
+        const { data: userData } = await supabase.auth.getUser();
+        const email = userData?.user?.email ?? '';
+        const fullName = userData?.user?.user_metadata?.full_name ?? email.split('@')[0];
+        await supabase.from('profiles').upsert({
+          id: userId,
+          full_name: fullName,
+          role: 'user',
+          tenant_id: null,
+        }, { onConflict: 'id' });
 
-        // Load tenant branding if user has a tenant
-        if (profileData.tenant_id) {
-          const { data: brandingData } = await supabase
-            .from('tenant_branding')
-            .select('*')
-            .eq('tenant_id', profileData.tenant_id)
-            .maybeSingle();
+        // Re-fetch after upsert
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .select('role, full_name, tenant_id')
+          .eq('id', userId)
+          .maybeSingle();
 
-          const { data: tenantData } = await supabase
-            .from('tenants')
-            .select('slug, name')
-            .eq('id', profileData.tenant_id)
-            .maybeSingle();
+        if (newProfile) set({ profile: newProfile });
+        return;
+      }
 
-          if (brandingData && tenantData) {
-            const branding: TenantBranding = {
-              tenantId: profileData.tenant_id,
-              tenantSlug: tenantData.slug,
-              storeName: brandingData.store_name || tenantData.name,
-              logoUrl: brandingData.logo_url,
-              faviconUrl: brandingData.favicon_url,
-              loginBgUrl: brandingData.login_bg_url,
-              primaryColor: brandingData.primary_color || '#a855f7',
-              whatsappNumber: brandingData.whatsapp_number,
-            };
-            set({ branding });
+      set({ profile: profileData });
 
-            // Apply favicon dynamically
-            if (brandingData.favicon_url) {
-              let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-              if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-              link.href = brandingData.favicon_url;
-            }
+      // Load tenant branding only if user belongs to a tenant
+      if (profileData.tenant_id) {
+        const { data: brandingData } = await supabase
+          .from('tenant_branding')
+          .select('*')
+          .eq('tenant_id', profileData.tenant_id)
+          .maybeSingle();
+
+        const { data: tenantData } = await supabase
+          .from('tenants')
+          .select('slug, name')
+          .eq('id', profileData.tenant_id)
+          .maybeSingle();
+
+        if (brandingData && tenantData) {
+          const branding: TenantBranding = {
+            tenantId: profileData.tenant_id,
+            tenantSlug: tenantData.slug,
+            storeName: brandingData.store_name || tenantData.name,
+            logoUrl: brandingData.logo_url,
+            faviconUrl: brandingData.favicon_url,
+            loginBgUrl: brandingData.login_bg_url,
+            primaryColor: brandingData.primary_color || '#a855f7',
+            whatsappNumber: brandingData.whatsapp_number,
+          };
+          set({ branding });
+
+          // Apply favicon dynamically
+          if (brandingData.favicon_url) {
+            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+            if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+            link.href = brandingData.favicon_url;
           }
         }
       }

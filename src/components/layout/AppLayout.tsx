@@ -6,6 +6,7 @@ import {
   Users, UserCircle2, Calculator
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Button } from '../ui';
 
@@ -34,6 +35,7 @@ const bottomNavItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuthStore();
+  const { branding: tenantBranding } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -55,6 +57,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     logoPos: 'center',
     isDefault: true
   });
+
+  // Se o tenant tiver branding configurado, usa como prioridade
+  const effectiveLogo = tenantBranding?.logoUrl ?? brand.logo;
+  const effectiveName = tenantBranding?.storeName ?? brand.name;
+  const isDefault = !tenantBranding?.logoUrl && brand.isDefault;
 
   useEffect(() => {
     if (!user) return;
@@ -151,14 +158,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* ── Mobile Top Bar ────────────────────────────────── */}
       <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-card border-b border-border z-30 fixed top-0 w-full shadow-sm">
           <div className="flex items-center gap-3 overflow-hidden h-full py-1">
-          {brand.logo ? (
+          {effectiveLogo ? (
             <img 
-              src={brand.logo} 
+              src={effectiveLogo} 
               alt="Logo" 
               crossOrigin="anonymous"
               style={{
                 height: 'auto',
-                maxHeight: 32, // Fixed height for top bar
+                maxHeight: 32,
                 width: 'auto',
                 maxWidth: 120,
                 objectFit: brand.logoFit as any,
@@ -168,7 +175,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           ) : (
             <Store className="h-5 w-5 text-primary" />
           )}
-          <span className="font-black text-sm truncate text-foreground tracking-tight">{brand.name}</span>
+          <span className="font-black text-sm truncate text-foreground tracking-tight">{effectiveName}</span>
         </div>
       </div>
 
@@ -192,15 +199,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-center p-4 pt-14 md:pt-4 border-b border-border/40 shrink-0 md:min-h-[88px]">
           {!collapsed ? (
             <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-1000 group">
-              {brand.logo ? (
+              {effectiveLogo ? (
                 <div className="relative">
-                  {/* Subtle glow effect behind logo on hover */}
                   <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                  
                   <NavLink to="/dashboard" className="relative p-1 block">
                     <div className="overflow-hidden transition-all duration-500 group-hover:-translate-y-1">
                       <img 
-                        src={brand.logo} 
+                        src={effectiveLogo} 
                         alt="Logo" 
                         crossOrigin="anonymous"
                         style={{
@@ -219,14 +224,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               ) : (
                 <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-3xl mb-2 shadow-inner border border-primary/5 transition-all duration-500 group-hover:scale-105 group-hover:bg-primary/15">
                   <div className="text-primary"><Store size={28} className="drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]" /></div>
-                  <span className="font-black text-[18px] tracking-tight truncate text-foreground">{brand.name}</span>
+                  <span className="font-black text-[18px] tracking-tight truncate text-foreground">{effectiveName}</span>
                 </div>
               )}
               <div className="mt-2 h-0.5 w-4 bg-primary/20 rounded-full transition-all duration-500 group-hover:w-8 group-hover:bg-primary/40" />
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-center w-full">
-              {brand.logo ? <img src={brand.logo} alt="Logo" className="h-8 w-auto max-w-[40px] object-contain" /> : <Store size={20} className="text-primary" />}
+              {effectiveLogo ? <img src={effectiveLogo} alt="Logo" className="h-8 w-auto max-w-[40px] object-contain" /> : <Store size={20} className="text-primary" />}
             </div>
           )}
         </div>
@@ -272,8 +277,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Main ──────────────────────────────────────────── */}
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
-        {brand.isDefault && location.pathname !== '/settings' && (
+      <main className="flex-1 flex flex-col min-w-0 max-w-full md:max-w-none overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
+        <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden">
+          {isDefault && location.pathname !== '/settings' && (
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-3">
               <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shrink-0">
@@ -291,8 +297,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               Configurar Agora
             </Button>
           </div>
-        )}
-        {children}
+          )}
+          {children}
+        </div>
       </main>
 
       {/* ── Bottom Navigation Bar (Mobile Only) ───────────── */}

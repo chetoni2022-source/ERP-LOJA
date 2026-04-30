@@ -82,6 +82,7 @@ export default function SalesPage() {
   const [editQty, setEditQty] = useState('');
   const [editCustomer, setEditCustomer] = useState('');
   const [editSource, setEditSource] = useState('');
+  const [activeTab, setActiveTab] = useState<'register' | 'cart'>('register');
 
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -481,10 +482,26 @@ export default function SalesPage() {
         </div>
       </div>
 
+      {/* Tabs Mobile */}
+      <div className="flex xl:hidden bg-muted/20 p-1 rounded-xl mb-4 border border-border/40">
+        <button 
+          onClick={() => setActiveTab('register')}
+          className={cn("flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all", activeTab === 'register' ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+        >
+          Lançar Venda
+        </button>
+        <button 
+          onClick={() => setActiveTab('cart')}
+          className={cn("flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2", activeTab === 'cart' ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+        >
+          Carrinho ({cart.reduce((a,b)=>a+b.quantity, 0)})
+        </button>
+      </div>
+
       <div className="grid lg:grid-cols-12 gap-4 md:gap-6 items-start">
         
         {/* ── Coluna Esquerda: Cadastro ─────────────────────── */}
-        <div className="lg:col-span-12 xl:col-span-5 space-y-4">
+        <div className={cn("lg:col-span-12 xl:col-span-5 space-y-4", activeTab !== 'register' && "hidden xl:block")}>
           <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm space-y-5">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
@@ -616,7 +633,7 @@ export default function SalesPage() {
         </div>
 
         {/* ── Coluna Direita: Carrinho ──────────────────────── */}
-        <div className="lg:col-span-12 xl:col-span-7 space-y-4">
+        <div className={cn("lg:col-span-12 xl:col-span-7 space-y-4", activeTab !== 'cart' && "hidden xl:block")}>
           
           <div className="bg-card border border-border/50 rounded-2xl shadow-sm flex flex-col min-h-[350px] overflow-hidden">
             <div className="p-4 border-b border-border/40 flex items-center justify-between bg-muted/5">
@@ -703,8 +720,8 @@ export default function SalesPage() {
                 <table className="w-full text-left">
                   <thead className="text-[9px] text-muted-foreground uppercase tracking-widest font-black border-b border-border/30">
                     <tr>
-                      <th className="px-2 py-3">Peça</th>
-                      <th className="px-2 py-3 hidden md:table-cell">Cliente / Canal</th>
+                      <th className="px-2 py-3">Peça / Info</th>
+                      <th className="px-2 py-3 hidden sm:table-cell">Cliente</th>
                       <th className="px-2 py-3 text-center">Qtd</th>
                       <th className="px-2 py-3 text-right">Total</th>
                     </tr>
@@ -713,19 +730,19 @@ export default function SalesPage() {
                     {sales.map(sale => (
                       <tr key={sale.id} className="text-[11px] group">
                         <td className="px-2 py-3">
-                           <span className="font-bold block truncate max-w-[120px]">{sale.products?.name || 'Item Excluído'}</span>
+                           <span className="font-bold block truncate max-w-[100px] sm:max-w-[150px]">{sale.products?.name || 'Item Excluído'}</span>
                            {sale.origin === 'shopee' ? (
-                             <span className="text-[9px] text-[#f53d2d] flex flex-row items-center gap-1 font-bold md:hidden"><ShoppingBag size={10} /> SHOPEE</span>
+                             <span className="text-[8px] text-[#f53d2d] flex flex-row items-center gap-1 font-black sm:hidden tracking-tighter"><ShoppingBag size={8} /> SHOPEE</span>
                            ) : (
-                             <span className="text-[9px] text-muted-foreground block md:hidden">{sale.customer_name || 'Balcão'} • {sale.lead_source}</span>
+                             <span className="text-[8px] text-muted-foreground block sm:hidden font-bold tracking-tight">{sale.customer_name || 'Balcão'} • {sale.lead_source}</span>
                            )}
                         </td>
-                        <td className="px-2 py-3 hidden md:table-cell">
-                           <span className="font-semibold">{sale.customer_name || 'Balcão'}</span>
+                        <td className="px-2 py-3 hidden sm:table-cell">
+                           <span className="font-semibold block truncate max-w-[120px]">{sale.customer_name || 'Balcão'}</span>
                            {sale.origin === 'shopee' ? (
-                             <span className="text-[9px] text-[#f53d2d] bg-[#f53d2d]/10 px-1 py-0.5 rounded w-fit flex items-center gap-1 mt-1 uppercase font-black tracking-widest"><ShoppingBag size={10} /> Shopee (-{sale.shopee_fee_pct}%)</span>
+                             <span className="text-[8px] text-[#f53d2d] bg-[#f53d2d]/10 px-1 py-0.5 rounded w-fit flex items-center gap-1 mt-1 uppercase font-black tracking-widest"><ShoppingBag size={8} /> Shopee</span>
                            ) : (
-                             <span className="text-[9px] text-muted-foreground block uppercase font-bold tracking-tighter mt-0.5">{sale.lead_source}</span>
+                             <span className="text-[8px] text-muted-foreground block uppercase font-bold tracking-tighter mt-0.5">{sale.lead_source}</span>
                            )}
                         </td>
                         <td className="px-2 py-3 text-center opacity-40 font-black">×{sale.quantity}</td>
@@ -765,9 +782,9 @@ export default function SalesPage() {
 
       {/* ── MODAL EDIÇÃO DE VENDA ── */}
       {editingSale && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setEditingSale(null)}></div>
-          <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border z-10 overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 mb-16 sm:mb-0">
             <div className="px-6 py-4 border-b border-border flex justify-between items-center">
               <h3 className="font-black text-sm uppercase tracking-widest text-foreground">Editar Lançamento</h3>
               <button onClick={() => setEditingSale(null)} className="p-1 hover:bg-muted rounded-full"><X size={18} /></button>

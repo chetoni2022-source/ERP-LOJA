@@ -233,6 +233,7 @@ export default function DashboardPage() {
   const [stockData, setStockData] = useState<any[]>(cachedData?.stockData || []);
   const [leadSourceData, setLeadSourceData] = useState<any[]>(cachedData?.leadSourceData || []);
   const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
+  const [globalROAS, setGlobalROAS] = useState(cachedData?.globalROAS || 0);
   const [stockHealthStats, setStockHealthStats] = useState<any>(cachedData?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
   const [topCustomers, setTopCustomers] = useState<any[]>(cachedData?.topCustomers || []);
   const [settings, setSettings] = useState<any>(cachedData?.settings || null);
@@ -326,10 +327,15 @@ export default function DashboardPage() {
           const pSite = (siteP - taxValueSite - cost);
           const pShopee = (shopeeP - commShopee - shopee_fee - taxValueShopee - cost);
           const pTiktok = (tiktokP - commTiktok - tiktok_fee - taxValueTiktok - cost);
-
+          
           totalProfitSite += pSite * qty;
           totalProfitShopee += pShopee * qty;
           totalProfitTiktok += pTiktok * qty;
+
+          // ROAS logic (Price / Unit Profit)
+          const roasSite = pSite > 0 ? (siteP / pSite) : 0;
+          const roasShopee = pShopee > 0 ? (shopeeP / pShopee) : 0;
+          const roasTiktok = pTiktok > 0 ? (tiktokP / pTiktok) : 0;
 
           // "Best Channel" logic: sum of max profit possible for each specific product
           const bestChannelProfit = Math.max(pSite, pShopee, pTiktok);
@@ -344,9 +350,9 @@ export default function DashboardPage() {
           profitBest: totalBestProfit,
           investment: totalInv,
           chartData: [
-            { name: 'Site', Venda: totalInventoryRevenue, Lucro: totalProfitSite, color: 'var(--primary)' },
-            { name: 'Shopee', Venda: totalInventoryRevenue, Lucro: totalProfitShopee, color: '#f53d2d' },
-            { name: 'TikTok Shop', Venda: totalInventoryRevenue, Lucro: totalProfitTiktok, color: '#000000' }
+            { name: 'Site', Venda: totalInventoryRevenue, Lucro: totalProfitSite, ROAS: totalProfitSite > 0 ? totalInventoryRevenue / totalProfitSite : 0, color: 'var(--primary)' },
+            { name: 'Shopee', Venda: totalInventoryRevenue, Lucro: totalProfitShopee, ROAS: totalProfitShopee > 0 ? totalInventoryRevenue / totalProfitShopee : 0, color: '#f53d2d' },
+            { name: 'TikTok Shop', Venda: totalInventoryRevenue, Lucro: totalProfitTiktok, ROAS: totalProfitTiktok > 0 ? totalInventoryRevenue / totalProfitTiktok : 0, color: '#000000' }
           ]
         };
         setStockProjections(projectionData);
@@ -371,6 +377,7 @@ export default function DashboardPage() {
         const profit = sales.reduce((acc, s) => acc + (s.total_price - (s.unit_cost_at_sale * s.quantity)), 0);
         setMonthlySalesValue(total);
         setTotalProfit(profit);
+        setGlobalROAS(profit > 0 ? (total / profit) : 0);
 
         const dailyData = sales.reduce((acc: any, sale: any) => {
           const date = new Date(sale.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
@@ -470,6 +477,7 @@ export default function DashboardPage() {
             stockData: products || [],
             leadSourceData: Object.entries(sourceCount).map(([n, v]) => ({ name: n, value: v })),
             totalProfit: thisMonthProfit,
+            globalROAS: thisMonthProfit > 0 ? (thisMonth / thisMonthProfit) : 0,
             settings: stgs,
             stockProjections: {
               revenue: totalInventoryRevenue,
@@ -523,10 +531,10 @@ export default function DashboardPage() {
     { 
       label: 'Lucro Estimado', 
       value: formatCurrency(totalProfit), 
-      sub: 'Lucro líquido aproximado', 
+      sub: globalROAS > 0 ? `ROAS Empate: ${globalROAS.toFixed(2)}x` : 'Lucro líquido aproximado', 
       icon: TrendingUp, 
       color: 'text-emerald-500',
-      info: 'Margem líquida aproximada após descontar o custo das peças das vendas realizadas.'
+      info: 'Representa a margem real líquida do período. O ROAS de Empate indica quanto você deve faturar para cada R$ 1,00 gasto em anúncios para não ter prejuízo.'
     },
     { 
       label: 'Alerta de Estoque', 
@@ -616,7 +624,7 @@ export default function DashboardPage() {
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {statCards.map((card, i) => (
               <div key={i} className="bg-card border border-border p-4 md:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-[80px] pointer-events-none" />
@@ -639,8 +647,8 @@ export default function DashboardPage() {
             <div className="md:col-span-5 bg-card border border-border rounded-2xl shadow-xl p-6 relative overflow-hidden group/pot">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 pointer-events-none blur-3xl opacity-50" />
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full -ml-16 -mb-16 pointer-events-none blur-3xl opacity-50" />
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 min-w-0">
+                <div className="min-w-0">
                   <h3 className="font-black text-2xl text-foreground flex items-center gap-3 tracking-tight italic">
                     <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> 
                     POTENCIAL DO ESTOQUE
@@ -705,6 +713,12 @@ export default function DashboardPage() {
                                   <span className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Lucro Estimado</span>
                                   <span className="text-lg font-black text-emerald-500">{formatCurrency(payload[1].value as number)}</span>
                                 </div>
+                                {payload[0].payload.ROAS > 0 && (
+                                  <div className="flex flex-col pt-2 border-t border-border/50">
+                                    <span className="text-[10px] font-bold text-primary uppercase mb-1">ROAS de Empate</span>
+                                    <span className="text-sm font-black text-primary">{payload[0].payload.ROAS.toFixed(2)}x</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

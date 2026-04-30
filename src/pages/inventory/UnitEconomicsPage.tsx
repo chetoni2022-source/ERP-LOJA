@@ -49,7 +49,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => classes.filter
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 // Common Grid Classes for perfect alignment
-const GRID_CLASSES = "grid grid-cols-[1fr_80px_100px_100px_100px_100px_100px_110px_130px_48px] gap-2 items-center";
+const GRID_CLASSES = "grid grid-cols-[1fr_80px_90px_90px_90px_90px_80px_100px_130px_48px] gap-2 items-center";
 
 const HeaderTooltip = ({ title, content, align = 'center' }: { title: string, content: string, align?: 'center' | 'left' | 'right' }) => (
   <div className="group relative inline-block ml-1 align-middle">
@@ -163,6 +163,7 @@ export default function UnitEconomicsPage() {
     const repasse = price - commissionValue - fixedFee - taxValue;
     const result = repasse - totalProductCost;
     const margin = (result / price) * 100;
+    const roas = result > 0 ? (price / result) : 0;
 
     return {
       price,
@@ -172,7 +173,8 @@ export default function UnitEconomicsPage() {
       fee: fixedFee,
       repasse,
       result,
-      margin
+      margin,
+      roas
     };
   };
 
@@ -267,8 +269,8 @@ export default function UnitEconomicsPage() {
           </div>
           
           <div className="text-center">
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Lucro</span>
-             <HeaderTooltip align="right" title="Resultado Real" content="O lucro líquido que fica com você após pagar o custo do produto e as taxas. (Repasse - Custo)" />
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Lucro / ROAS</span>
+             <HeaderTooltip align="right" title="Resultado & ROAS" content="O lucro líquido (Repasse - Custo) e o ROAS de Empate (Preço / Lucro). Mostra quanto sobra e o retorno mínimo necessário em anúncios." />
           </div>
           <div />
         </div>
@@ -340,8 +342,8 @@ export default function UnitEconomicsPage() {
 
                   {/* Expanded Breakdown */}
                   {isExpanded && (
-                    <div className="px-8 lg:px-10 pb-8 animate-in slide-in-from-top-6 duration-700">
-                      <div className="bg-background/60 border border-border/40 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl">
+                    <div className="px-8 lg:px-10 pb-8 animate-in slide-in-from-top-6 duration-700 overflow-x-auto lg:overflow-x-visible">
+                      <div className="bg-background/60 border border-border/40 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl min-w-[1000px] lg:min-w-0">
                         <div className="divide-y divide-border/20">
                           {(['site', 'shopee', 'tiktok'] as const).map(platform => {
                             if (!visiblePlatforms[platform]) return null;
@@ -418,18 +420,25 @@ export default function UnitEconomicsPage() {
                                     </div>
                                   </div>
                                   <div className="text-center lg:block">
-                                    <p className="lg:hidden text-[9px] font-black text-foreground uppercase mb-1">Resultado</p>
+                                    <p className="lg:hidden text-[9px] font-black text-foreground uppercase mb-1">Resultado / ROAS</p>
                                     <div className="flex flex-col items-center">
                                         <span className={cn("text-sm font-black font-mono tracking-tighter", isNeg ? "text-red-500" : "text-emerald-500")}>
                                           {ecc.result > 0 ? '+' : ''}{fmt(ecc.result)}
                                         </span>
-                                        <div className={cn(
-                                          "text-[9px] font-black px-1.5 py-0.5 rounded-full mt-0.5 border", 
-                                          isNeg ? "bg-red-500/10 text-red-500 border-red-500/20" : 
-                                          ecc.margin > 20 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : 
-                                          "bg-orange-500/10 text-orange-500 border-orange-500/20"
-                                        )}>
-                                          {ecc.margin.toFixed(1)}% MG
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                          <div className={cn(
+                                            "text-[9px] font-black px-1.5 py-0.5 rounded-full border", 
+                                            isNeg ? "bg-red-500/10 text-red-500 border-red-500/20" : 
+                                            ecc.margin > 20 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : 
+                                            "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                                          )}>
+                                            {ecc.margin.toFixed(0)}% MG
+                                          </div>
+                                          {ecc.roas > 0 && (
+                                            <div className="text-[9px] font-black px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 flex items-center gap-0.5" title="ROAS de Empate">
+                                              {ecc.roas.toFixed(1)} <span className="text-[7px] opacity-60">ROAS</span>
+                                            </div>
+                                          )}
                                         </div>
                                     </div>
                                   </div>

@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
-import { UserCircle2, Plus, Trash2, Edit2, Loader2, Search, Phone, Mail, ShoppingBag, X, ChevronRight, MessageCircle } from 'lucide-react';
+import { UserCircle2, Plus, Trash2, Edit2, Loader2, Search, Phone, Mail, ShoppingBag, X, ChevronRight, MessageCircle, ArrowLeft } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -51,7 +51,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user.id, toastError]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
@@ -118,7 +118,7 @@ export default function CustomersPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-5 animate-in fade-in duration-300 pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${selectedCustomer ? 'hidden md:flex' : ''}`}>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5 flex items-center gap-2">
             <UserCircle2 className="text-primary hidden md:inline" /> Clientes
@@ -130,15 +130,15 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
+      {/* Search - Hidden on mobile if customer selected */}
+      <div className={`relative ${selectedCustomer ? 'hidden md:block' : ''}`}>
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, telefone ou e-mail..." className="pl-10 h-11 bg-card" />
       </div>
 
       <div className="grid md:grid-cols-5 gap-4">
         {/* Customer List */}
-        <div className={`bg-card border border-border rounded-xl shadow-sm overflow-hidden ${selectedCustomer ? 'md:col-span-2' : 'md:col-span-5'}`}>
+        <div className={`bg-card border border-border rounded-xl shadow-sm overflow-hidden ${selectedCustomer ? 'md:col-span-2 hidden md:block' : 'md:col-span-5'}`}>
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="animate-spin h-6 w-6 text-primary/50" /></div>
           ) : filtered.length === 0 ? (
@@ -175,9 +175,12 @@ export default function CustomersPage() {
 
         {/* Customer Detail / History */}
         {selectedCustomer && (
-          <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="px-5 py-4 border-b border-border bg-muted/20 flex items-start justify-between gap-3">
+          <div className="md:col-span-3 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 min-h-[60vh]">
+            <div className="px-5 py-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex items-center gap-3">
+                <Button onClick={() => setSelectedCustomer(null)} className="h-9 w-9 p-0 bg-muted hover:bg-primary/10 hover:text-primary sm:hidden shrink-0 border border-border">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
                 <div className="h-12 w-12 rounded-full bg-primary/15 flex items-center justify-center border border-primary/20 shrink-0">
                   <span className="font-black text-primary text-base">{selectedCustomer.full_name[0].toUpperCase()}</span>
                 </div>
@@ -209,7 +212,7 @@ export default function CustomersPage() {
                 <Button onClick={() => handleDelete(selectedCustomer)} className="h-8 w-8 px-0 bg-muted border border-border text-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button onClick={() => setSelectedCustomer(null)} className="h-8 w-8 px-0 bg-muted border border-border text-foreground hover:bg-muted/80 transition-colors">
+                <Button onClick={() => setSelectedCustomer(null)} className="h-8 w-8 px-0 bg-muted border border-border text-foreground hover:bg-muted/80 transition-colors sm:flex hidden">
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -265,41 +268,46 @@ export default function CustomersPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 flex flex-col max-h-[90svh] sm:max-h-[85vh] animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 overflow-hidden">
-            {/* Header */}
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 flex flex-col max-h-[calc(100svh-80px)] sm:max-h-[85vh] mb-16 sm:mb-0 animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 overflow-hidden">
             <div className="px-5 py-4 border-b border-border shrink-0 flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h3>
               <button onClick={() => setModalOpen(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome Completo *</Label>
-                <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Maria Carolina Silva" className="mt-1 h-11" autoFocus />
+                <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Maria Carolina Silva" className="mt-1.5 h-12" autoFocus />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Telefone</Label>
-                  <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="(11) 99999-9999" className="mt-1 h-11" />
+                  <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="(11) 99999-9999" className="mt-1.5 h-12" inputMode="tel" />
                 </div>
                 <div>
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">E-mail</Label>
-                  <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@..." className="mt-1 h-11" />
+                  <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" className="mt-1.5 h-12" />
                 </div>
               </div>
               <div>
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Observações</Label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Preferências, ocasiões especiais..." className="mt-1 w-full h-20 px-3 py-2.5 rounded-lg border border-border bg-background text-sm font-medium text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary" />
+                <textarea
+                  value={form.notes}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Preferências, ocasiões especiais, presente frequente..."
+                  className="mt-1.5 w-full h-24 px-3 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                />
               </div>
             </div>
-            {/* Sticky Footer — always visible on mobile */}
-            <div className="p-4 border-t border-border bg-card flex gap-3 shrink-0">
-              <Button onClick={() => setModalOpen(false)} className="flex-1 h-12 bg-muted text-foreground border border-border hover:bg-muted/80 font-bold">Cancelar</Button>
-              <Button onClick={handleSave} disabled={saving || !form.full_name.trim()} className="flex-1 h-12 font-black bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs shadow-md active:scale-95 transition-all">
-                {saving ? <Loader2 className="animate-spin h-4 w-4 mr-1" /> : null}
-                {saving ? 'Salvando...' : editingId ? 'Salvar' : 'Cadastrar'}
+            <div className="p-4 border-t border-border bg-card/95 backdrop-blur-sm flex gap-3 shrink-0">
+              <Button onClick={() => setModalOpen(false)} className="flex-1 h-12 bg-muted text-foreground border border-border hover:bg-muted/80 font-bold rounded-xl">Cancelar</Button>
+              <Button
+                onClick={handleSave}
+                disabled={saving || !form.full_name.trim()}
+                className="flex-1 h-12 font-black bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs shadow-md active:scale-95 transition-all rounded-xl disabled:opacity-40"
+              >
+                {saving ? <Loader2 className="animate-spin h-4 w-4" /> : editingId ? 'Salvar' : 'Cadastrar'}
               </Button>
             </div>
           </div>

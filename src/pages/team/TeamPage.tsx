@@ -119,7 +119,7 @@ export default function TeamPage() {
         <h2 className="font-bold text-base text-foreground flex items-center gap-2 mb-4">
           <UserPlus className="h-5 w-5 text-primary" /> Convidar Novo Membro
         </h2>
-        <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-3">
+        <form onSubmit={handleInvite} className="space-y-3 md:space-y-0 md:flex md:flex-row md:gap-3">
           <div className="flex-1 relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -128,20 +128,22 @@ export default function TeamPage() {
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
               placeholder="email@membro.com"
-              className="h-11 pl-9 font-medium bg-background"
+              className="h-11 pl-9 font-medium bg-background rounded-xl"
             />
           </div>
-          <select
-            value={inviteRole}
-            onChange={e => setInviteRole(e.target.value)}
-            className="h-11 px-3 bg-background border border-border text-foreground font-bold text-sm rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary md:w-48"
-          >
-            {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-          <Button type="submit" disabled={inviting} className="h-11 px-6 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
-            {inviting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
-            Convidar
-          </Button>
+          <div className="flex gap-2">
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value)}
+              className="h-11 px-3 bg-background border border-border text-foreground font-bold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-1 focus:ring-primary flex-1 md:w-48 appearance-none"
+            >
+              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+            <Button type="submit" disabled={inviting} className="h-11 px-6 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-xl flex-1 md:flex-none">
+              {inviting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+              Convidar
+            </Button>
+          </div>
         </form>
 
         {successMsg && (
@@ -197,20 +199,20 @@ export default function TeamPage() {
             {members.map(member => {
               const isCurrentUser = member.id === user?.id;
               return (
-                <div key={member.id} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/20 transition-colors">
-                  <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0 border border-primary/20">
-                    <span className="font-black text-primary text-sm">
+                <div key={member.id} className="flex items-center gap-3 md:gap-4 px-4 md:px-5 py-4 hover:bg-muted/10 transition-colors">
+                  <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                    <span className="font-black text-primary text-xs md:text-sm">
                       {(member.full_name || 'M')[0].toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <span className="font-bold text-sm text-foreground truncate">{member.full_name || 'Membro sem nome'}</span>
-                      {isCurrentUser && <span className="text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1.5 py-0.5 rounded">Você</span>}
+                      {isCurrentUser && <span className="text-[8px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20 px-1.5 py-0.5 rounded shrink-0">Você</span>}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {getRoleBadge(member.role || 'sales')}
-                      <span className="text-[10px] text-muted-foreground">· desde {new Date(member.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</span>
+                      <span className="text-[9px] text-muted-foreground opacity-60">· desde {new Date(member.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</span>
                     </div>
                   </div>
 
@@ -219,12 +221,12 @@ export default function TeamPage() {
                       <select
                         value={member.role || 'sales'}
                         onChange={e => updateRole(member.id, e.target.value)}
-                        className="h-8 px-2 bg-background border border-border text-foreground font-bold text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-primary hidden md:block"
+                        className="h-8 px-2 bg-background border border-border text-foreground font-bold text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-primary hidden sm:block"
                       >
                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
-                      <Button onClick={() => removeMember(member.id)} className="h-8 w-8 px-0 bg-muted border border-border text-foreground hover:bg-red-500/10 hover:border-red-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button onClick={() => removeMember(member.id)} className="h-9 w-9 px-0 bg-muted/30 border border-border/40 text-foreground hover:bg-red-500/10 hover:border-red-400 hover:text-red-500 transition-colors rounded-xl">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}

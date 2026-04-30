@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Link as LinkIcon, Blocks } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Link as LinkIcon, Blocks, Layout } from 'lucide-react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -26,15 +27,20 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   
   // White-label State
+  const { tenantId } = useTenant();
   const [storeName, setStoreName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [monthlyGoal, setMonthlyGoal] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#a855f7');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [loginBgFile, setLoginBgFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [loginBgPreview, setLoginBgPreview] = useState<string | null>(null);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null);
+  const [currentLoginBgUrl, setCurrentLoginBgUrl] = useState<string | null>(null);
   const [savingBrand, setSavingBrand] = useState(false);
 
   // Logo display settings
@@ -68,24 +74,45 @@ export default function SettingsPage() {
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from('store_settings')
+    if (!user || !tenantId) return;
+
+    // Load tenant branding
+    supabase.from('tenant_branding')
       .select('*')
-      .eq('user_id', user.id)
-      .limit(1).maybeSingle().then(({ data }: { data: any }) => {
+      .eq('tenant_id', tenantId)
+      .maybeSingle()
+      .then(({ data }) => {
         if (data) {
           if (data.store_name) setStoreName(data.store_name);
-          if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
-          if (data.monthly_goal) setMonthlyGoal(data.monthly_goal.toString());
           if (data.logo_url) setCurrentLogoUrl(data.logo_url);
           if (data.favicon_url) setCurrentFaviconUrl(data.favicon_url);
+          if (data.login_bg_url) setCurrentLoginBgUrl(data.login_bg_url);
+          if (data.primary_color) setPrimaryColor(data.primary_color);
+          if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
+        }
+      });
+
+    // Load other settings
+    supabase.from('store_settings')
+      .select('*')
+      .eq('tenant_id', tenantId) // Filter by tenant now
+      .limit(1).maybeSingle().then(({ data }: { data: any }) => {
+        if (data) {
+          // Backward compatibility: if tenant_branding was empty, use these
+          if (!storeName && data.store_name) setStoreName(data.store_name);
+          if (!whatsappNumber && data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
+          
+          if (data.monthly_goal) setMonthlyGoal(data.monthly_goal.toString());
+          if (!currentLogoUrl && data.logo_url) setCurrentLogoUrl(data.logo_url);
+          if (!currentFaviconUrl && data.favicon_url) setCurrentFaviconUrl(data.favicon_url);
+          
           if (data.logo_width) setLogoWidth(data.logo_width);
           if (data.logo_height) setLogoHeight(data.logo_height);
           if (data.logo_fit) setLogoFit(data.logo_fit);
           if (data.logo_position) setLogoPosition(data.logo_position);
           if (data.lead_sources) setLeadSources(data.lead_sources);
           if (data.shopee_app_id) setShopeeAppId(data.shopee_app_id);
-          if (data.shopee_app_secret) setShopeeSecret(data.shopee_app_secret);
+          if (data.shopee_app_secret) setShopeeAppId(data.shopee_app_secret);
           if (data.shopee_shop_id) setShopeeShopId(data.shopee_shop_id);
           if (data.shopee_markup_pct !== null) setShopeeMarkup(data.shopee_markup_pct.toString());
           if (data.tiktok_markup_pct !== null) setTiktokMarkup(data.tiktok_markup_pct.toString());
@@ -98,7 +125,7 @@ export default function SettingsPage() {
           if (data.global_tax_pct !== null) setGlobalTaxPct(data.global_tax_pct.toString());
         }
       });
-  }, [user]);
+  }, [user, tenantId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: any, setPreview: any) => {
     if (e.target.files && e.target.files[0]) {
@@ -115,56 +142,72 @@ export default function SettingsPage() {
 
   const handleSaveBranding = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenantId) return;
     setSavingBrand(true);
     try {
       let logoUrl = null;
       let faviconUrl = null;
+      let loginBgUrl = null;
 
       if (logoFile) {
-        const logoExt = logoFile.name.split('.').pop();
-        const { error, data } = await supabase.storage.from('brand').upload(`logo-${Date.now()}.${logoExt}`, logoFile);
+        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/logo-${Date.now()}`, logoFile);
         if (error) throw error;
         logoUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
       if (faviconFile) {
-        const favExt = faviconFile.name.split('.').pop();
-        const { error, data } = await supabase.storage.from('brand').upload(`favicon-${Date.now()}.${favExt}`, faviconFile);
+        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/favicon-${Date.now()}`, faviconFile);
         if (error) throw error;
         faviconUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
-      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
-      
-      const payload: any = {};
-      if (storeName) payload.store_name = storeName;
-      if (whatsappNumber) payload.whatsapp_number = whatsappNumber;
-      if (logoUrl) { payload.logo_url = logoUrl; setCurrentLogoUrl(logoUrl); }
-      if (faviconUrl) { payload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
-      if (monthlyGoal) payload.monthly_goal = parseFloat(monthlyGoal);
-      payload.lead_sources = leadSources;
+      if (loginBgFile) {
+        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/login-bg-${Date.now()}`, loginBgFile);
+        if (error) throw error;
+        loginBgUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
+      }
 
-      if (Object.keys(payload).length === 0) { toastError('Preencha ao menos um campo para salvar.'); return; }
-      if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
+      // 1. Save to tenant_branding
+      const brandingPayload: any = {
+        store_name: storeName,
+        whatsapp_number: whatsappNumber,
+        primary_color: primaryColor,
+      };
+      if (logoUrl) { brandingPayload.logo_url = logoUrl; setCurrentLogoUrl(logoUrl); }
+      if (faviconUrl) { brandingPayload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
+      if (loginBgUrl) { brandingPayload.login_bg_url = loginBgUrl; setCurrentLoginBgUrl(loginBgUrl); }
 
-      if (existing) {
-        const { error: upError } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
-        if (upError) throw upError;
+      const { data: existingBranding } = await supabase.from('tenant_branding').select('id').eq('tenant_id', tenantId).maybeSingle();
+      if (existingBranding) {
+        await supabase.from('tenant_branding').update(brandingPayload).eq('id', existingBranding.id);
       } else {
-        const { error: inError } = await supabase.from('store_settings').insert([{ ...payload, user_id: user?.id }]);
-        if (inError) throw inError;
+        await supabase.from('tenant_branding').insert([{ ...brandingPayload, tenant_id: tenantId }]);
       }
 
-      setLogoFile(null); setFaviconFile(null); setLogoPreview(null); setFaviconPreview(null);
-      if (faviconUrl) {
-        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-        link.href = `${faviconUrl}?v=${Date.now()}`;
+      // 2. Save common settings to store_settings
+      const settingsPayload: any = {
+        store_name: storeName,
+        whatsapp_number: whatsappNumber,
+        monthly_goal: parseFloat(monthlyGoal) || 0,
+        lead_sources: leadSources
+      };
+      if (logoUrl) settingsPayload.logo_url = logoUrl;
+      if (faviconUrl) settingsPayload.favicon_url = faviconUrl;
+
+      const { data: existingSettings } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      if (existingSettings) {
+        await supabase.from('store_settings').update(settingsPayload).eq('id', existingSettings.id);
+      } else {
+        await supabase.from('store_settings').insert([{ ...settingsPayload, tenant_id: tenantId, user_id: user?.id }]);
       }
-      success('Identidade visual salva! As alterações foram aplicadas em todo o sistema.');
+
+      setLogoFile(null); setFaviconFile(null); setLoginBgFile(null);
+      setLogoPreview(null); setFaviconPreview(null); setLoginBgPreview(null);
+      
+      success('Identidade visual salva! As alterações foram aplicadas para toda a empresa.');
     } catch (err: any) { 
       console.error('Error saving branding:', err);
-      toastError('Erro ao salvar: ' + (err.message || 'Verifique sua conexão ou permissões.')); 
+      toastError('Erro ao salvar: ' + (err.message || 'Verifique sua conexão.')); 
     } 
     finally { setSavingBrand(false); }
   };
@@ -172,15 +215,15 @@ export default function SettingsPage() {
   const handleSaveDisplaySettings = async () => {
     setSavingDisplay(true);
     try {
-      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
-      if (!user?.id) { toastError('Erro: Usuário não identificado. Tente fazer login novamente.'); return; }
+      if (!tenantId) return;
+      const { data: existing } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
       const payload = { logo_width: logoWidth, logo_height: logoHeight, logo_fit: logoFit, logo_position: logoPosition };
       
       if (existing) {
         const { error: upError } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
         if (upError) throw upError;
       } else {
-        const { error: inError } = await supabase.from('store_settings').insert([{ ...payload, user_id: user?.id }]);
+        const { error: inError } = await supabase.from('store_settings').insert([{ ...payload, tenant_id: tenantId, user_id: user?.id }]);
         if (inError) throw inError;
       }
       success('Configurações de exibição salvas!');
@@ -195,8 +238,8 @@ export default function SettingsPage() {
     e.preventDefault();
     setSavingShopee(true);
     try {
-      const { data: existing } = await supabase.from('store_settings').select('id').eq('user_id', user?.id).limit(1).maybeSingle();
-      if (!user?.id) { toastError('Erro: Usuário não identificado.'); return; }
+      if (!tenantId) return;
+      const { data: existing } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
       
       const payload = { 
         shopee_app_id: shopeeAppId || null, 
@@ -217,7 +260,7 @@ export default function SettingsPage() {
         const { error } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
         if (error) throw error;
       } else {
-         toastError('Erro: Registre sua marca em "Identidade Visual" primeiro.'); return;
+        await supabase.from('store_settings').insert([{ ...payload, tenant_id: tenantId, user_id: user?.id }]);
       }
       success('Configurações de Marketplaces salvas no ERP!');
     } catch (err: any) { 
@@ -257,6 +300,7 @@ export default function SettingsPage() {
 
   const previewImg = logoPreview || getProxyUrl(currentLogoUrl);
   const faviconImg = faviconPreview || getProxyUrl(currentFaviconUrl);
+  const loginBgImg = loginBgPreview || getProxyUrl(currentLoginBgUrl);
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
@@ -379,6 +423,20 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-1.5">
+                <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Palette size={14} className="text-primary"/> Cor Primária do Sistema</Label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="color" 
+                    value={primaryColor} 
+                    onChange={e => setPrimaryColor(e.target.value)}
+                    className="h-11 w-11 rounded-xl border border-border cursor-pointer bg-background"
+                  />
+                  <Input value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="bg-background shadow-sm h-11 font-mono uppercase" />
+                </div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Esta cor será aplicada em botões e destaques para toda sua equipe.</p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Target size={14} className="text-primary"/> Meta Mensal (R$)</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xs">R$</span>
@@ -420,10 +478,31 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-2">
+              {/* Login Background */}
+              <div className="space-y-2">
+                <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Layout size={14} className="text-primary"/> Fundo da Tela de Login</Label>
+                <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[180px] overflow-hidden shadow-inner">
+                  {loginBgImg
+                    ? <img src={loginBgImg} alt="Login Background" crossOrigin="anonymous" className="w-full h-full object-cover z-10" />
+                    : <div className="flex flex-col items-center z-10 pointer-events-none">
+                        <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
+                        <span className="text-xs font-bold">Enviar Imagem de Fundo</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">Recomendado: 1920x1080px</span>
+                      </div>
+                  }
+                  <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setLoginBgFile,setLoginBgPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
+                  {loginBgImg && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-11">
+                      <span className="text-white text-xs font-black uppercase tracking-widest">Trocar Fundo</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-4 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
                 <Button type="submit" disabled={savingBrand||(!storeName&&!logoFile&&!faviconFile&&!monthlyGoal)}
-                  className="w-full h-12 text-sm font-black tracking-wide shadow-lg bg-primary text-primary-foreground transition-all active:scale-95">
-                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade Visual
+                  className="w-full h-12 text-sm font-black tracking-widest shadow-lg bg-primary text-primary-foreground transition-all active:scale-[0.98] rounded-xl uppercase">
+                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade
                 </Button>
               </div>
             </form>
@@ -511,10 +590,10 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-muted-foreground">Define de onde a logo é "ancorada" ao cortar (modo Cobrir).</p>
               </div>
 
-              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0">
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
                 <Button onClick={handleSaveDisplaySettings} disabled={savingDisplay}
-                  className="w-full h-11 font-black uppercase tracking-wider bg-primary text-primary-foreground shadow-md transition-all active:scale-95">
-                  {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição da Logo
+                  className="w-full h-11 font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-lg transition-all active:scale-[0.98] rounded-xl text-[10px]">
+                  {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição
                 </Button>
               </div>
             </div>
@@ -587,10 +666,10 @@ export default function SettingsPage() {
                          </div>
                       </div>
                     </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0">
-                      <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl transition-all active:scale-95">
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
+                      <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl transition-all active:scale-[0.98]">
                          {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                         Salvar Marketplace Taxas
+                         Salvar Taxas Marketplaces
                       </Button>
                     </div>
                   </form>

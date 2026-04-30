@@ -1,19 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Input, Label } from '../../components/ui';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Building2 } from 'lucide-react';
+
+interface TenantLoginBranding {
+  store_name: string | null;
+  logo_url: string | null;
+  login_bg_url: string | null;
+  primary_color: string | null;
+  tenant_id: string;
+  tenant_name: string;
+}
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [brandingLoading, setBrandingLoading] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [settings, setSettings] = useState<{ logo_url: string | null } | null>(null);
+  const [tenantBranding, setTenantBranding] = useState<TenantLoginBranding | null>(null);
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -21,10 +31,76 @@ export default function AuthPage() {
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
 
-  useEffect(() => {
-    supabase.from('store_settings').select('logo_url').limit(1).maybeSingle()
-      .then(({ data }) => { if (data) setSettings(data); });
+  // Detect tenant by email domain when user stops typing
+  const detectTenantByEmail = useCallback(async (emailValue: string) => {
+    if (!emailValue || !emailValue.includes('@')) {
+      setTenantBranding(null);
+      return;
+    }
+
+    setBrandingLoading(true);
+    try {
+      // Try to find tenant by owner_email or users with that email domain
+      const domain = emailValue.split('@')[1];
+
+      // Look for tenant branding linked to users with this email domain
+      const { data } = await supabase
+        .from('tenants')
+        .select(`
+          id, name, slug,
+          tenant_branding (
+            store_name, logo_url, login_bg_url, primary_color
+          )
+        `)
+        .eq('status', 'active')
+        .limit(10);
+
+      if (data && data.length > 0) {
+        // Check if any tenant has a user with this email
+        const { data: profileMatch } = await supabase
+          .from('profiles')
+          .select('tenant_id, full_name')
+          .limit(1)
+          .single();
+
+        // For now, try to match by owner_email domain
+        const { data: tenantByDomain } = await supabase
+          .from('tenants')
+          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, primary_color)`)
+          .ilike('owner_email', `%@${domain}`)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (tenantByDomain) {
+          const branding = (tenantByDomain as any).tenant_branding;
+          setTenantBranding({
+            store_name: branding?.store_name ?? null,
+            logo_url: branding?.logo_url ?? null,
+            login_bg_url: branding?.login_bg_url ?? null,
+            primary_color: branding?.primary_color ?? null,
+            tenant_id: tenantByDomain.id,
+            tenant_name: tenantByDomain.name,
+          });
+          return;
+        }
+      }
+
+      setTenantBranding(null);
+    } catch {
+      setTenantBranding(null);
+    } finally {
+      setBrandingLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (email && email.includes('@') && email.includes('.')) {
+        detectTenantByEmail(email);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [email, detectTenantByEmail]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +124,17 @@ export default function AuthPage() {
         });
         if (signUpError) throw signUpError;
         if (data.user) {
-          await supabase.from('profiles').insert([{ id: data.user.id, full_name: name, role: 'admin' }]);
-          success('Conta criada com sucesso! Verifique seu e-mail.');
+          const profilePayload: any = {
+            id: data.user.id,
+            full_name: name,
+            role: 'admin',
+          };
+          // If a tenant was detected by email, assign the user to it
+          if (tenantBranding?.tenant_id) {
+            profilePayload.tenant_id = tenantBranding.tenant_id;
+          }
+          await supabase.from('profiles').insert([profilePayload]);
+          success('Conta criada! Verifique seu e-mail.');
         }
       }
     } catch (err: any) {
@@ -59,146 +144,203 @@ export default function AuthPage() {
     }
   };
 
+  const title = recoveryMode ? 'Recuperar Acesso' : isLogin ? 'Entrar' : 'Criar Conta';
+  const primaryColor = tenantBranding?.primary_color || '#18181b';
+  const bgImage = tenantBranding?.login_bg_url || '/auth-bg.jpg';
+  const logoUrl = tenantBranding?.logo_url || null;
+  const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
-      {/* Background subtle pattern */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/3 rounded-full blur-[80px]" />
-        {/* E-commerce / Fashion subtle background */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.015]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
+    <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
+      
+      {/* ── Esquerda: Imagem de Fundo (Desktop) ─── */}
+      <div className="hidden md:flex md:w-1/2 lg:w-[55%] relative overflow-hidden">
+        <img
+          src={bgImage}
+          alt={storeName}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        
+        {tenantBranding && (
+          <div className="absolute top-8 left-8 flex items-center gap-3 animate-in fade-in duration-500">
+            <div
+              className="h-8 w-8 rounded-lg flex items-center justify-center"
+              style={{ background: primaryColor }}
+            >
+              <Building2 className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-white/80 text-xs font-black uppercase tracking-widest">
+              {tenantBranding.tenant_name}
+            </span>
+          </div>
+        )}
+
+        <div className="absolute bottom-12 left-12 right-12 z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+           <div className="h-px w-12 bg-white/40 mb-6" />
+           <h2 className="text-white text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-4">
+             A elegância que<br />
+             <span className="text-white/60">sua loja merece.</span>
+           </h2>
+           <p className="text-white/50 text-sm font-medium max-w-sm leading-relaxed tracking-wide uppercase text-[10px]">
+             Sistema completo de gestão para joias e acessórios.
+           </p>
+        </div>
       </div>
 
-      {/* ⚡ Nano Box Portal (v7.0 Laris — Mobile Optimized) */}
-      <div className="w-full max-w-[300px] relative z-10 flex flex-col animate-in zoom-in-95 duration-500">
-        <div className="bg-white border border-zinc-200 shadow-2xl rounded-2xl p-5 sm:p-6 relative overflow-hidden dark:bg-zinc-900 dark:border-zinc-800">
-          <div className="space-y-4 sm:space-y-5">
-            {/* Logo / Branding */}
-            {settings?.logo_url ? (
-              <div className="flex items-center justify-start h-6 sm:h-8 mb-2 sm:mb-3 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all">
+      {/* ── Direita: Painel de Login ─── */}
+      <div className="flex-1 flex flex-col items-center justify-center relative bg-white dark:bg-[#050505] overflow-hidden">
+        
+        {/* Mobile background */}
+        <div className="md:hidden absolute inset-0">
+          <img src={bgImage} alt="" className="w-full h-full object-cover opacity-15" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/95 to-white dark:from-black/70 dark:via-[#050505]/95 dark:to-[#050505]" />
+        </div>
+
+        <div className="relative z-10 w-full px-8 py-10 max-w-[440px] mx-auto flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
+          
+          {/* Logo / Branding */}
+          <div className="mb-12 flex flex-col items-center w-full">
+            {logoUrl ? (
+              <div className="mb-8 flex items-center justify-center w-full transition-transform duration-500 hover:scale-[1.02]">
                 <img
-                  src={settings.logo_url}
+                  src={logoUrl}
                   crossOrigin="anonymous"
-                  className="h-full w-auto object-contain"
-                  alt="Logo Laris"
+                  alt={storeName}
+                  className="h-28 sm:h-32 w-auto max-w-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2 mb-1">
-                <div className="h-5 w-5 rounded-md bg-zinc-900 dark:bg-white flex items-center justify-center shrink-0">
-                  <span className="text-white dark:text-zinc-900 text-[8px] font-black">L</span>
+              <div className="mb-8 flex flex-col items-center gap-4">
+                <div
+                  className="h-20 w-20 rounded-3xl flex items-center justify-center shadow-2xl relative group overflow-hidden"
+                  style={{ background: primaryColor }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <span className="text-white text-3xl font-black">
+                    {storeName[0]?.toUpperCase() ?? 'E'}
+                  </span>
                 </div>
-                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em]">Laris Acessórios</span>
+                <span className="text-xs font-black text-zinc-400 dark:text-zinc-500 tracking-[0.4em] uppercase">{storeName}</span>
               </div>
             )}
 
-            <div>
-              <h1 className="text-lg sm:text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight uppercase leading-none mb-0.5">
-                {recoveryMode ? 'Recuperar' : isLogin ? 'Acesso' : 'Cadastro'}
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase italic">
+                {title}
               </h1>
-              <p className="text-[7px] sm:text-[8px] font-bold text-zinc-400 uppercase tracking-[0.3em]">
-                Aura Elite ERP · Laris
+              <div className="h-1 w-8 mx-auto rounded-full" style={{ background: primaryColor }} />
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] pt-1">
+                {tenantBranding ? `Plataforma ${storeName}` : 'Acessar Plataforma'}
               </p>
             </div>
+          </div>
 
-            <form onSubmit={handleAuth} className="space-y-3 sm:space-y-3.5">
-              {!isLogin && !recoveryMode && (
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400">Nome</Label>
-                  <Input
-                    required
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Seu nome"
-                    className="h-10 rounded-lg text-sm border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800"
-                  />
-                </div>
-              )}
+          {/* Form */}
+          <form onSubmit={handleAuth} className="space-y-4 w-full">
+            {!isLogin && !recoveryMode && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Nome Completo</Label>
+                <Input
+                  required
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Seu nome"
+                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5"
+                />
+              </div>
+            )}
 
-              <div className="space-y-1">
-                <Label className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400">E-mail</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">E-mail</Label>
+              <div className="relative">
                 <Input
                   required
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  className="h-10 rounded-lg text-sm border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800"
+                  placeholder="email@empresa.com"
+                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5 pr-10"
                   autoComplete="email"
                 />
+                {brandingLoading && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-zinc-400" />
+                )}
               </div>
-
-              {!recoveryMode && (
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400">Senha</Label>
-                    {isLogin && (
-                      <button
-                        type="button"
-                        onClick={() => setRecoveryMode(true)}
-                        className="text-[9px] font-bold text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-                      >
-                        Esqueci
-                      </button>
-                    )}
-                  </div>
-                  <Input
-                    required
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-10 rounded-lg text-sm border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 tracking-widest"
-                    autoComplete={isLogin ? 'current-password' : 'new-password'}
-                  />
+              {tenantBranding && !brandingLoading && (
+                <div className="flex items-center gap-2 px-1 pt-1 animate-in fade-in duration-300">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                    {tenantBranding.tenant_name} identificado
+                  </span>
                 </div>
               )}
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 font-black uppercase tracking-widest text-[10px] rounded-xl transition-all active:scale-95 shadow-lg mt-1"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin h-4 w-4" />
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {recoveryMode ? 'Enviar Link' : isLogin ? 'Entrar' : 'Criar Conta'}
-                    <ArrowRight size={14} />
-                  </span>
-                )}
-              </Button>
-            </form>
-
-            <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => {
-                  if (recoveryMode) setRecoveryMode(false);
-                  else setIsLogin(!isLogin);
-                }}
-                className="w-full text-center text-[9px] font-bold text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors uppercase tracking-[0.15em] py-1"
-              >
-                {recoveryMode
-                  ? '← Voltar ao login'
-                  : isLogin
-                  ? 'Não tem conta? Cadastrar'
-                  : 'Já tenho conta · Entrar'}
-              </button>
             </div>
-          </div>
-        </div>
 
-        <p className="text-center text-[8px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] mt-4">
-          Laris Acessórios &amp; Semijoias · ERP Elite
-        </p>
+            {!recoveryMode && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center px-1">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Senha</Label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setRecoveryMode(true)}
+                      className="text-[9px] font-black text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest"
+                    >
+                      Esqueceu?
+                    </button>
+                  )}
+                </div>
+                <Input
+                  required
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold tracking-widest focus:ring-0 transition-all pl-5"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-16 mt-4 text-white font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl transition-all active:scale-[0.97] shadow-2xl relative overflow-hidden group border-none"
+              style={{ background: primaryColor }}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                <span className="flex items-center gap-3">
+                  {title}
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </span>
+              )}
+            </Button>
+          </form>
+
+          {/* Toggle */}
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => {
+                if (recoveryMode) setRecoveryMode(false);
+                else setIsLogin(!isLogin);
+              }}
+              className="group flex flex-col items-center gap-1"
+            >
+              <span className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-widest transition-colors group-hover:text-zinc-400">
+                {recoveryMode ? 'Voltar para o portal' : isLogin ? 'Solicitar Novo Cadastro' : 'Já possui credenciais?'}
+              </span>
+              <div className="h-0.5 w-4 bg-zinc-100 dark:bg-zinc-800 transition-all group-hover:w-8 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700" />
+            </button>
+          </div>
+
+          <p className="mt-auto pt-16 text-[9px] font-black text-zinc-200 dark:text-zinc-900 uppercase tracking-[0.5em]">
+            POWERED BY LARIS ERP
+          </p>
+        </div>
       </div>
     </div>
   );

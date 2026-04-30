@@ -4,6 +4,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { useAuthStore } from './stores/authStore';
 import { supabase } from './lib/supabase';
 import { AppLayout } from './components/layout/AppLayout';
+import { TenantProvider } from './contexts/TenantContext';
 
 // Lazy load all pages
 const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
@@ -18,6 +19,7 @@ const CatalogPublicView = lazy(() => import('./pages/catalogs/CatalogPublicView'
 const TeamPage = lazy(() => import('./pages/team/TeamPage'));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const SuperAdminPage = lazy(() => import('./pages/superadmin/SuperAdminPage'));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -26,8 +28,7 @@ const PageLoader = () => (
 );
 
 /**
- * Persists the Layout and Session state across navigations.
- * This fixes the "white screen" bug when using the browser back button.
+ * Layout protegido para rotas do ERP. Mantém o sidebar e sessão persistentes.
  */
 function DashboardLayout() {
   const { user, loading } = useAuthStore();
@@ -41,6 +42,22 @@ function DashboardLayout() {
         <Outlet />
       </Suspense>
     </AppLayout>
+  );
+}
+
+/** Layout para o Super Admin — sem sidebar, página standalone. */
+function SuperAdminLayout() {
+  const { user, loading, profile } = useAuthStore();
+
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/auth" replace />;
+  // Aguarda o perfil carregar antes de redirecionar
+  if (profile && profile.role !== 'super_admin') return <Navigate to="/dashboard" replace />;
+
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <SuperAdminPage />
+    </Suspense>
   );
 }
 
@@ -63,33 +80,38 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/c/:id" element={<CatalogPublicView />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <TenantProvider>
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Rotas Públicas */}
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/c/:id" element={<CatalogPublicView />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            {/* Protected Routes (Persisted Layout) */}
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/inventory/analytics" element={<UnitEconomicsPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/sales" element={<SalesPage />} />
-              <Route path="/catalogs" element={<CatalogBuilderPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/team" element={<TeamPage />} />
-              <Route path="/customers" element={<CustomersPage />} />
-            </Route>
+                {/* Rota Secreta do Super Admin */}
+                <Route path="/superadmin-laris" element={<SuperAdminLayout />} />
 
-            {/* Redirects */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+                {/* Rotas Protegidas (Layout com sidebar) */}
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/inventory/analytics" element={<UnitEconomicsPage />} />
+                  <Route path="/categories" element={<CategoriesPage />} />
+                  <Route path="/sales" element={<SalesPage />} />
+                  <Route path="/catalogs" element={<CatalogBuilderPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/team" element={<TeamPage />} />
+                  <Route path="/customers" element={<CustomersPage />} />
+                </Route>
+
+                {/* Redirecionamentos */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TenantProvider>
     </ThemeProvider>
   );
 }

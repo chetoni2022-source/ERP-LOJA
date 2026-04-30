@@ -23,6 +23,7 @@ interface Product {
   created_at: string;
   updated_at?: string | null;
   category_id?: string | null;
+  material?: 'Ouro' | 'Prata' | 'Outro' | null;
   ean?: string | null;
   weight_g?: number;
   length_cm?: number;
@@ -48,6 +49,10 @@ const calculateROI = (salePrice: number, costPrice: number, platformFee: number 
   if (totalCost <= 0) return 0;
   return ((salePrice - totalCost) / totalCost) * 100;
 };
+const calculateBreakEvenROAS = (price: number, profit: number) => {
+  if (profit <= 0) return 0;
+  return price / profit;
+};
 const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
 export default function InventoryPage() {
@@ -61,6 +66,7 @@ export default function InventoryPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_desc' | 'price_asc'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
+  const [materialFilter, setMaterialFilter] = useState<'all' | 'Ouro' | 'Prata' | 'Outro'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const [categories, setCategories] = useState<any[]>([]);
@@ -104,6 +110,7 @@ export default function InventoryPage() {
   // Marketplace prices
   const [shopeePrice, setShopeePrice] = useState('');
   const [tiktokPrice, setTiktokPrice] = useState('');
+  const [material, setMaterial] = useState<'Ouro' | 'Prata' | 'Outro'>('Outro');
 
   // Variations State
   const [variations, setVariations] = useState<{name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string}[]>([]);
@@ -264,7 +271,8 @@ export default function InventoryPage() {
       return true;
     })
     .filter(p => {
-      if (categoryFilter !== 'all') return p.category_id === categoryFilter;
+      if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false;
+      if (materialFilter !== 'all' && (p.material || 'Outro') !== materialFilter) return false;
       return true;
     })
     .sort((a, b) => {
@@ -360,6 +368,7 @@ export default function InventoryPage() {
     const existingImgs = (p.images && p.images.length > 0) ? p.images : (p.image_url ? [p.image_url] : []);
     setImages(existingImgs.map(url => ({ file: null, preview: url, isExisting: true })));
     setCategoryId(p.category_id || '');
+    setMaterial((p.material as any) || 'Outro');
     setSupplierName(p.supplier_name || '');
     setSupplierLink(p.supplier_link || '');
     setShopeeVideo(p.media_assets?.shopee_video || '');
@@ -579,6 +588,7 @@ export default function InventoryPage() {
         images: finalImageUrls,
         image_url: finalImageUrls[0] || null,
         category_id: categoryId || null,
+        material: material || 'Outro',
         supplier_name: supplierName || null,
         supplier_link: supplierLink || null,
         shopee_price: shopeePrice ? parseFloat(shopeePrice) : null,
@@ -735,48 +745,79 @@ export default function InventoryPage() {
     }
   };
 
-  // Pre-calculations for smart formatting
-  const orgPrice = parseFloat(price) || 0;
-  const promoPrice = parseFloat(salePrice) || 0;
-  const isDiscountValid = salePrice && promoPrice > 0 && promoPrice < orgPrice;
-  const discountAbs = orgPrice - promoPrice;
-  const discountPct = orgPrice ? Math.round((discountAbs / orgPrice) * 100) : 0;
+  // ── REACTIVE CALCULATIONS (Memoized for performance and clarity) ──
+  const { 
+    siteActiveProfit, siteBaseROI, sitePromoROI, siteActivePrice, siteHasPromo, siteBreakEvenROAS,
+    itemTotalCosts, 
+    shopeeProfit, shopeeROI, shopeeSuggested, shopeeBreakEvenROAS,
+    tiktokProfit, tiktokROI, tiktokSuggested, tiktokBreakEvenROAS 
+  } = useMemo(() => {
+    const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
+    const baseP = parseFloat(price || '0');
+    const promoP = parseFloat(salePrice || '0');
+    const hasPromo = promoP > 0 && promoP < baseP;
+    const activeP = hasPromo ? promoP : baseP;
+    
+    // Site
+    const activeProfit = activeP - totalCosts;
+    const baseROI = calculateROI(baseP, totalCosts);
+    const promoROI = calculateROI(promoP, totalCosts);
 
-  const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-  const profitPerSale = (promoPrice || orgPrice || 0) - totalCost;
-  const profitColor = profitPerSale > 0 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" : 
-                      profitPerSale < 0 ? "text-red-500 bg-red-500/10 border-red-500/30" : 
-                      "text-muted-foreground bg-muted/30 border-border";
+    // Common Base for Marketplaces
+    const commonBase = activeP;
 
-  const itemTotalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
-  
-  // Site Calculations
-  const siteBaseP = parseFloat(price || '0');
-  const sitePromoP = parseFloat(salePrice || '0');
-  const siteHasPromo = sitePromoP > 0 && sitePromoP < siteBaseP;
-  const siteActivePrice = siteHasPromo ? sitePromoP : siteBaseP;
-  const siteActiveProfit = siteActivePrice - itemTotalCosts;
-  const siteBaseROI = calculateROI(siteBaseP, itemTotalCosts);
-  const sitePromoROI = calculateROI(sitePromoP, itemTotalCosts);
+    // Shopee
+    const shopeeP = shopeePrice && parseFloat(shopeePrice) > 0 ? parseFloat(shopeePrice) : commonBase;
+    const shopeeC = shopeeP * (taxSettings.shopee_comm / 100);
+    const shopeeProf = shopeeP - totalCosts - shopeeC - taxSettings.shopee_fee;
+    const shopeeR = calculateROI(shopeeP, totalCosts, taxSettings.shopee_fee, taxSettings.shopee_comm);
+    const shopeeCRate = (taxSettings.shopee_comm || 0) / 100;
+    const shopeSug = Math.max((commonBase + taxSettings.shopee_fee) / (1 - shopeeCRate), commonBase * (1 + (taxSettings.shopee_markup / 100)));
 
-  // Common Base for market suggestions
-  const commonBaseP = siteHasPromo ? sitePromoP : siteBaseP;
+    // TikTok
+    const tiktokP = tiktokPrice && parseFloat(tiktokPrice) > 0 ? parseFloat(tiktokPrice) : commonBase;
+    const tiktokC = tiktokP * (taxSettings.tiktok_comm / 100);
+    const tiktokProf = tiktokP - totalCosts - tiktokC - taxSettings.tiktok_fee;
+    const tiktokR = calculateROI(tiktokP, totalCosts, taxSettings.tiktok_fee, taxSettings.tiktok_comm);
+    const tiktokCRate = (taxSettings.tiktok_comm || 0) / 100;
+    const tiktSug = Math.max((commonBase + taxSettings.tiktok_fee) / (1 - tiktokCRate), commonBase * (1 + (taxSettings.tiktok_markup / 100)));
 
-  // Shopee Calculations
-  const shopeePriceVal = shopeePrice && parseFloat(shopeePrice) > 0 ? parseFloat(shopeePrice) : commonBaseP;
-  const shopeeComm = shopeePriceVal * (taxSettings.shopee_comm / 100);
-  const shopeeProfit = shopeePriceVal - itemTotalCosts - shopeeComm - taxSettings.shopee_fee;
-  const shopeeROI = calculateROI(shopeePriceVal, itemTotalCosts, taxSettings.shopee_fee, taxSettings.shopee_comm);
-  const shopeeCommRate = (taxSettings.shopee_comm || 0) / 100;
-  const shopeeSuggested = Math.max((commonBaseP + taxSettings.shopee_fee) / (1 - shopeeCommRate), commonBaseP * (1 + (taxSettings.shopee_markup / 100)));
+    return {
+      siteActiveProfit: activeProfit,
+      siteBaseROI: baseROI,
+      sitePromoROI: promoROI,
+      siteActivePrice: activeP,
+      siteHasPromo: hasPromo,
+      siteBreakEvenROAS: calculateBreakEvenROAS(activeP, activeProfit),
+      itemTotalCosts: totalCosts,
+      shopeeProfit: shopeProf,
+      shopeeROI: shopeeR,
+      shopeeSuggested: shopeSug,
+      shopeeBreakEvenROAS: calculateBreakEvenROAS(shopeeP, shopeeProf),
+      tiktokProfit: tiktokProf,
+      tiktokROI: tiktokR,
+      tiktokSuggested: tiktSug,
+      tiktokBreakEvenROAS: calculateBreakEvenROAS(tiktokP, tiktokProf)
+    };
+  }, [price, salePrice, costs, shopeePrice, tiktokPrice, taxSettings]);
 
-  // TikTok Calculations
-  const tiktokPriceVal = tiktokPrice && parseFloat(tiktokPrice) > 0 ? parseFloat(tiktokPrice) : commonBaseP;
-  const tiktokComm = tiktokPriceVal * (taxSettings.tiktok_comm / 100);
-  const tiktokProfit = tiktokPriceVal - itemTotalCosts - tiktokComm - taxSettings.tiktok_fee;
-  const tiktokROI = calculateROI(tiktokPriceVal, itemTotalCosts, taxSettings.tiktok_fee, taxSettings.tiktok_comm);
-  const tiktokCommRate = (taxSettings.tiktok_comm || 0) / 100;
-  const tiktokSuggested = Math.max((commonBaseP + taxSettings.tiktok_fee) / (1 - tiktokCommRate), commonBaseP * (1 + (taxSettings.tiktok_markup / 100)));
+  // Mini-parser for description preview
+  const renderERPDesc = (text: string) => {
+    if (!text) return null;
+    return text.split('\n').map((line, i) => {
+      if (line.trim() === '') return <div key={i} className="h-2" />;
+      const parts = line.split(/(\*\*[^*]+\*\*|\+\+[^+]+\+\+)/g);
+      return (
+        <div key={i} className="min-h-[1.2em]">
+          {parts.map((p, j) => {
+            if (p.startsWith('**') && p.endsWith('**')) return <strong key={j} className="text-primary font-bold">{p.slice(2,-2)}</strong>;
+            if (p.startsWith('++') && p.endsWith('++')) return <span key={j} className="text-base font-bold bg-primary/10 px-1 rounded">{p.slice(2,-2)}</span>;
+            return <span key={j}>{p}</span>;
+          })}
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
@@ -860,6 +901,17 @@ export default function InventoryPage() {
               <option value="out_of_stock">Filtro: Esgotados</option>
             </select>
 
+            <select
+              className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none min-w-[140px]"
+              value={materialFilter}
+              onChange={(e) => setMaterialFilter(e.target.value as any)}
+            >
+              <option value="all">Todos os Materiais</option>
+              <option value="Ouro">Peças em Ouro</option>
+              <option value="Prata">Peças em Prata</option>
+              <option value="Outro">Outros Materiais</option>
+            </select>
+
             <select 
               className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none"
               value={sortBy}
@@ -926,8 +978,17 @@ export default function InventoryPage() {
                       )}
                       
                       {totalStock <= 0 && (
-                        <div className="absolute top-2 left-2 bg-red-500/95 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-widest backdrop-blur-sm z-10">
-                          Esgotado
+                        <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
+                          <span className="bg-foreground text-background text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Esgotado</span>
+                        </div>
+                      )}
+
+                      {product.material && product.material !== 'Outro' && (
+                        <div className={cn(
+                          "absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest shadow-sm z-10",
+                          product.material === 'Ouro' ? "bg-amber-500 text-white" : "bg-slate-400 text-white"
+                        )}>
+                          {product.material}
                         </div>
                       )}
 
@@ -1031,7 +1092,17 @@ export default function InventoryPage() {
                        </div>
                        
                        <div className="flex-1 min-w-0">
-                         <h4 className="text-xs font-bold text-foreground truncate uppercase tracking-tight">{product.name}</h4>
+                         <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-foreground truncate uppercase tracking-tight">{product.name}</h4>
+                            {product.material && product.material !== 'Outro' && (
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded-[4px] text-[8px] font-black uppercase tracking-wider",
+                                product.material === 'Ouro' ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" : "bg-slate-400/10 text-slate-600 border border-slate-400/20"
+                              )}>
+                                {product.material}
+                              </span>
+                            )}
+                         </div>
                          <span className="text-[10px] text-muted-foreground flex gap-3 mt-0.5 font-medium uppercase tracking-widest">
                            <span>Qtd: {totalStock}</span>
                            {product.sale_price && <span className="text-green-600 dark:text-green-400 font-bold tracking-tighter">Oferta</span>}
@@ -1229,6 +1300,28 @@ export default function InventoryPage() {
                         </select>
                       </div>
                     </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="font-bold text-[10px] uppercase text-foreground/70 tracking-widest block ml-1">Material do Acessório</Label>
+                      <div className="flex gap-2 p-1 bg-muted/20 border border-border/40 rounded-xl">
+                        {(['Outro', 'Ouro', 'Prata'] as const).map(m => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => setMaterial(m)}
+                            className={cn(
+                              "flex-1 h-10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                              material === m 
+                                ? "bg-background text-primary shadow-sm border border-border/40" 
+                                : "text-muted-foreground hover:bg-background/40"
+                            )}
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3 md:col-span-2 rounded-xl">
                       <div className="space-y-1">
                         <Label className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest block ml-1">GTIN | EAN</Label>
@@ -1274,14 +1367,22 @@ export default function InventoryPage() {
                           <Maximize2 size={12} /> Expandir
                         </button>
                       </div>
-                      <textarea
-                        id="descTextarea"
-                        value={description}
-                        onChange={e => handleDescriptionChange(e.target.value)}
-                        onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
-                        placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
-                        className="w-full px-5 py-5 text-sm font-medium bg-transparent text-foreground outline-none resize-none min-h-[300px] leading-relaxed custom-scrollbar"
-                      />
+                      <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border/40">
+                        <textarea
+                          id="descTextarea"
+                          value={description}
+                          onChange={e => handleDescriptionChange(e.target.value)}
+                          onKeyDown={(e) => handleDescKeyDown(e, 'descTextarea')}
+                          placeholder="Ex: Peça produzida em aço inoxidável com banho de ouro 18k..."
+                          className="flex-1 px-5 py-5 text-sm font-medium bg-transparent text-foreground outline-none resize-none min-h-[200px] md:min-h-[400px] leading-relaxed custom-scrollbar border-none"
+                        />
+                        <div className="flex-1 p-5 bg-muted/5 min-h-[150px] md:min-h-[400px] overflow-y-auto custom-scrollbar">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 mb-3 block">Preview do Catálogo</span>
+                           <div className="text-sm leading-relaxed text-foreground/80 space-y-1">
+                             {renderERPDesc(description)}
+                           </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1425,6 +1526,24 @@ export default function InventoryPage() {
                               </>
                             )}
                           </div>
+                          <div className="text-right flex flex-col items-end group/roas relative">
+                            <div className="flex items-center gap-1">
+                              <p className="text-[10px] font-black tabular-nums text-primary flex items-center gap-1">
+                                {siteBreakEvenROAS > 0 ? siteBreakEvenROAS.toFixed(2) : 'N/A'}
+                              </p>
+                              <HelpCircle size={10} className="text-muted-foreground/40 cursor-help" />
+                            </div>
+                            <p className="text-[7px] text-muted-foreground uppercase font-bold">ROAS Empate</p>
+                            
+                            {/* ROAS Tooltip */}
+                            <div className="absolute bottom-full mb-2 right-0 w-48 p-3 bg-card border border-border shadow-xl rounded-xl opacity-0 invisible group-hover/roas:opacity-100 group-hover/roas:visible transition-all z-20 text-[9px] leading-relaxed text-foreground text-center pointer-events-none backdrop-blur-md">
+                              <div className="font-black border-b border-border/40 mb-1.5 pb-1 uppercase tracking-widest text-primary flex items-center justify-center gap-1.5">
+                                <TrendingUp size={10} /> ROAS de Empate
+                              </div>
+                              Para cada R$ 1,00 gasto em anúncios, você precisa faturar {siteBreakEvenROAS > 0 ? `R$ ${siteBreakEvenROAS.toFixed(2)}` : 'um valor infinito'} para não ter prejuízo.
+                              <div className="absolute top-full right-4 border-8 border-transparent border-t-card" />
+                            </div>
+                          </div>
                           <div className="text-right">
                             <p className={`text-lg font-black tabular-nums ${siteActiveProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                               {siteActiveProfit >= 0 ? '+' : ''}R$ {siteActiveProfit.toFixed(2).replace('.', ',')}
@@ -1469,6 +1588,24 @@ export default function InventoryPage() {
                           <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.shopee_comm}% + R${taxSettings.shopee_fee}</span>
                         </div>
                         <div className="flex items-center gap-3">
+                          <div className="text-right flex flex-col items-end group/roas relative">
+                            <div className="flex items-center gap-1">
+                              <p className="text-[10px] font-black tabular-nums text-[#f53d2d] flex items-center gap-1">
+                                {shopeeBreakEvenROAS > 0 ? shopeeBreakEvenROAS.toFixed(2) : 'N/A'}
+                              </p>
+                              <HelpCircle size={10} className="text-muted-foreground/40 cursor-help" />
+                            </div>
+                            <p className="text-[7px] text-muted-foreground uppercase font-bold">ROAS Empate</p>
+                            
+                            {/* ROAS Tooltip */}
+                            <div className="absolute bottom-full mb-2 right-0 w-48 p-3 bg-card border border-border shadow-xl rounded-xl opacity-0 invisible group-hover/roas:opacity-100 group-hover/roas:visible transition-all z-20 text-[9px] leading-relaxed text-foreground text-center pointer-events-none backdrop-blur-md">
+                              <div className="font-black border-b border-border/40 mb-1.5 pb-1 uppercase tracking-widest text-[#f53d2d] flex items-center justify-center gap-1.5">
+                                <TrendingUp size={10} /> ROAS Empate Shopee
+                              </div>
+                              Neste canal, o retorno mínimo em anúncios deve ser de {shopeeBreakEvenROAS > 0 ? shopeeBreakEvenROAS.toFixed(2) : 'N/A'}x sobre o gasto para empatar.
+                              <div className="absolute top-full right-4 border-8 border-transparent border-t-card" />
+                            </div>
+                          </div>
                           <div className="text-right">
                             <p className={`text-[10px] font-black tabular-nums ${shopeeProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                               {shopeeROI.toFixed(1)}% ROI
@@ -1516,6 +1653,24 @@ export default function InventoryPage() {
                           <span className="text-[8px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md">{taxSettings.tiktok_comm}% + R${taxSettings.tiktok_fee}</span>
                         </div>
                         <div className="flex items-center gap-3">
+                          <div className="text-right flex flex-col items-end group/roas relative">
+                            <div className="flex items-center gap-1">
+                              <p className="text-[10px] font-black tabular-nums text-foreground flex items-center gap-1">
+                                {tiktokBreakEvenROAS > 0 ? tiktokBreakEvenROAS.toFixed(2) : 'N/A'}
+                              </p>
+                              <HelpCircle size={10} className="text-muted-foreground/40 cursor-help" />
+                            </div>
+                            <p className="text-[7px] text-muted-foreground uppercase font-bold">ROAS Empate</p>
+                            
+                            {/* ROAS Tooltip */}
+                            <div className="absolute bottom-full mb-2 right-0 w-48 p-3 bg-card border border-border shadow-xl rounded-xl opacity-0 invisible group-hover/roas:opacity-100 group-hover/roas:visible transition-all z-20 text-[9px] leading-relaxed text-foreground text-center pointer-events-none backdrop-blur-md">
+                              <div className="font-black border-b border-border/40 mb-1.5 pb-1 uppercase tracking-widest text-primary flex items-center justify-center gap-1.5">
+                                <TrendingUp size={10} /> ROAS Empate TikTok
+                              </div>
+                              Mínimo de {tiktokBreakEvenROAS > 0 ? tiktokBreakEvenROAS.toFixed(2) : 'N/A'}x de faturamento sobre o ad spend para não ter prejuízo.
+                              <div className="absolute top-full right-4 border-8 border-transparent border-t-card" />
+                            </div>
+                          </div>
                           <div className="text-right">
                             <p className={`text-[10px] font-black tabular-nums ${tiktokProfit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                               {tiktokROI.toFixed(1)}% ROI
@@ -2250,21 +2405,21 @@ export default function InventoryPage() {
 
             </div>{/* end body flex */}
 
-            <div className="p-4 md:p-5 border-t border-border bg-card flex flex-wrap gap-3 items-center shrink-0 sticky bottom-0 z-50 md:relative md:mt-auto">
-              <Button type="button" className="w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-sm uppercase tracking-widest shrink-0" onClick={() => {setIsModalOpen(false); resetForm();}}>
+            {/* ── FOOTER: Sticky on Mobile, above bottom nav ── */}
+            <div className="p-4 md:p-5 border-t border-border bg-card/95 backdrop-blur-md flex flex-wrap gap-3 items-center shrink-0 sticky bottom-0 z-50 md:relative md:mt-auto mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+              <Button type="button" className="w-[100px] sm:w-[120px] h-12 md:h-14 bg-muted border border-border text-foreground hover:bg-muted/80 font-bold shadow-sm text-xs uppercase tracking-widest shrink-0 rounded-xl" onClick={() => {setIsModalOpen(false); resetForm();}}>
                 Voltar
               </Button>
               {editingProduct && (
-                 <Button type="button" onClick={() => {
+                 <button type="button" onClick={() => {
                      if (!weight || !images.length) toastError("Preencha dimensões e coloque fotos para publicar.");
                      else success("Shopee Hub não ativado. Cadastre as chaves de integração primeiro.");
-                 }} className="flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 h-12 md:h-14 font-black uppercase tracking-widest text-xs min-w-[100px]">
+                 }} className="hidden sm:flex flex-1 md:flex-none border border-[#f53d2d] bg-[#f53d2d]/10 text-[#f53d2d] hover:bg-[#f53d2d]/20 items-center justify-center h-12 md:h-14 font-black uppercase tracking-widest text-[10px] min-w-[100px] rounded-xl transition-all">
                    Subir Shopee
-                 </Button>
+                 </button>
               )}
-              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto transition-all active:scale-95" disabled={saving || (!name && images.length === 0)}>
-                {saving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-                {editingProduct ? 'Salvar' : 'Cadastrar'}
+              <Button type="submit" form="productForm" className="flex-1 h-12 md:h-14 font-black text-sm md:text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg uppercase tracking-widest w-full md:w-auto transition-all active:scale-[0.98] rounded-xl" disabled={saving || (!name && images.length === 0)}>
+                {saving ? <Loader2 className="animate-spin h-5 w-5" /> : (editingProduct ? 'Salvar Alterações' : 'Concluir Cadastro')}
               </Button>
             </div>{/* end footer */}
           </div>{/* end modal card */}

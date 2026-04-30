@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp, SlidersHorizontal, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ShoppingBag, ShoppingCart, Search, X, Plus, Minus, Trash2, Package, ChevronDown, ChevronUp, SlidersHorizontal, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const WA_NUMBER = '5511945421583';
 
@@ -15,6 +15,7 @@ interface CatalogItem {
   image_url?: string | null;
   images?: string[] | null;
   category_id?: string | null;
+  material?: string | null;
   _categoryName?: string;
   variations?: { name: string, type: 'size'|'color'|'style', stock?: number | null, image_url?: string }[] | null;
 }
@@ -50,16 +51,30 @@ function resolveTheme(catalog: any): Theme {
 function fmt(v:number){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v); }
 
 /** Render description: **bold**, ++big++, and newlines */
-function renderDesc(text: string, accentColor: string) {
+function renderDesc(text: string | null | undefined, accentColor: string) {
+  if (!text) return null;
+  // Map lines to block elements to ensure they take a full row
   return text.split('\n').map((line, lineIdx) => {
-    if (line.trim() === '') return <br key={lineIdx} />;
+    // If empty line, render a spacer
+    if (!line || line.trim() === '') return <div key={lineIdx} style={{ height: '0.8em' }} />;
+    
+    // Parse tags: **bold** and ++big++
     const parts = line.split(/(\*\*[^*]+\*\*|\+\+[^+]+\+\+)/g);
     const rendered = parts.map((p, i) => {
-      if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} style={{ color: accentColor, fontWeight: 700 }}>{p.slice(2,-2)}</strong>;
-      if (p.startsWith('++') && p.endsWith('++')) return <span key={i} style={{ fontSize: '1.15em', fontWeight: 500 }}>{p.slice(2,-2)}</span>;
+      if (p.startsWith('**') && p.endsWith('**')) {
+        return <strong key={i} style={{ color: accentColor, fontWeight: 800 }}>{p.slice(2,-2)}</strong>;
+      }
+      if (p.startsWith('++') && p.endsWith('++')) {
+        return <span key={i} style={{ fontSize: '1.15em', fontWeight: 700, background: `${accentColor}15`, padding: '0 4px', borderRadius: 4 }}>{p.slice(2,-2)}</span>;
+      }
       return <span key={i}>{p}</span>;
     });
-    return <span key={lineIdx} style={{ display: 'block', minHeight: '1em' }}>{rendered}</span>;
+
+    return (
+      <div key={lineIdx} style={{ marginBottom: 4, display: 'block', minHeight: '1.2em' }}>
+        {rendered}
+      </div>
+    );
   });
 }
 
@@ -97,9 +112,11 @@ export default function CatalogPublicView() {
   const [social, setSocial] = useState<{name:string;action:string}|null>(null);
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
+  const [activeMaterial, setActiveMaterial] = useState('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CatalogItem|null>(null);
+  const [detailImgIdx, setDetailImgIdx] = useState(0);
   const [detailQty, setDetailQty] = useState(1);
   const [selectedVarIdx, setSelectedVarIdx] = useState<number|null>(null);
   const [varImage, setVarImage] = useState<string|null>(null);
@@ -185,10 +202,11 @@ export default function CatalogPublicView() {
   const filtered=useMemo(()=>items.filter(i=>{
     const ms=!search||i.name.toLowerCase().includes(search.toLowerCase());
     const mc=activeCat==='all'||i.category_id===activeCat;
+    const mm=activeMaterial==='all'||i.material===activeMaterial;
     const hideOutOfStock = catalog?.settings?.hide_out_of_stock;
     const isAvailable = !hideOutOfStock || i.stock_quantity > 0;
-    return ms && mc && isAvailable;
-  }),[items,search,activeCat,catalog]);
+    return ms && mc && mm && isAvailable;
+  }),[items,search,activeCat,activeMaterial,catalog]);
 
   const cartCount=cart.reduce((s,c)=>s+c.qty,0);
   const cartTotal=cart.reduce((s,c)=>s+(c.item.sale_price||c.item.price)*c.qty,0);
@@ -367,6 +385,31 @@ export default function CatalogPublicView() {
               : <div style={{textAlign:'center'}}><p style={{fontFamily:theme.serif,fontSize:24,fontWeight:500,color:theme.text,letterSpacing:'-0.01em'}}>{brand.name}</p></div>
             }
           </div>
+          </div>
+
+          <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:12}}>
+             {[{id:'all',label:'Todos'}, {id:'Ouro',label:'✨ Ouro'}, {id:'Prata',label:'💍 Prata'}].map(m => (
+               <button 
+                 key={m.id}
+                 onClick={() => setActiveMaterial(m.id)}
+                 style={{
+                   padding:'8px 16px',
+                   fontSize:10,
+                   fontFamily:theme.sans,
+                   fontWeight:800,
+                   textTransform:'uppercase',
+                   letterSpacing:'0.1em',
+                   borderRadius:99,
+                   border:`1px solid ${activeMaterial === m.id ? theme.accent : theme.border}`,
+                   background:activeMaterial === m.id ? theme.accent : 'transparent',
+                   color:activeMaterial === m.id ? onAccent : theme.muted,
+                   transition:'all 0.3s'
+                 }}
+               >
+                 {m.label}
+               </button>
+             ))}
+          </div>
 
           <div className="sticky-inner">
             <div className="search-container" style={{position:'relative'}}>
@@ -438,7 +481,6 @@ export default function CatalogPublicView() {
             )}
           </div>
         </div>
-      </div>
 
       {/* ── GRID ── */}
       {loading ? <CatalogSkeleton /> : (
@@ -462,7 +504,7 @@ export default function CatalogPublicView() {
                       onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-4px)')} onMouseLeave={e=>(e.currentTarget.style.transform='translateY(0)')}>
                       {/* Image */}
                       <div style={{position:'relative',aspectRatio:'1/1',background:theme.cardBg,border:`1px solid ${theme.border}`,overflow:'hidden',marginBottom:12,borderRadius:12}}
-                        onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>
+                        onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailImgIdx(0);setDetailQty(inCart?inCart.qty:1);}}}>
                         {displayImg
                           ? <img src={getProxyUrl(displayImg) || ''} alt={item.name} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',}}
                               onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}/>
@@ -475,7 +517,7 @@ export default function CatalogPublicView() {
                       {/* Info */}
                       <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 4px'}}>
                         <p style={{fontFamily:theme.serif,fontSize:16,fontWeight:500,lineHeight:1.25,color:theme.text,marginBottom:6,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}
-                          onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailQty(inCart?inCart.qty:1);}}}>{item.name}</p>
+                          onClick={()=>{if(!isSoldOut){setDetailItem(item);setDetailImgIdx(0);setDetailQty(inCart?inCart.qty:1);}}}>{item.name}</p>
                         <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
                           <span style={{fontFamily:theme.sans,fontSize:15,fontWeight:700,color:isOnSale?theme.accent:theme.text}}>{fmt(price)}</span>
                           {isOnSale&&<span style={{fontFamily:theme.sans,fontSize:11,color:theme.muted,textDecoration:'line-through',fontWeight:500}}>{fmt(item.price)}</span>}
@@ -496,6 +538,7 @@ export default function CatalogPublicView() {
                             : <button onClick={()=>{
                                 if (item.variations && item.variations.length > 0) {
                                   setDetailItem(item);
+                                  setDetailImgIdx(0);
                                   return;
                                 }
                                 addToCart(item,1);
@@ -635,16 +678,72 @@ export default function CatalogPublicView() {
         <div style={{position:'fixed',inset:0,zIndex:110,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
           <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.78)',backdropFilter:'blur(6px)'}} onClick={()=>setDetailItem(null)}/>
           <div className="animate-in slide-in-from-bottom-4 duration-300" style={{position:'relative',background:theme.cardBg,border:`1px solid ${theme.border}`,borderBottom:'none',maxHeight:'92svh',display:'flex',flexDirection:'column',width:'100%',maxWidth:640,margin:'0 auto',borderRadius:'16px 16px 0 0',overflow:'hidden'}}>
-            {/* Image */}
-            <div style={{position:'relative',width:'100%',maxHeight:'40vh',minHeight:'280px',background:theme.bg,flexShrink:0}}>
-              {(varImage||detailItem.images?.[0]||detailItem.image_url)
-                ? <img src={getProxyUrl(varImage||detailItem.images?.[0]||detailItem.image_url) || ''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px',transition:'opacity 0.3s ease-in-out'}}/>
-                : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:48,height:48,color:theme.text}}/></div>
-              }
-              <button onClick={()=>setDetailItem(null)} style={{position:'absolute',top:12,right:12,width:34,height:34,borderRadius:'50%',background:`${theme.bg}d0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text}}>
-                <X style={{width:16,height:16}}/>
+            {/* Image Carousel */}
+            <div style={{position:'relative',width:'100%',maxHeight:'45vh',minHeight:'320px',background:theme.bg,flexShrink:0, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+              {(() => {
+                const itemImgs = detailItem.images && detailItem.images.length > 0 ? detailItem.images : [detailItem.image_url];
+                const currentImg = varImage || itemImgs[detailImgIdx] || detailItem.image_url;
+                
+                return (
+                  <>
+                    {currentImg 
+                      ? <img src={getProxyUrl(currentImg) || ''} alt={detailItem.name} style={{width:'100%',height:'100%',objectFit:'contain',padding:'16px',transition:'opacity 0.3s ease-in-out'}}/>
+                      : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',opacity:0.15}}><ShoppingBag style={{width:48,height:48,color:theme.text}}/></div>
+                    }
+
+                    {!varImage && itemImgs.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setDetailImgIdx(p => (p - 1 + itemImgs.length) % itemImgs.length); }}
+                          style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',width:36,height:36,borderRadius:'50%',background:`${theme.bg}b0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text,zIndex:20}}
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setDetailImgIdx(p => (p + 1) % itemImgs.length); }}
+                          style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',width:36,height:36,borderRadius:'50%',background:`${theme.bg}b0`,backdropFilter:'blur(8px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text,zIndex:20}}
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        
+                        {/* Dots */}
+                        <div style={{position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',display:'flex',gap:6,zIndex:20}}>
+                          {itemImgs.map((_, i) => (
+                            <div key={i} style={{width:6,height:6,borderRadius:'50%',background:detailImgIdx === i ? theme.accent : `${theme.muted}40`,transition:'all 0.3s'}} />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+              
+              <button onClick={() => { setDetailItem(null); setDetailImgIdx(0); }} style={{position:'absolute',top:16,right:16,width:42,height:42,borderRadius:'50%',background:`${theme.bg}f0`,backdropFilter:'blur(12px)',border:`1px solid ${theme.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:theme.text,boxShadow:'0 4px 12px rgba(0,0,0,0.15)',zIndex:30}}>
+                <X style={{width:20,height:20,strokeWidth:3}}/>
               </button>
             </div>
+            {/* Thumbnails */}
+            {(() => {
+                const itemImgs = detailItem.images && detailItem.images.length > 0 ? detailItem.images : [];
+                if (itemImgs.length <= 1 || varImage) return null;
+                return (
+                  <div style={{display:'flex',gap:8,padding:'0 18px 10px',overflowX:'auto',scrollbarWidth:'none'}}>
+                    {itemImgs.map((img, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => setDetailImgIdx(idx)}
+                        style={{
+                          width:50,height:50,borderRadius:8,overflow:'hidden',flexShrink:0,
+                          border:`2px solid ${detailImgIdx === idx ? theme.accent : 'transparent'}`,
+                          transition:'all 0.2s'
+                        }}
+                      >
+                        <img src={getProxyUrl(img) || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                      </button>
+                    ))}
+                  </div>
+                );
+            })()}
             {/* Info */}
             <div style={{flex:1,overflowY:'auto',padding:'18px 18px 0'}}>
               {detailItem._categoryName&&<span style={{fontSize:9,fontFamily:theme.sans,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.accent,display:'block',marginBottom:6}}>{detailItem._categoryName}</span>}
@@ -713,7 +812,7 @@ export default function CatalogPublicView() {
               {detailItem.description&&(
                 <div style={{marginBottom:14,marginTop:16}}>
                   <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:6}}>Sobre a Peça</p>
-                  <div style={{fontFamily:theme.sans,fontSize:13,lineHeight:1.85,color:theme.text,opacity:0.9,whiteSpace:'pre-wrap'}}>
+                  <div style={{fontFamily:theme.sans,fontSize:13,lineHeight:1.7,color:theme.text,opacity:0.95}}>
                     {renderDesc(detailItem.description,theme.accent)}
                   </div>
                 </div>

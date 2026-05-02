@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, PackageSearch, BadgeDollarSign, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, Store, Link as LinkIcon, Tags, Menu, X,
-  Users, UserCircle2, Calculator
+  Users, UserCircle2, Calculator, ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenant } from '../../contexts/TenantContext';
@@ -264,6 +264,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           ))}
+
+          {/* Super Admin Quick Access */}
+          {profile?.role === 'super_admin' && (
+            <NavLink
+              to="/superadmin-laris"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.1em] text-purple-600 hover:bg-purple-50 transition-all duration-200 mt-4 border border-purple-100 bg-purple-50/30"
+              title={collapsed ? 'Painel Master' : undefined}
+            >
+              <ShieldCheck size={16} className="shrink-0" />
+              {!collapsed && <span className="truncate">Painel Master</span>}
+            </NavLink>
+          )}
         </nav>
 
         {/* Footer */}

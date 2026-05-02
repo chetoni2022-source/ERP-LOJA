@@ -44,10 +44,10 @@ const TenantContext = createContext<TenantContextValue>({
 });
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const { branding, profile } = useAuthStore();
+  const { branding, profile, previewTenantId } = useAuthStore();
 
   const isSuperAdmin = profile?.role === 'super_admin';
-  const tenantId = profile?.tenant_id ?? null;
+  const tenantId = previewTenantId || profile?.tenant_id || null;
 
   useEffect(() => {
     if (branding?.primaryColor) {

@@ -811,8 +811,8 @@ export default function CatalogPublicView() {
               {/* Description */}
               {detailItem.description&&(
                 <div style={{marginBottom:14,marginTop:16}}>
-                  <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:6}}>Sobre a Peça</p>
-                  <div style={{fontFamily:theme.sans,fontSize:13,lineHeight:1.7,color:theme.text,opacity:0.95}}>
+                  <p style={{fontFamily:theme.sans,fontSize:10,fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase',color:theme.muted,marginBottom:8}}>Sobre a Peça</p>
+                  <div style={{fontFamily:theme.sans,fontSize:15,lineHeight:1.8,color:theme.text,opacity:0.95}}>
                     {renderDesc(detailItem.description,theme.accent)}
                   </div>
                 </div>

@@ -149,6 +149,7 @@ export default function AuthPage() {
   const bgImage = tenantBranding?.login_bg_url || '/auth-bg.jpg';
   const logoUrl = tenantBranding?.logo_url || null;
   const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
+  const isDarkBg = true; // For the left panel text contrast
 
   return (
     <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
@@ -226,7 +227,10 @@ export default function AuthPage() {
             )}
 
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase italic">
+              <h1 
+                className="text-3xl font-black tracking-tighter uppercase italic"
+                style={{ color: tenantBranding ? primaryColor : undefined }}
+              >
                 {title}
               </h1>
               <div className="h-1 w-8 mx-auto rounded-full" style={{ background: primaryColor }} />

@@ -62,15 +62,43 @@ function TenantModal({ tenant, onClose, onSave }: { tenant: Partial<Tenant> | nu
     setSaving(true);
     try {
       if (isNew) {
-        const { data: tenantData, error: tenantErr } = await supabase.from('tenants').insert([{ name, slug, status, owner_email: ownerEmail || null }]).select('id').single();
+        // 1. Criar o tenant
+        const { data: tenantData, error: tenantErr } = await supabase
+          .from('tenants')
+          .insert([{ name, slug, status, owner_email: ownerEmail || null }])
+          .select('id').single();
         if (tenantErr) throw tenantErr;
-        await supabase.from('tenant_branding').insert([{ tenant_id: tenantData.id, store_name: name, primary_color: primaryColor }]);
+
+        // 2. Criar o branding inicial
+        await supabase.from('tenant_branding').insert([{
+          tenant_id: tenantData.id,
+          store_name: name,
+          primary_color: primaryColor
+        }]);
+
+        // 3. Criar o usuário dono (usa signUp com anon key, sem precisar de service role)
         if (ownerEmail && ownerPassword) {
-          const { data: authData, error: authErr } = await supabase.auth.admin.createUser({ email: ownerEmail, password: ownerPassword, email_confirm: true, user_metadata: { full_name: ownerName || name } });
+          const { data: authData, error: authErr } = await supabase.auth.signUp({
+            email: ownerEmail,
+            password: ownerPassword,
+            options: {
+              data: { full_name: ownerName || name }
+            }
+          });
           if (authErr) throw authErr;
-          if (authData.user) await supabase.from('profiles').insert([{ id: authData.user.id, full_name: ownerName || name, role: 'admin', tenant_id: tenantData.id }]);
+          if (authData.user) {
+            // Criar perfil vinculado ao tenant
+            await supabase.from('profiles').upsert([{
+              id: authData.user.id,
+              full_name: ownerName || name,
+              role: 'admin',
+              tenant_id: tenantData.id
+            }]);
+            // Atualizar owner_email no tenant
+            await supabase.from('tenants').update({ owner_email: ownerEmail }).eq('id', tenantData.id);
+          }
         }
-        success(`Empresa "${name}" criada!`);
+        success(`Empresa "${name}" criada! O dono receberá um e-mail de confirmação.`);
       } else {
         const { error } = await supabase.from('tenants').update({ name, slug, status, owner_email: ownerEmail || null }).eq('id', tenant!.id);
         if (error) throw error;

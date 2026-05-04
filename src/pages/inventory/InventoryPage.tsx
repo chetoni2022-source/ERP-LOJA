@@ -3,7 +3,7 @@ import { Button, Input, Label } from '../../components/ui';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
-import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading, BadgeDollarSign, Truck, HelpCircle } from 'lucide-react';
+import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading, BadgeDollarSign, Truck, HelpCircle, TrendingUp } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';

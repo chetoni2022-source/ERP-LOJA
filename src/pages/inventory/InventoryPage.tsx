@@ -1399,7 +1399,7 @@ export default function InventoryPage() {
                         <div>
                           <Label className="font-black text-sm uppercase text-foreground tracking-widest block flex items-center gap-2">
                             Estrutura de Custos
-                            {totalCost <= 0 && (
+                            {itemTotalCosts <= 0 && (
                               <span className="flex items-center gap-1 text-[8px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full border border-amber-500/20 animate-pulse">
                                 <AlertTriangle size={8} /> Custo não definido
                               </span>

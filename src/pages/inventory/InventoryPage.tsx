@@ -749,8 +749,8 @@ export default function InventoryPage() {
   const { 
     siteActiveProfit, siteBaseROI, sitePromoROI, siteActivePrice, siteHasPromo, siteBreakEvenROAS,
     itemTotalCosts, 
-    shopeeProfit, shopeeROI, shopeeSuggested, shopeeBreakEvenROAS,
-    tiktokProfit, tiktokROI, tiktokSuggested, tiktokBreakEvenROAS 
+    shopeeProfit, shopeeROI, shopeeSuggested, shopeeBreakEvenROAS, shopeePriceVal, shopeeComm,
+    tiktokProfit, tiktokROI, tiktokSuggested, tiktokBreakEvenROAS, tiktokPriceVal, tiktokComm
   } = useMemo(() => {
     const totalCosts = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
     const baseP = parseFloat(price || '0');
@@ -794,10 +794,14 @@ export default function InventoryPage() {
       shopeeROI: shopeeR,
       shopeeSuggested: shopeSug,
       shopeeBreakEvenROAS: calculateBreakEvenROAS(shopeeP, shopeeProf),
+      shopeePriceVal: shopeeP,
+      shopeeComm: shopeeC,
       tiktokProfit: tiktokProf,
       tiktokROI: tiktokR,
       tiktokSuggested: tiktSug,
-      tiktokBreakEvenROAS: calculateBreakEvenROAS(tiktokP, tiktokProf)
+      tiktokBreakEvenROAS: calculateBreakEvenROAS(tiktokP, tiktokProf),
+      tiktokPriceVal: tiktokP,
+      tiktokComm: tiktokC
     };
   }, [price, salePrice, costs, shopeePrice, tiktokPrice, taxSettings]);
 

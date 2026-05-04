@@ -790,7 +790,7 @@ export default function InventoryPage() {
       siteHasPromo: hasPromo,
       siteBreakEvenROAS: calculateBreakEvenROAS(activeP, activeProfit),
       itemTotalCosts: totalCosts,
-      shopeeProfit: shopeProf,
+      shopeeProfit: shopeeProf,
       shopeeROI: shopeeR,
       shopeeSuggested: shopeSug,
       shopeeBreakEvenROAS: calculateBreakEvenROAS(shopeeP, shopeeProf),

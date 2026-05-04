@@ -249,7 +249,7 @@ export default function SuperAdminPage() {
   const totalProducts = tenants.reduce((s, t) => s + (t._productCount ?? 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#08080f] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#08080f] text-white overflow-x-hidden w-full max-w-[100vw]" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Gradient background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
@@ -258,29 +258,29 @@ export default function SuperAdminPage() {
 
       {/* Header */}
       <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <ShieldAlert className="h-5 w-5 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0">
+              <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <h1 className="font-black text-base leading-none text-white">Super Admin</h1>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5">Laris ERP · Painel Mestre</p>
+              <h1 className="font-black text-sm sm:text-base leading-none text-white truncate max-w-[120px] sm:max-w-none">Super Admin</h1>
+              <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5 hidden sm:block">Laris ERP · Painel Mestre</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-white/30 hidden sm:block">{user?.email}</span>
-            <button onClick={() => window.location.href = '/dashboard'} className="h-9 px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold text-white flex items-center gap-1.5 transition-all">
-              <ExternalLink className="h-3.5 w-3.5" /> Meu ERP
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xs text-white/30 hidden md:block">{user?.email}</span>
+            <button onClick={() => window.location.href = '/dashboard'} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] sm:text-xs font-bold text-white flex items-center gap-1.5 transition-all">
+              <ExternalLink className="h-3 sm:h-3.5 w-3 sm:w-3.5" /> <span className="hidden sm:inline">Meu ERP</span><span className="sm:hidden">ERP</span>
             </button>
-            <button onClick={signOut} className="h-9 w-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 transition-all">
-              <LogOut className="h-4 w-4" />
+            <button onClick={signOut} className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 transition-all">
+              <LogOut className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
@@ -331,9 +331,9 @@ export default function SuperAdminPage() {
                 const storeName = t._branding?.store_name || t.name;
 
                 return (
-                  <div key={t.id} className="flex items-center gap-4 px-6 py-5 hover:bg-white/3 transition-colors group">
+                  <div key={t.id} className="flex flex-col sm:flex-row sm:items-center gap-4 px-4 sm:px-6 py-5 hover:bg-white/3 transition-colors group">
                     {/* Logo */}
-                    <div className="h-14 w-14 rounded-2xl shrink-0 overflow-hidden shadow-lg border border-white/10" style={{ background: primaryColor + '20' }}>
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl shrink-0 overflow-hidden shadow-lg border border-white/10 flex items-center justify-center" style={{ background: primaryColor + '20' }}>
                       {logoUrl ? (
                         <img src={logoUrl} alt={storeName} className="h-full w-full object-contain p-1" />
                       ) : (
@@ -344,57 +344,57 @@ export default function SuperAdminPage() {
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-black text-white">{storeName}</p>
-                        <span className="text-[10px] font-mono text-white/30 bg-white/5 px-2 py-0.5 rounded-md">/{t.slug}</span>
+                        <p className="font-black text-white truncate">{storeName}</p>
+                        <span className="text-[10px] font-mono text-white/30 bg-white/5 px-2 py-0.5 rounded-md hidden sm:inline-block">/{t.slug}</span>
                         <span className={cn('flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border', STATUS_CONFIG[t.status].bg, STATUS_CONFIG[t.status].color)}>
                           <StatusIcon className="h-2.5 w-2.5" />{STATUS_CONFIG[t.status].label}
                         </span>
                       </div>
-                      <p className="text-xs text-white/30 mt-0.5">{t.owner_email ?? 'Sem e-mail'}</p>
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        <span className="text-[11px] text-white/40 flex items-center gap-1">
-                          <Users className="h-3 w-3" />{t._userCount} usuário{t._userCount !== 1 ? 's' : ''}
+                      <p className="text-xs text-white/30 mt-0.5 truncate">{t.owner_email ?? 'Sem e-mail'}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
+                        <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5" />{t._userCount}
                         </span>
-                        <span className="text-[11px] text-white/40 flex items-center gap-1">
-                          <Package className="h-3 w-3" />{t._productCount} produto{t._productCount !== 1 ? 's' : ''}
+                        <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5" />{t._productCount}
                         </span>
-                        <span className={cn("text-[11px] flex items-center gap-1", t.last_accessed_at ? 'text-emerald-400' : 'text-white/30')}>
-                          <Activity className="h-3 w-3" />{formatRelativeTime(t.last_accessed_at)}
+                        <span className={cn("text-[11px] flex items-center gap-1.5", t.last_accessed_at ? 'text-emerald-400' : 'text-white/30')}>
+                          <Activity className="h-3.5 w-3.5" />{formatRelativeTime(t.last_accessed_at)}
                         </span>
-                        <span className="text-[11px] text-white/30 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />Criado {new Date(t.created_at).toLocaleDateString('pt-BR')}
+                        <span className="text-[11px] text-white/30 flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5" />{new Date(t.created_at).toLocaleDateString('pt-BR')}
                         </span>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-2 shrink-0 sm:opacity-0 group-hover:opacity-100 transition-opacity mt-2 sm:mt-0 w-full sm:w-auto justify-end">
                       <button
                         onClick={() => accessTenant(t)}
-                        className="h-9 w-9 flex items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                        className="flex-1 sm:flex-none h-10 w-10 sm:h-9 sm:w-9 flex items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 transition-colors"
                         title="Acessar empresa"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4.5 w-4.5 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => { setEditingTenant(t); setModalOpen(true); }}
-                        className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                        className="flex-1 sm:flex-none h-10 w-10 sm:h-9 sm:w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                         title="Editar"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-4.5 w-4.5 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => toggleStatus(t)}
-                        className={cn('h-9 w-9 flex items-center justify-center rounded-lg border transition-colors',
+                        className={cn('flex-1 sm:flex-none h-10 w-10 sm:h-9 sm:w-9 flex items-center justify-center rounded-lg border transition-colors',
                           t.status === 'active'
                             ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
                             : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                         )}
                         title={t.status === 'active' ? 'Suspender' : 'Reativar'}
                       >
-                        {t.status === 'active' ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                        {t.status === 'active' ? <PowerOff className="h-4.5 w-4.5 sm:h-4 sm:w-4" /> : <Power className="h-4.5 w-4.5 sm:h-4 sm:w-4" />}
                       </button>
                     </div>
                   </div>

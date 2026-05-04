@@ -57,6 +57,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (profileData) {
         set({ profile: profileData });
 
+        // Update tenant last accessed timestamp
+        if (profileData.tenant_id) {
+          await supabase
+            .from('tenants')
+            .update({ last_accessed_at: new Date().toISOString() })
+            .eq('id', profileData.tenant_id);
+        }
+
         // Determine which tenant ID to use (actual or preview)
         const activeTenantId = overrideTenantId || get().previewTenantId || profileData.tenant_id;
 

@@ -318,7 +318,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="flex-1 w-full max-w-[100vw] overflow-x-hidden">
+        <div className="flex-1 w-full max-w-full overflow-x-hidden">
           {isDefault && location.pathname !== '/settings' && (
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-3">

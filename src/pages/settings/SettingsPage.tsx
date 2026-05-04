@@ -140,9 +140,12 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveBranding = async (e: React.FormEvent) => {
+  const handleSaveBranding = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!tenantId) return;
+    if (!tenantId) {
+      toastError('Erro: Empresa não identificada. Recarregue a página.');
+      return;
+    }
     setSavingBrand(true);
     try {
       let logoUrl = null;
@@ -500,7 +503,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-4 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
-                <Button type="submit" disabled={savingBrand||(!storeName&&!logoFile&&!faviconFile&&!monthlyGoal)}
+                <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
                   className="w-full h-12 text-sm font-black tracking-widest shadow-lg bg-primary text-primary-foreground transition-all active:scale-[0.98] rounded-xl uppercase">
                   {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade
                 </Button>

@@ -1641,7 +1641,7 @@ export default function InventoryPage() {
                         </div>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-[#f53d2d]/50">R$</span>
-                          <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={commonBaseP > 0 ? commonBaseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
+                          <Input type="number" step="0.01" value={shopeePrice} onChange={e => setShopeePrice(e.target.value)} placeholder={siteActivePrice > 0 ? siteActivePrice.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-[#f53d2d]/30 bg-[#f53d2d]/5 focus-visible:ring-[#f53d2d] text-[#f53d2d]" />
                         </div>
                       </div>
                     </div>
@@ -1706,7 +1706,7 @@ export default function InventoryPage() {
                         </div>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-foreground/40">R$</span>
-                          <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={commonBaseP > 0 ? commonBaseP.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
+                          <Input type="number" step="0.01" value={tiktokPrice} onChange={e => setTiktokPrice(e.target.value)} placeholder={siteActivePrice > 0 ? siteActivePrice.toFixed(2) : '0.00'} className="h-11 pl-9 text-base font-black border-black/20 bg-black/5 focus-visible:ring-black dark:focus-visible:ring-white text-foreground" />
                         </div>
                       </div>
                     </div>

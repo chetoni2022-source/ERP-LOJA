@@ -257,70 +257,77 @@ export default function SuperAdminPage() {
       </div>
 
       {/* Header */}
-      <div className="relative border-b border-white/5 bg-black/30 backdrop-blur-xl sticky top-0 z-50">
+      <div className="relative border-b border-white/10 bg-[#08080f]/60 backdrop-blur-2xl sticky top-0 z-50 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0">
-              <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.15)] shrink-0">
+              <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6 text-purple-300" />
             </div>
             <div>
-              <h1 className="font-black text-sm sm:text-base leading-none text-white truncate max-w-[120px] sm:max-w-none">Super Admin</h1>
-              <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5 hidden sm:block">Laris ERP · Painel Mestre</p>
+              <h1 className="font-black text-base sm:text-xl leading-none bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">Super Admin</h1>
+              <p className="text-[10px] sm:text-[11px] text-white/40 font-bold uppercase tracking-widest mt-1 hidden sm:block">Laris ERP <span className="text-purple-400/50">•</span> Painel Mestre</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xs text-white/30 hidden md:block">{user?.email}</span>
-            <button onClick={() => window.location.href = '/dashboard'} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] sm:text-xs font-bold text-white flex items-center gap-1.5 transition-all">
-              <ExternalLink className="h-3 sm:h-3.5 w-3 sm:w-3.5" /> <span className="hidden sm:inline">Meu ERP</span><span className="sm:hidden">ERP</span>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <span className="text-xs font-medium text-white/30 hidden md:block border-r border-white/10 pr-4">{user?.email}</span>
+            <button onClick={() => window.location.href = '/dashboard'} className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[10px] sm:text-xs font-bold text-white flex items-center gap-2 transition-all active:scale-95">
+              <ExternalLink className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-purple-300" /> <span className="hidden sm:inline">Meu ERP</span><span className="sm:hidden">ERP</span>
             </button>
-            <button onClick={signOut} className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 transition-all">
-              <LogOut className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+            <button onClick={signOut} className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 text-red-400 transition-all active:scale-95 group">
+              <LogOut className="h-4 sm:h-4.5 w-4 sm:w-4.5 group-hover:-translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8 sm:space-y-10">
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           {[
-            { label: 'Empresas', value: tenants.length, icon: Building2, color: 'from-purple-600 to-purple-700', glow: 'shadow-purple-500/20' },
-            { label: 'Ativas', value: activeCount, icon: CheckCircle2, color: 'from-emerald-600 to-emerald-700', glow: 'shadow-emerald-500/20' },
-            { label: 'Suspensas', value: suspendedCount, icon: AlertTriangle, color: 'from-red-600 to-red-700', glow: 'shadow-red-500/20' },
-            { label: 'Produtos Total', value: totalProducts, icon: Package, color: 'from-blue-600 to-blue-700', glow: 'shadow-blue-500/20' },
-          ].map(kpi => (
-            <div key={kpi.label} className="relative bg-white/3 border border-white/8 rounded-2xl p-5 overflow-hidden group hover:border-white/15 transition-all">
-              <div className={cn('h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 shadow-lg', kpi.color, kpi.glow)}>
-                <kpi.icon className="h-5 w-5 text-white" />
+            { label: 'Empresas', value: tenants.length, icon: Building2, color: 'from-purple-500 to-indigo-600', text: 'text-purple-300' },
+            { label: 'Ativas', value: activeCount, icon: CheckCircle2, color: 'from-emerald-500 to-teal-600', text: 'text-emerald-300' },
+            { label: 'Suspensas', value: suspendedCount, icon: AlertTriangle, color: 'from-red-500 to-rose-600', text: 'text-red-300' },
+            { label: 'Produtos Total', value: totalProducts, icon: Package, color: 'from-blue-500 to-cyan-600', text: 'text-blue-300' },
+          ].map((kpi, i) => (
+            <div key={kpi.label} className="relative bg-[#ffffff05] border border-[#ffffff10] rounded-3xl p-6 overflow-hidden group hover:border-[#ffffff20] hover:bg-[#ffffff08] transition-all duration-500 hover:-translate-y-1 shadow-2xl shadow-black/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className={cn('h-12 w-12 rounded-2xl bg-gradient-to-br flex items-center justify-center mb-4 shadow-lg transform group-hover:scale-110 transition-transform duration-500', kpi.color)}>
+                <kpi.icon className="h-6 w-6 text-white" />
               </div>
-              <p className="text-3xl font-black text-white">{kpi.value}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">{kpi.label}</p>
+              <p className="text-4xl font-black text-white tracking-tight">{kpi.value}</p>
+              <p className={cn("text-[10px] font-black uppercase tracking-widest mt-2", kpi.text)}>{kpi.label}</p>
             </div>
           ))}
         </div>
 
         {/* Tenant List */}
-        <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
-            <h2 className="font-black text-sm uppercase tracking-widest text-white flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-purple-400" /> Empresas Cadastradas
+        <div className="bg-[#ffffff05] border border-[#ffffff10] rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
+          <div className="px-6 sm:px-8 py-5 border-b border-[#ffffff10] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff03]">
+            <h2 className="font-black text-sm uppercase tracking-widest text-white flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                <Building2 className="h-4 w-4" />
+              </div>
+              Empresas Cadastradas
             </h2>
-            <div className="flex gap-2">
-              <button onClick={fetchTenants} className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white/40 hover:text-white">
-                <RefreshCcw className="h-4 w-4" />
+            <div className="flex gap-3">
+              <button onClick={fetchTenants} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-white/50 hover:text-white active:scale-95">
+                <RefreshCcw className="h-4.5 w-4.5" />
               </button>
-              <button onClick={() => { setEditingTenant(null); setModalOpen(true); }} className="h-9 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-purple-500/20 transition-all active:scale-95">
-                <Plus className="h-4 w-4" /> Nova Empresa
+              <button onClick={() => { setEditingTenant(null); setModalOpen(true); }} className="h-10 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all active:scale-95 border border-purple-500/50">
+                <Plus className="h-4.5 w-4.5" /> <span className="hidden sm:inline">Nova Empresa</span><span className="sm:hidden">Nova</span>
               </button>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin h-8 w-8 text-purple-400/40" /></div>
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-purple-500/50" /></div>
           ) : tenants.length === 0 ? (
-            <div className="py-16 text-center">
-              <Building2 className="h-12 w-12 opacity-10 mx-auto mb-3 text-white" />
-              <p className="font-bold text-white/30">Nenhuma empresa cadastrada.</p>
+            <div className="py-24 text-center">
+              <div className="h-20 w-20 bg-[#ffffff05] border border-[#ffffff10] rounded-full flex items-center justify-center mx-auto mb-6">
+                <Building2 className="h-10 w-10 opacity-20 text-white" />
+              </div>
+              <p className="font-bold text-white/40 text-lg">Nenhuma empresa cadastrada.</p>
+              <p className="text-sm text-white/20 mt-2">Clique em "Nova Empresa" para começar.</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">

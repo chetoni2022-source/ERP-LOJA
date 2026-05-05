@@ -15,6 +15,7 @@ export interface TenantBranding {
 
 interface AuthState {
   user: User | null;
+  profile: any | null;
   loading: boolean;
   branding: TenantBranding | null;
   previewTenantId: string | null;

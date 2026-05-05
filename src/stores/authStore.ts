@@ -56,18 +56,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .maybeSingle();
 
       if (profileData) {
-        set({ profile: profileData });
+        let finalTenantId = profileData.tenant_id;
+
+        // Se for super_admin e não tiver tenant_id, busca o tenant master 'laris'
+        if (profileData.role === 'super_admin' && !finalTenantId) {
+          const { data: larisTenant } = await supabase
+            .from('tenants')
+            .select('id')
+            .eq('slug', 'laris')
+            .maybeSingle();
+          
+          if (larisTenant) {
+            finalTenantId = larisTenant.id;
+            // Opcional: Atualiza o perfil no banco para não ter que buscar toda vez
+            await supabase.from('profiles').update({ tenant_id: larisTenant.id }).eq('id', userId);
+          }
+        }
+
+        set({ profile: { ...profileData, tenant_id: finalTenantId } });
 
         // Update tenant last accessed timestamp
-        if (profileData.tenant_id) {
+        if (finalTenantId) {
           await supabase
             .from('tenants')
             .update({ last_accessed_at: new Date().toISOString() })
-            .eq('id', profileData.tenant_id);
+            .eq('id', finalTenantId);
         }
 
         // Determine which tenant ID to use (actual or preview)
-        const activeTenantId = overrideTenantId || get().previewTenantId || profileData.tenant_id;
+        const activeTenantId = overrideTenantId || get().previewTenantId || finalTenantId;
 
         // Load tenant branding
         if (activeTenantId) {

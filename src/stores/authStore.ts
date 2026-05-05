@@ -29,14 +29,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   profile: null,
   branding: null,
-  previewTenantId: null,
+  previewTenantId: localStorage.getItem('previewTenantId'),
 
   setUser: (user) => {
     set({ user, loading: false });
     if (user) {
       get().loadProfile(user.id);
     } else {
-      set({ profile: null, branding: null });
+      localStorage.removeItem('previewTenantId');
+      set({ profile: null, branding: null, previewTenantId: null });
     }
   },
 
@@ -110,6 +111,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setPreviewTenant: (tenantId) => {
+    if (tenantId) {
+      localStorage.setItem('previewTenantId', tenantId);
+    } else {
+      localStorage.removeItem('previewTenantId');
+    }
     set({ previewTenantId: tenantId });
     const user = get().user;
     if (user) {

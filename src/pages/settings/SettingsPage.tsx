@@ -312,7 +312,22 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
       </div>
 
-      {/* Menu de Abas Premium */}
+      {!tenantId ? (
+        <div className="bg-card border-2 border-dashed border-border rounded-2xl p-10 text-center space-y-4">
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Store className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-xl font-black text-foreground">Nenhuma Empresa Selecionada</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Como Super Admin, você precisa selecionar uma empresa antes de alterar as configurações de identidade visual ou integrações.
+          </p>
+          <Button onClick={() => window.location.href = '/superadmin-laris'} className="mt-4 bg-primary text-primary-foreground font-bold">
+            Voltar ao Painel Mestre
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Menu de Abas Premium */}
       <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <button 
           onClick={() => setActiveTab('geral')}
@@ -729,6 +744,8 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

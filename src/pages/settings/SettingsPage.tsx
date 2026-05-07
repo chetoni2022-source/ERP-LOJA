@@ -83,7 +83,18 @@ export default function SettingsPage() {
       .select('*')
       .eq('tenant_id', tenantId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Tenant branding columns missing?', error);
+          // Fallback: try selecting only common columns
+          return supabase.from('tenant_branding')
+            .select('store_name, logo_url, favicon_url, login_bg_url, primary_color, whatsapp_number')
+            .eq('tenant_id', tenantId)
+            .maybeSingle();
+        }
+        return { data };
+      })
+      .then(({ data }: any) => {
         if (data) {
           if (data.store_name) setStoreName(data.store_name);
           if (data.logo_url) setCurrentLogoUrl(data.logo_url);

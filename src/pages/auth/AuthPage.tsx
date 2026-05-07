@@ -51,7 +51,7 @@ export default function AuthPage() {
         .select(`
           id, name, slug,
           tenant_branding (
-            store_name, logo_url, login_bg_url, login_bg_color, login_bg_mode, primary_color
+            store_name, logo_url, login_bg_url, primary_color
           )
         `)
         .eq('status', 'active')
@@ -68,7 +68,7 @@ export default function AuthPage() {
         // For now, try to match by owner_email domain
         const { data: tenantByDomain } = await supabase
           .from('tenants')
-          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, login_bg_color, login_bg_mode, primary_color)`)
+          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, primary_color)`)
           .ilike('owner_email', `%@${domain}`)
           .eq('status', 'active')
           .maybeSingle();

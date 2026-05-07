@@ -247,7 +247,11 @@ export default function InventoryPage() {
   }
 
   async function fetchProducts() {
-    if (!tenantId) return;
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('products')

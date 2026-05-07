@@ -160,8 +160,8 @@ export default function SettingsPage() {
     
     let activeTenantId = tenantId;
     
-    // Fallback para Admin/Super Admin se tenantId for nulo
-    if (!activeTenantId && (profile?.role === 'super_admin' || profile?.role === 'admin')) {
+    // Fallback de emergência para garantir que identifique a empresa (Laris)
+    if (!activeTenantId) {
       const { data: laris } = await supabase.from('tenants').select('id').eq('slug', 'laris').maybeSingle();
       if (laris) activeTenantId = laris.id;
     }

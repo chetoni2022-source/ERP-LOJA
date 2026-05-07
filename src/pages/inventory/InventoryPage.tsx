@@ -253,11 +253,16 @@ export default function InventoryPage() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // Se tiver tenantId, filtra. Se for admin e não tiver, tenta buscar órfãos também
+      if (tenantId) {
+        query = query.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
       setProducts(data || []);

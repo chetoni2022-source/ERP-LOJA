@@ -46,7 +46,7 @@ const TenantContext = createContext<TenantContextValue>({
 export function TenantProvider({ children }: { children: ReactNode }) {
   const { branding, profile, previewTenantId } = useAuthStore();
 
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const isSuperAdmin = profile?.role === 'super_admin' || profile?.role === 'admin';
   // Use previewTenantId (from selector), then profile.tenant_id, then fallback for super_admin
   const tenantId = previewTenantId || profile?.tenant_id;
 

@@ -59,8 +59,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (profileData) {
         let finalTenantId = profileData.tenant_id;
 
-        // Se for super_admin e não tiver tenant_id, busca o tenant master 'laris'
-        if (profileData.role === 'super_admin' && !finalTenantId) {
+        // Se for admin/super_admin e não tiver tenant_id, busca o tenant master 'laris'
+        if ((profileData.role === 'super_admin' || profileData.role === 'admin') && !finalTenantId) {
           const { data: larisTenant } = await supabase
             .from('tenants')
             .select('id')

@@ -149,8 +149,8 @@ export default function SettingsPage() {
     
     let activeTenantId = tenantId;
     
-    // Fallback para Super Admin se tenantId for nulo
-    if (!activeTenantId && profile?.role === 'super_admin') {
+    // Fallback para Admin/Super Admin se tenantId for nulo
+    if (!activeTenantId && (profile?.role === 'super_admin' || profile?.role === 'admin')) {
       const { data: laris } = await supabase.from('tenants').select('id').eq('slug', 'laris').maybeSingle();
       if (laris) activeTenantId = laris.id;
     }
@@ -328,8 +328,8 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
         <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
         
-        {/* Contexto de Tenant para Super Admin */}
-        {profile?.role === 'super_admin' && (
+        {/* Contexto de Tenant para Admin/Super Admin */}
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
           <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">

@@ -20,7 +20,7 @@ const POSITION_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const { success, error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<'geral' | 'marca' | 'integracoes'>('geral');
@@ -146,10 +146,21 @@ export default function SettingsPage() {
 
   const handleSaveBranding = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!tenantId) {
-      toastError('Erro: Empresa não identificada. Recarregue a página.');
+    
+    let activeTenantId = tenantId;
+    
+    // Fallback para Super Admin se tenantId for nulo
+    if (!activeTenantId && profile?.role === 'super_admin') {
+      const { data: laris } = await supabase.from('tenants').select('id').eq('slug', 'laris').maybeSingle();
+      if (laris) activeTenantId = laris.id;
+    }
+
+    if (!activeTenantId) {
+      toastError('Erro: Empresa não identificada. Selecione uma empresa ou recarregue a página.');
       return;
     }
+    const finalTenantId = activeTenantId;
+    
     setSavingBrand(true);
     try {
       let logoUrl = null;
@@ -157,19 +168,19 @@ export default function SettingsPage() {
       let loginBgUrl = null;
 
       if (logoFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/logo-${Date.now()}`, logoFile);
+        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/logo-${Date.now()}`, logoFile);
         if (error) throw error;
         logoUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
       if (faviconFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/favicon-${Date.now()}`, faviconFile);
+        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/favicon-${Date.now()}`, faviconFile);
         if (error) throw error;
         faviconUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
       if (loginBgFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${tenantId}/login-bg-${Date.now()}`, loginBgFile);
+        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/login-bg-${Date.now()}`, loginBgFile);
         if (error) throw error;
         loginBgUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
@@ -186,11 +197,11 @@ export default function SettingsPage() {
       brandingPayload.login_bg_color = loginBgColor;
       brandingPayload.login_bg_mode = loginBgMode;
 
-      const { data: existingBranding } = await supabase.from('tenant_branding').select('id').eq('tenant_id', tenantId).maybeSingle();
+      const { data: existingBranding } = await supabase.from('tenant_branding').select('id').eq('tenant_id', finalTenantId).maybeSingle();
       if (existingBranding) {
         await supabase.from('tenant_branding').update(brandingPayload).eq('id', existingBranding.id);
       } else {
-        await supabase.from('tenant_branding').insert([{ ...brandingPayload, tenant_id: tenantId }]);
+        await supabase.from('tenant_branding').insert([{ ...brandingPayload, tenant_id: finalTenantId }]);
       }
 
       // 2. Save common settings to store_settings
@@ -203,11 +214,11 @@ export default function SettingsPage() {
       if (logoUrl) settingsPayload.logo_url = logoUrl;
       if (faviconUrl) settingsPayload.favicon_url = faviconUrl;
 
-      const { data: existingSettings } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      const { data: existingSettings } = await supabase.from('store_settings').select('id').eq('tenant_id', finalTenantId).maybeSingle();
       if (existingSettings) {
         await supabase.from('store_settings').update(settingsPayload).eq('id', existingSettings.id);
       } else {
-        await supabase.from('store_settings').insert([{ ...settingsPayload, tenant_id: tenantId, user_id: user?.id }]);
+        await supabase.from('store_settings').insert([{ ...settingsPayload, tenant_id: finalTenantId, user_id: user?.id }]);
       }
 
       setLogoFile(null); setFaviconFile(null); setLoginBgFile(null);
@@ -316,6 +327,28 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
         <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
+        
+        {/* Contexto de Tenant para Super Admin */}
+        {profile?.role === 'super_admin' && (
+          <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                <Store size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Contexto de Edição</p>
+                <p className="text-sm font-bold text-foreground">
+                  {tenantId ? `Editando Tenant ID: ${tenantId}` : 'Nenhuma empresa selecionada (Laris Master)'}
+                </p>
+              </div>
+            </div>
+            {!tenantId && (
+              <p className="text-[10px] italic text-muted-foreground">
+                Dica: Selecione uma empresa no Dashboard para editar uma marca específica.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Menu de Abas Premium */}

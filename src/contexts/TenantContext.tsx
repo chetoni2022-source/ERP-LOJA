@@ -47,7 +47,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const { branding, profile, previewTenantId } = useAuthStore();
 
   const isSuperAdmin = profile?.role === 'super_admin';
-  const tenantId = previewTenantId || profile?.tenant_id || null;
+  const tenantId = previewTenantId || profile?.tenant_id || (isSuperAdmin ? null : null); // Fallback logic is handled in authStore now
 
   useEffect(() => {
     if (branding?.primaryColor) {

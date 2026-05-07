@@ -41,6 +41,8 @@ export default function SettingsPage() {
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null);
   const [currentLoginBgUrl, setCurrentLoginBgUrl] = useState<string | null>(null);
+  const [loginBgColor, setLoginBgColor] = useState('#000000');
+  const [loginBgMode, setLoginBgMode] = useState<'image' | 'color' | 'gradient'>('image');
   const [savingBrand, setSavingBrand] = useState(false);
 
   // Logo display settings
@@ -89,6 +91,8 @@ export default function SettingsPage() {
           if (data.login_bg_url) setCurrentLoginBgUrl(data.login_bg_url);
           if (data.primary_color) setPrimaryColor(data.primary_color);
           if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
+          if (data.login_bg_color) setLoginBgColor(data.login_bg_color);
+          if (data.login_bg_mode) setLoginBgMode(data.login_bg_mode);
         }
       });
 
@@ -179,6 +183,8 @@ export default function SettingsPage() {
       if (logoUrl) { brandingPayload.logo_url = logoUrl; setCurrentLogoUrl(logoUrl); }
       if (faviconUrl) { brandingPayload.favicon_url = faviconUrl; setCurrentFaviconUrl(faviconUrl); }
       if (loginBgUrl) { brandingPayload.login_bg_url = loginBgUrl; setCurrentLoginBgUrl(loginBgUrl); }
+      brandingPayload.login_bg_color = loginBgColor;
+      brandingPayload.login_bg_mode = loginBgMode;
 
       const { data: existingBranding } = await supabase.from('tenant_branding').select('id').eq('tenant_id', tenantId).maybeSingle();
       if (existingBranding) {
@@ -481,22 +487,54 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Login Background */}
-              <div className="space-y-2">
-                <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Layout size={14} className="text-primary"/> Fundo da Tela de Login</Label>
-                <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[180px] overflow-hidden shadow-inner">
-                  {loginBgImg
-                    ? <img src={loginBgImg} alt="Login Background" crossOrigin="anonymous" className="w-full h-full object-cover z-10" />
-                    : <div className="flex flex-col items-center z-10 pointer-events-none">
-                        <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
-                        <span className="text-xs font-bold">Enviar Imagem de Fundo</span>
-                        <span className="text-[10px] text-muted-foreground mt-1">Recomendado: 1920x1080px</span>
+              {/* ── LOGIN EXPERIENCE ── */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm border-t-4 border-t-zinc-900">
+                <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Layout className="w-5 h-5 text-primary"/> Experiência de Login</h2>
+                <p className="text-sm text-muted-foreground mb-6">Personalize como seus clientes e equipe veem a porta de entrada do sistema.</p>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Tipo de Fundo</Label>
+                    <div className="flex bg-muted/40 p-1 rounded-xl border border-border">
+                      {([['image','Imagem'],['color','Cor Sólida'],['gradient','Gradiente Profissional']] as const).map(([val,label])=>(
+                        <button key={val} type="button" onClick={()=>setLoginBgMode(val)}
+                          className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${loginBgMode===val?'bg-background shadow-md text-foreground':'text-muted-foreground hover:text-foreground'}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {loginBgMode === 'image' && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Label className="font-semibold text-foreground text-sm flex items-center gap-2">Imagem de Fundo</Label>
+                      <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[180px] overflow-hidden shadow-inner">
+                        {loginBgImg
+                          ? <img src={loginBgImg} alt="Login Background" crossOrigin="anonymous" className="w-full h-full object-cover z-10" />
+                          : <div className="flex flex-col items-center z-10 pointer-events-none">
+                              <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
+                              <span className="text-xs font-bold">Enviar Imagem</span>
+                              <span className="text-[10px] text-muted-foreground mt-1">HD 1920x1080px recomendado</span>
+                            </div>
+                        }
+                        <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setLoginBgFile,setLoginBgPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
                       </div>
-                  }
-                  <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setLoginBgFile,setLoginBgPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
-                  {loginBgImg && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-11">
-                      <span className="text-white text-xs font-black uppercase tracking-widest">Trocar Fundo</span>
+                    </div>
+                  )}
+
+                  {(loginBgMode === 'color' || loginBgMode === 'gradient') && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Label className="font-semibold text-foreground text-sm flex items-center gap-2">Cor de Fundo da Tela</Label>
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="color" 
+                          value={loginBgColor} 
+                          onChange={e => setLoginBgColor(e.target.value)}
+                          className="h-14 w-14 rounded-2xl border border-border cursor-pointer bg-background p-1"
+                        />
+                        <Input value={loginBgColor} onChange={e => setLoginBgColor(e.target.value)} className="bg-background shadow-sm h-14 font-mono uppercase text-lg font-black" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Essa cor será usada no fundo da tela de login {loginBgMode==='gradient'?'como base do gradiente':''}.</p>
                     </div>
                   )}
                 </div>
@@ -504,8 +542,8 @@ export default function SettingsPage() {
 
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-4 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
                 <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
-                  className="w-full h-12 text-sm font-black tracking-widest shadow-lg bg-primary text-primary-foreground transition-all active:scale-[0.98] rounded-xl uppercase">
-                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:null} Salvar Identidade
+                  className="w-full h-14 text-sm font-black tracking-[0.2em] shadow-xl bg-primary text-primary-foreground transition-all active:scale-[0.98] rounded-2xl uppercase">
+                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:<Target className="h-5 w-5 mr-2"/>} Salvar Identidade Master
                 </Button>
               </div>
             </form>

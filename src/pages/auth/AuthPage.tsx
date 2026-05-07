@@ -10,6 +10,8 @@ interface TenantLoginBranding {
   store_name: string | null;
   logo_url: string | null;
   login_bg_url: string | null;
+  login_bg_color: string | null;
+  login_bg_mode: 'image' | 'color' | 'gradient' | null;
   primary_color: string | null;
   tenant_id: string;
   tenant_name: string;
@@ -49,7 +51,7 @@ export default function AuthPage() {
         .select(`
           id, name, slug,
           tenant_branding (
-            store_name, logo_url, login_bg_url, primary_color
+            store_name, logo_url, login_bg_url, login_bg_color, login_bg_mode, primary_color
           )
         `)
         .eq('status', 'active')
@@ -66,7 +68,7 @@ export default function AuthPage() {
         // For now, try to match by owner_email domain
         const { data: tenantByDomain } = await supabase
           .from('tenants')
-          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, primary_color)`)
+          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, login_bg_color, login_bg_mode, primary_color)`)
           .ilike('owner_email', `%@${domain}`)
           .eq('status', 'active')
           .maybeSingle();
@@ -77,6 +79,8 @@ export default function AuthPage() {
             store_name: branding?.store_name ?? null,
             logo_url: branding?.logo_url ?? null,
             login_bg_url: branding?.login_bg_url ?? null,
+            login_bg_color: branding?.login_bg_color ?? null,
+            login_bg_mode: branding?.login_bg_mode ?? null,
             primary_color: branding?.primary_color ?? null,
             tenant_id: tenantByDomain.id,
             tenant_name: tenantByDomain.name,
@@ -147,21 +151,41 @@ export default function AuthPage() {
   const title = recoveryMode ? 'Recuperar Acesso' : isLogin ? 'Entrar' : 'Criar Conta';
   const primaryColor = tenantBranding?.primary_color || '#18181b';
   const bgImage = tenantBranding?.login_bg_url || '/auth-bg.jpg';
+  const bgColor = tenantBranding?.login_bg_color || '#000000';
+  const bgMode = tenantBranding?.login_bg_mode || 'image';
   const logoUrl = tenantBranding?.logo_url || null;
   const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
-  const isDarkBg = true; // For the left panel text contrast
+  const isDarkBg = true;
 
   return (
     <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
       
       {/* ── Esquerda: Imagem de Fundo (Desktop) ─── */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[55%] relative overflow-hidden">
-        <img
-          src={bgImage}
-          alt={storeName}
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div 
+        className="hidden md:flex md:w-1/2 lg:w-[55%] relative overflow-hidden items-center justify-center"
+        style={{ 
+          background: bgMode === 'image' 
+            ? `url(${bgImage}) center/cover no-repeat` 
+            : bgMode === 'gradient' 
+              ? `linear-gradient(135deg, ${bgColor} 0%, ${primaryColor} 100%)` 
+              : bgColor 
+        }}
+      >
+        {bgMode === 'image' && (
+          <>
+            <img
+              src={bgImage}
+              alt={storeName}
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          </>
+        )}
+        
+        {/* Adicionando um overlay elegante se for gradiente ou cor */}
+        {(bgMode === 'gradient' || bgMode === 'color') && (
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        )}
         
         {tenantBranding && (
           <div className="absolute top-8 left-8 flex items-center gap-3 animate-in fade-in duration-500">
@@ -193,8 +217,12 @@ export default function AuthPage() {
       <div className="flex-1 flex flex-col items-center justify-center relative bg-white dark:bg-[#050505] overflow-hidden">
         
         {/* Mobile background */}
-        <div className="md:hidden absolute inset-0">
-          <img src={bgImage} alt="" className="w-full h-full object-cover opacity-15" />
+        <div className="md:hidden absolute inset-0 overflow-hidden">
+          {bgMode === 'image' ? (
+            <img src={bgImage} alt="" className="w-full h-full object-cover opacity-15" />
+          ) : (
+            <div className="w-full h-full opacity-10" style={{ background: bgMode === 'gradient' ? `linear-gradient(135deg, ${bgColor}, ${primaryColor})` : bgColor }} />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/95 to-white dark:from-black/70 dark:via-[#050505]/95 dark:to-[#050505]" />
         </div>
 

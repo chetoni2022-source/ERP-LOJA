@@ -5,6 +5,7 @@ import { useDashboardStore } from '../../stores/dashboardStore';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Plus, Search, Image as ImageIcon, Loader2, PackageSearch, X, Grid, List, Trash2, Edit, GripHorizontal, ArrowDownToLine, Copy, CheckCircle2, AlertTriangle, Package, ExternalLink, PlayCircle, Barcode, Scale, Ruler, Link2, Factory, Tag, Tags, Coins, Percent, Eye, Download, MoreVertical, FolderArchive, Layers, Monitor, ShoppingBag, Maximize2, Minimize2, Bold, Italic, Heading, BadgeDollarSign, Truck, HelpCircle, TrendingUp } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { useTenant } from '../../contexts/TenantContext';
 import { MediaOptimizer } from '../../lib/mediaOptimizer';
 import JSZip from 'jszip';
 
@@ -57,6 +58,7 @@ const MAX_FILE_SIZE_INVENTORY = 3 * 1024 * 1024; // 3MB
 
 export default function InventoryPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const { clearCache } = useDashboardStore();
   const { success, error: toastError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -188,8 +190,8 @@ export default function InventoryPage() {
   }, [user]);
 
   async function fetchTaxSettings() {
-    if (!user) return;
-    const { data } = await supabase.from('store_settings').select('*').eq('user_id', user.id).maybeSingle();
+    if (!user || !tenantId) return;
+    const { data } = await supabase.from('store_settings').select('*').eq('tenant_id', tenantId).maybeSingle();
     if (data) {
       setTaxSettings({
         shopee_comm: data.shopee_commission_pct ?? 20,
@@ -237,17 +239,20 @@ export default function InventoryPage() {
   }, [isModalOpen, toastError, success]);
 
   async function fetchCategories() {
+    if (!tenantId) return;
     try {
-      const { data } = await supabase.from('categories').select('*').eq('user_id', user.id).order('name');
+      const { data } = await supabase.from('categories').select('*').eq('tenant_id', tenantId).order('name');
       setCategories(data || []);
     } catch(err) { console.error(err); }
   }
 
   async function fetchProducts() {
+    if (!tenantId) return;
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -382,7 +387,7 @@ export default function InventoryPage() {
   const handleDelete = async (p: Product) => {
     if (!window.confirm(`Deseja excluir "${p.name}"? Essa ação não pode ser desfeita.`)) return;
     try {
-       const { error } = await supabase.from('products').delete().eq('id', p.id);
+       const { error } = await supabase.from('products').delete().eq('id', p.id).eq('tenant_id', tenantId);
        if (error) throw error;
        success('Produto excluído!');
        fetchProducts();
@@ -572,6 +577,7 @@ export default function InventoryPage() {
       const totalCost = costs.reduce((acc, c) => acc + (parseFloat(c.value) || 0), 0);
 
       const payload: any = {
+        tenant_id: tenantId,
         name,
         sku: sku || null,
         description: description || null,
@@ -611,7 +617,7 @@ export default function InventoryPage() {
       
       // Perform a single, robust save attempt
       if (editingProduct) {
-        const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
+        const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id).eq('tenant_id', tenantId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('products').insert([payload]);
@@ -1155,12 +1161,12 @@ export default function InventoryPage() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => {setIsModalOpen(false); resetForm();}} />
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center md:p-6 bg-black/60 backdrop-blur-sm">
+          <div className="absolute inset-0" onClick={() => {setIsModalOpen(false); resetForm();}} />
           
-          <div className="bg-card w-full max-w-5xl md:rounded-2xl shadow-2xl border-t md:border border-border flex flex-col z-10 h-[90dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-300 transition-all">
+          <div className="bg-card w-full max-w-5xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-t md:border border-border flex flex-col z-10 h-[92dvh] md:h-auto md:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-500 transition-all">
             {/* ── HEADER ── */}
-            <div className="px-5 py-4 border-b border-border bg-card flex justify-between items-center shrink-0">
+            <div className="px-5 py-3 md:py-4 border-b border-border bg-card flex justify-between items-center shrink-0">
               {/* Mobile drag handle */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-border rounded-full md:hidden" />
               <div className="flex items-center gap-3 min-w-0">
@@ -1168,7 +1174,7 @@ export default function InventoryPage() {
                   <Package size={20} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black tracking-tight text-foreground truncate max-w-[220px] md:max-w-lg">
+                  <h3 className="text-base md:text-lg font-black tracking-tight text-foreground truncate max-w-[150px] sm:max-w-[220px] md:max-w-lg">
                     {editingProduct ? editingProduct.name : 'Nova Peça'}
                   </h3>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
@@ -1179,24 +1185,30 @@ export default function InventoryPage() {
                             SKU: {sku}
                           </span>
                         )}
-                        {categoryId && (
-                          <span className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-widest border-l border-border pl-2">
-                             {categories.find(c => c.id === categoryId)?.name || 'Peça'}
-                          </span>
-                        )}
                         <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-widest border-l border-border pl-2", parseInt(stock) > 0 ? "text-emerald-500" : "text-red-500")}>
-                          {parseInt(stock) > 0 ? `${stock} em estoque` : 'Esgotado'}
+                          {parseInt(stock) > 0 ? `${stock} unid.` : 'Esgotado'}
                         </span>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Preencha os dados técnicos da peça</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Injetar mercadoria</p>
                     )}
                   </div>
                 </div>
               </div>
-              <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-9 w-9 flex items-center justify-center hover:bg-muted rounded-xl transition-all group shrink-0 ml-2">
-                <X size={18} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Botão Salvar Rápido no Header para Mobile */}
+                <button 
+                  onClick={handleSaveProduct} 
+                  disabled={saving}
+                  className="md:hidden flex items-center gap-2 bg-foreground text-background px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 size={14} />}
+                  Salvar
+                </button>
+                <button onClick={() => {setIsModalOpen(false); resetForm();}} className="h-9 w-9 flex items-center justify-center hover:bg-muted rounded-xl transition-all group shrink-0">
+                  <X size={18} className="text-muted-foreground group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+              </div>
             </div>
 
             {/* ── BODY: Sidebar + Content ── */}
@@ -1242,25 +1254,27 @@ export default function InventoryPage() {
               <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar relative bg-muted/5">
 
                 {/* Mobile tabs (horizontal pills) */}
-                <div className="md:hidden sticky top-0 z-[60] bg-background border-b border-border shadow-sm px-4 py-2.5">
-                  <div className="flex flex-nowrap overflow-x-auto gap-1 bg-muted/30 p-1 rounded-xl no-scrollbar">
-                    {['basic', 'pricing', 'logistics', 'media', 'variations'].map(tab => (
+                <div className="md:hidden sticky top-0 z-[60] bg-card/80 backdrop-blur-md border-b border-border shadow-sm px-4 py-2.5">
+                  <div className="flex flex-nowrap overflow-x-auto gap-2 p-1 no-scrollbar">
+                    {[
+                      {id:'basic', label: 'Info', emoji: '📝'},
+                      {id:'pricing', label: 'Lucros', emoji: '💸'},
+                      {id:'logistics', label: 'Frete', emoji: '📦'},
+                      {id:'media', label: 'Mídia', emoji: '🎥'},
+                      {id:'variations', label: 'Opções', emoji: '✨'}
+                    ].map(tab => (
                       <button
-                        key={tab}
+                        key={tab.id}
                         type="button"
-                        onClick={() => setActiveTab(tab as any)}
+                        onClick={() => setActiveTab(tab.id as any)}
                         className={cn(
-                          "flex-1 text-[10px] uppercase font-black tracking-widest py-2 px-3 rounded-lg transition-all whitespace-nowrap min-w-[70px]",
-                          activeTab === tab
-                            ? "bg-foreground text-background shadow-sm"
-                            : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                          "flex-1 text-[10px] uppercase font-black tracking-[0.1em] py-2.5 px-4 rounded-xl transition-all whitespace-nowrap border",
+                          activeTab === tab.id
+                            ? "bg-primary border-primary text-white shadow-lg scale-105"
+                            : "bg-muted/40 border-border/40 text-muted-foreground hover:bg-muted/80"
                         )}
                       >
-                        {tab === 'basic' && 'Info 📝'}
-                        {tab === 'pricing' && 'Lucros 💸'}
-                        {tab === 'logistics' && 'Frete 📦'}
-                        {tab === 'media' && 'Mídia 🎥'}
-                        {tab === 'variations' && 'Opções ✨'}
+                        {tab.label} {tab.emoji}
                       </button>
                     ))}
                   </div>

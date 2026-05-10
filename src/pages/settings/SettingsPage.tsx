@@ -4,7 +4,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTenant } from '../../contexts/TenantContext';
 import { useTheme } from '../../components/theme-provider';
 import { useToast } from '../../contexts/ToastContext';
-import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Link as LinkIcon, Blocks, Layout } from 'lucide-react';
+import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palette, Target, ImageIcon, Crop, Phone, X, ShoppingBag, Settings2, Blocks, Layout } from 'lucide-react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
@@ -18,6 +18,22 @@ const POSITION_OPTIONS = [
   { value: 'bottom center',label:'↓', title: 'Inferior Centro' },
   { value: 'bottom right',label: '↘', title: 'Inferior Direita' },
 ];
+
+function selectLatestStoreSettings(tenantId: string, columns = '*') {
+  return supabase
+    .from('store_settings')
+    .select(columns)
+    .eq('tenant_id', tenantId)
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+function storagePathFor(finalTenantId: string, prefix: string, file: File) {
+  const fallbackExt = file.type.split('/')[1] || 'png';
+  const ext = (file.name.split('.').pop() || fallbackExt).toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  return `${finalTenantId}/${prefix}-${Date.now()}.${ext}`;
+}
 
 export default function SettingsPage() {
   const { user, profile } = useAuthStore();
@@ -41,6 +57,9 @@ export default function SettingsPage() {
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null);
   const [currentLoginBgUrl, setCurrentLoginBgUrl] = useState<string | null>(null);
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const [faviconLoadFailed, setFaviconLoadFailed] = useState(false);
+  const [loginBgLoadFailed, setLoginBgLoadFailed] = useState(false);
   const [loginBgColor, setLoginBgColor] = useState('#000000');
   const [loginBgMode, setLoginBgMode] = useState<'image' | 'color' | 'gradient'>('image');
   const [savingBrand, setSavingBrand] = useState(false);
@@ -76,6 +95,18 @@ export default function SettingsPage() {
   const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
   useEffect(() => {
+    setLogoLoadFailed(false);
+  }, [logoPreview, currentLogoUrl]);
+
+  useEffect(() => {
+    setFaviconLoadFailed(false);
+  }, [faviconPreview, currentFaviconUrl]);
+
+  useEffect(() => {
+    setLoginBgLoadFailed(false);
+  }, [loginBgPreview, currentLoginBgUrl]);
+
+  useEffect(() => {
     if (!user || !tenantId) return;
 
     // Load tenant branding
@@ -88,7 +119,7 @@ export default function SettingsPage() {
           console.warn('Tenant branding columns missing?', error);
           // Fallback: try selecting only common columns
           return supabase.from('tenant_branding')
-            .select('store_name, logo_url, favicon_url, login_bg_url, primary_color, whatsapp_number')
+            .select('store_name, logo_url, favicon_url, login_bg_url, login_bg_color, login_bg_mode, primary_color, whatsapp_number')
             .eq('tenant_id', tenantId)
             .maybeSingle();
         }
@@ -108,18 +139,15 @@ export default function SettingsPage() {
       });
 
     // Load other settings
-    supabase.from('store_settings')
-      .select('*')
-      .eq('tenant_id', tenantId) // Filter by tenant now
-      .limit(1).maybeSingle().then(({ data }: { data: any }) => {
+    selectLatestStoreSettings(tenantId).then(({ data }: { data: any }) => {
         if (data) {
           // Backward compatibility: if tenant_branding was empty, use these
-          if (!storeName && data.store_name) setStoreName(data.store_name);
-          if (!whatsappNumber && data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
+          if (data.store_name) setStoreName((prev) => prev || data.store_name);
+          if (data.whatsapp_number) setWhatsappNumber((prev) => prev || data.whatsapp_number);
           
           if (data.monthly_goal) setMonthlyGoal(data.monthly_goal.toString());
-          if (!currentLogoUrl && data.logo_url) setCurrentLogoUrl(data.logo_url);
-          if (!currentFaviconUrl && data.favicon_url) setCurrentFaviconUrl(data.favicon_url);
+          if (data.logo_url) setCurrentLogoUrl((prev) => prev || data.logo_url);
+          if (data.favicon_url) setCurrentFaviconUrl((prev) => prev || data.favicon_url);
           
           if (data.logo_width) setLogoWidth(data.logo_width);
           if (data.logo_height) setLogoHeight(data.logo_height);
@@ -127,7 +155,7 @@ export default function SettingsPage() {
           if (data.logo_position) setLogoPosition(data.logo_position);
           if (data.lead_sources) setLeadSources(data.lead_sources);
           if (data.shopee_app_id) setShopeeAppId(data.shopee_app_id);
-          if (data.shopee_app_secret) setShopeeAppId(data.shopee_app_secret);
+          if (data.shopee_app_secret) setShopeeSecret(data.shopee_app_secret);
           if (data.shopee_shop_id) setShopeeShopId(data.shopee_shop_id);
           if (data.shopee_markup_pct !== null) setShopeeMarkup(data.shopee_markup_pct.toString());
           if (data.tiktok_markup_pct !== null) setTiktokMarkup(data.tiktok_markup_pct.toString());
@@ -142,7 +170,11 @@ export default function SettingsPage() {
       });
   }, [user, tenantId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: any, setPreview: any) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    setPreview: React.Dispatch<React.SetStateAction<string | null>>
+  ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > MAX_FILE_SIZE) {
@@ -155,14 +187,51 @@ export default function SettingsPage() {
     }
   };
 
+  const resolveActiveTenantId = async () => {
+    if (tenantId) return tenantId;
+
+    const { data: laris } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('status', 'active')
+      .or('slug.eq.laris,slug.eq.laris-acess-rios,name.ilike.Laris%')
+      .limit(1)
+      .maybeSingle();
+
+    return laris?.id ?? null;
+  };
+
+  const saveStoreSettings = async (finalTenantId: string, payload: Record<string, unknown>) => {
+    const values = { ...payload, updated_at: new Date().toISOString() };
+    const { data: existing, error: selectError } = await selectLatestStoreSettings(finalTenantId, 'id');
+    if (selectError) throw selectError;
+
+    if (existing?.id) {
+      const { error } = await supabase.from('store_settings').update(values).eq('id', existing.id);
+      if (error) throw error;
+      return;
+    }
+
+    const { error } = await supabase
+      .from('store_settings')
+      .insert([{ ...values, tenant_id: finalTenantId, user_id: user?.id }]);
+    if (error) throw error;
+  };
+
   const handleSaveBranding = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     
-    let activeTenantId = tenantId;
+    let activeTenantId = await resolveActiveTenantId();
     
     // Fallback de emergência para garantir que identifique a empresa (Laris)
     if (!activeTenantId) {
-      const { data: laris } = await supabase.from('tenants').select('id').eq('slug', 'laris').maybeSingle();
+      const { data: laris } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('status', 'active')
+        .or('slug.eq.laris,slug.eq.laris-acess-rios,name.ilike.Laris%')
+        .limit(1)
+        .maybeSingle();
       if (laris) activeTenantId = laris.id;
     }
 
@@ -179,19 +248,19 @@ export default function SettingsPage() {
       let loginBgUrl = null;
 
       if (logoFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/logo-${Date.now()}`, logoFile);
+        const { error, data } = await supabase.storage.from('brand').upload(storagePathFor(finalTenantId, 'logo', logoFile), logoFile);
         if (error) throw error;
         logoUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
       if (faviconFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/favicon-${Date.now()}`, faviconFile);
+        const { error, data } = await supabase.storage.from('brand').upload(storagePathFor(finalTenantId, 'favicon', faviconFile), faviconFile);
         if (error) throw error;
         faviconUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
 
       if (loginBgFile) {
-        const { error, data } = await supabase.storage.from('brand').upload(`${finalTenantId}/login-bg-${Date.now()}`, loginBgFile);
+        const { error, data } = await supabase.storage.from('brand').upload(storagePathFor(finalTenantId, 'login-bg', loginBgFile), loginBgFile);
         if (error) throw error;
         loginBgUrl = supabase.storage.from('brand').getPublicUrl(data.path).data.publicUrl;
       }
@@ -207,12 +276,15 @@ export default function SettingsPage() {
       if (loginBgUrl) { brandingPayload.login_bg_url = loginBgUrl; setCurrentLoginBgUrl(loginBgUrl); }
       brandingPayload.login_bg_color = loginBgColor;
       brandingPayload.login_bg_mode = loginBgMode;
+      brandingPayload.updated_at = new Date().toISOString();
 
       const { data: existingBranding } = await supabase.from('tenant_branding').select('id').eq('tenant_id', finalTenantId).maybeSingle();
       if (existingBranding) {
-        await supabase.from('tenant_branding').update(brandingPayload).eq('id', existingBranding.id);
+        const { error } = await supabase.from('tenant_branding').update(brandingPayload).eq('id', existingBranding.id);
+        if (error) throw error;
       } else {
-        await supabase.from('tenant_branding').insert([{ ...brandingPayload, tenant_id: finalTenantId }]);
+        const { error } = await supabase.from('tenant_branding').insert([{ ...brandingPayload, tenant_id: finalTenantId }]);
+        if (error) throw error;
       }
 
       // 2. Save common settings to store_settings
@@ -225,12 +297,7 @@ export default function SettingsPage() {
       if (logoUrl) settingsPayload.logo_url = logoUrl;
       if (faviconUrl) settingsPayload.favicon_url = faviconUrl;
 
-      const { data: existingSettings } = await supabase.from('store_settings').select('id').eq('tenant_id', finalTenantId).maybeSingle();
-      if (existingSettings) {
-        await supabase.from('store_settings').update(settingsPayload).eq('id', existingSettings.id);
-      } else {
-        await supabase.from('store_settings').insert([{ ...settingsPayload, tenant_id: finalTenantId, user_id: user?.id }]);
-      }
+      await saveStoreSettings(finalTenantId, settingsPayload);
 
       setLogoFile(null); setFaviconFile(null); setLoginBgFile(null);
       setLogoPreview(null); setFaviconPreview(null); setLoginBgPreview(null);
@@ -246,17 +313,10 @@ export default function SettingsPage() {
   const handleSaveDisplaySettings = async () => {
     setSavingDisplay(true);
     try {
-      if (!tenantId) return;
-      const { data: existing } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      const activeTenantId = await resolveActiveTenantId();
+      if (!activeTenantId) throw new Error('Empresa nÃ£o identificada para salvar a exibiÃ§Ã£o.');
       const payload = { logo_width: logoWidth, logo_height: logoHeight, logo_fit: logoFit, logo_position: logoPosition };
-      
-      if (existing) {
-        const { error: upError } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
-        if (upError) throw upError;
-      } else {
-        const { error: inError } = await supabase.from('store_settings').insert([{ ...payload, tenant_id: tenantId, user_id: user?.id }]);
-        if (inError) throw inError;
-      }
+      await saveStoreSettings(activeTenantId, payload);
       success('Configurações de exibição salvas!');
     } catch (err: any) { 
       console.error('Error saving display settings:', err);
@@ -269,8 +329,8 @@ export default function SettingsPage() {
     e.preventDefault();
     setSavingShopee(true);
     try {
-      if (!tenantId) return;
-      const { data: existing } = await supabase.from('store_settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      const activeTenantId = await resolveActiveTenantId();
+      if (!activeTenantId) throw new Error('Empresa nÃ£o identificada para salvar integraÃ§Ãµes.');
       
       const payload = { 
         shopee_app_id: shopeeAppId || null, 
@@ -287,12 +347,7 @@ export default function SettingsPage() {
         global_tax_pct: parseFloat(globalTaxPct) || 0
       };
       
-      if (existing) {
-        const { error } = await supabase.from('store_settings').update(payload).eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        await supabase.from('store_settings').insert([{ ...payload, tenant_id: tenantId, user_id: user?.id }]);
-      }
+      await saveStoreSettings(activeTenantId, payload);
       success('Configurações de Marketplaces salvas no ERP!');
     } catch (err: any) { 
       console.error(err);
@@ -308,10 +363,14 @@ export default function SettingsPage() {
     
     setSavingBrand(true); // Using this as general loading for settings
     try {
+      if (!tenantId) {
+        throw new Error('Empresa não identificada para o convite.');
+      }
       const { error } = await supabase.from('team_invites').insert([{
         email: inviteEmail.toLowerCase().trim(),
         role: 'sales',
-        invited_by: user.id
+        invited_by: user.id,
+        tenant_id: tenantId
       }]);
       
       if (error) {
@@ -329,12 +388,12 @@ export default function SettingsPage() {
     }
   };
 
-  const previewImg = logoPreview || getProxyUrl(currentLogoUrl);
-  const faviconImg = faviconPreview || getProxyUrl(currentFaviconUrl);
-  const loginBgImg = loginBgPreview || getProxyUrl(currentLoginBgUrl);
+  const previewImg = logoPreview || (logoLoadFailed ? null : getProxyUrl(currentLogoUrl));
+  const faviconImg = faviconPreview || (faviconLoadFailed ? null : getProxyUrl(currentFaviconUrl));
+  const loginBgImg = loginBgPreview || (loginBgLoadFailed ? null : getProxyUrl(currentLoginBgUrl));
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
         <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
@@ -366,13 +425,13 @@ export default function SettingsPage() {
       <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <button 
           onClick={() => setActiveTab('geral')}
-          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
         >
           <Settings2 size={16} /> Geral & Equipe
         </button>
         <button 
           onClick={() => setActiveTab('marca')}
-          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
         >
           <Palette size={16} /> Identidade Visual
         </button>
@@ -389,7 +448,7 @@ export default function SettingsPage() {
         {activeTab === 'geral' && (
           <div className="grid gap-6 lg:grid-cols-2 animate-in slide-in-from-bottom-2 duration-300">
             {/* Aparência */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-sm xl:sticky xl:top-24">
             <h2 className="text-lg font-bold mb-4 flex items-center text-foreground gap-2"><Palette className="w-5 h-5 text-primary" /> Aparência do Painel</h2>
             <Label className="mb-3 block text-foreground font-semibold">Tema do Sistema ERP</Label>
             <div className="flex bg-muted/40 p-1.5 rounded-xl border border-border overflow-hidden">
@@ -439,7 +498,7 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground mb-4">Gerencie quem tem acesso ao painel do seu ERP.</p>
             <form onSubmit={handleInviteMember} className="flex gap-2">
               <Input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="vendedor@loja.com" className="bg-background shadow-sm h-11" required type="email" />
-              <Button type="submit" disabled={savingBrand} className="bg-primary text-primary-foreground font-bold shadow-md px-4 h-11">
+              <Button type="submit" disabled={savingBrand} className="bg-zinc-950 text-white hover:bg-zinc-800 font-bold shadow-md px-4 h-11">
                 {savingBrand ? <Loader2 className="animate-spin h-4 w-4 mr-1.5" /> : <UserPlus className="h-4 w-4 mr-1.5" />}
                 Convidar
               </Button>
@@ -456,10 +515,30 @@ export default function SettingsPage() {
 
         {/* TAB 2: MARCA E PLATAFORMA */}
         {activeTab === 'marca' && (
-          <div className="grid gap-6 lg:grid-cols-2 animate-in slide-in-from-bottom-2 duration-300">
-            <div className="space-y-6">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] animate-in slide-in-from-bottom-2 duration-300">
+            <div className="xl:col-span-2 sticky top-14 md:top-0 z-30 -mx-1 rounded-xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Identidade Visual</p>
+                  <p className="text-sm text-foreground font-semibold">Salve a marca e os ajustes de exibição sem perder o ponto da página.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:min-w-[320px] lg:min-w-[420px]">
+                  <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
+                    className="h-11 text-[10px] font-black uppercase tracking-widest bg-zinc-950 text-white hover:bg-zinc-800 shadow-md rounded-xl">
+                    {savingBrand ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Target className="h-4 w-4 mr-2" />}
+                    Salvar Marca
+                  </Button>
+                  <Button type="button" onClick={handleSaveDisplaySettings} disabled={savingDisplay}
+                    className="h-11 text-[10px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 shadow-md rounded-xl">
+                    {savingDisplay ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Crop className="h-4 w-4 mr-2" />}
+                    Salvar Exibição
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-5 min-w-0">
               {/* Identidade visual */}
-              <div className="bg-card border border-border rounded-xl p-6 shadow-sm border-t-4 border-t-primary">
+              <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-sm border-t-4 border-t-primary">
             <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Store className="w-5 h-5 text-primary"/> Identidade Visual (White-label)</h2>
             <p className="text-sm text-muted-foreground mb-5">Personalize o sistema com a sua marca.</p>
 
@@ -498,13 +577,13 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground">Aparece como barra de progresso no Painel.</p>
               </div>
               
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 {/* Logo */}
                 <div className="space-y-2">
                   <Label className="font-semibold text-foreground text-sm">Logotipo Principal</Label>
                   <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
                     {previewImg
-                      ? <img src={previewImg} alt="Logo" crossOrigin="anonymous" className="w-full h-full object-contain z-10 drop-shadow-sm p-3" />
+                      ? <img src={previewImg} alt="Logo" onError={() => setLogoLoadFailed(true)} className="w-full h-full object-contain z-10 drop-shadow-sm p-3" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Logo</span>
@@ -519,7 +598,7 @@ export default function SettingsPage() {
                   <Label className="font-semibold text-foreground text-sm">Ícone da Aba (Favicon)</Label>
                   <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
                     {faviconImg
-                      ? <img src={faviconImg} alt="Favicon" crossOrigin="anonymous" className="h-14 w-14 object-contain z-10" />
+                      ? <img src={faviconImg} alt="Favicon" onError={() => setFaviconLoadFailed(true)} className="h-14 w-14 object-contain z-10" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Favicon</span>
@@ -532,7 +611,7 @@ export default function SettingsPage() {
               </div>
 
               {/* ── LOGIN EXPERIENCE ── */}
-              <div className="bg-card border border-border rounded-xl p-6 shadow-sm border-t-4 border-t-zinc-900">
+              <div className="border-t border-border pt-5">
                 <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Layout className="w-5 h-5 text-primary"/> Experiência de Login</h2>
                 <p className="text-sm text-muted-foreground mb-6">Personalize como seus clientes e equipe veem a porta de entrada do sistema.</p>
 
@@ -554,7 +633,7 @@ export default function SettingsPage() {
                       <Label className="font-semibold text-foreground text-sm flex items-center gap-2">Imagem de Fundo</Label>
                       <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[180px] overflow-hidden shadow-inner">
                         {loginBgImg
-                          ? <img src={loginBgImg} alt="Login Background" crossOrigin="anonymous" className="w-full h-full object-cover z-10" />
+                          ? <img src={loginBgImg} alt="Login Background" onError={() => setLoginBgLoadFailed(true)} className="w-full h-full object-cover z-10" />
                           : <div className="flex flex-col items-center z-10 pointer-events-none">
                               <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                               <span className="text-xs font-bold">Enviar Imagem</span>
@@ -584,9 +663,9 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 md:mt-4 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
+              <div className="mt-4 p-3 rounded-xl border border-border bg-background/70 backdrop-blur-sm shadow-sm">
                 <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
-                  className="w-full h-14 text-sm font-black tracking-[0.2em] shadow-xl bg-primary text-primary-foreground transition-all active:scale-[0.98] rounded-2xl uppercase">
+                  className="w-full h-14 text-sm font-black tracking-[0.2em] shadow-xl bg-zinc-950 text-white hover:bg-zinc-800 transition-all active:scale-[0.98] rounded-2xl uppercase">
                   {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:<Target className="h-5 w-5 mr-2"/>} Salvar Identidade Master
                 </Button>
               </div>
@@ -594,7 +673,7 @@ export default function SettingsPage() {
           </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5 min-w-0">
           {/* ── LOGO DISPLAY SETTINGS ── */}
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-1 flex items-center gap-2 text-foreground"><Crop className="w-5 h-5 text-primary"/> Exibição da Logo no Painel e Catálogo</h2>
@@ -604,9 +683,9 @@ export default function SettingsPage() {
             <div className="border border-border rounded-xl overflow-hidden mb-5 bg-[#0c0b09]">
               <div className="p-3 text-center">
                 <p className="text-[9px] font-bold tracking-widest uppercase text-white/30 mb-2">Preview do catálogo</p>
-                <div style={{width:'100%',height:logoHeight+24,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                <div style={{width:'100%',minHeight:104,height:Math.min(logoHeight+24,184),display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
                   {previewImg
-                    ? <img src={previewImg} alt="preview" crossOrigin="anonymous" style={{width:logoWidth,height:logoHeight,objectFit:logoFit,objectPosition:logoPosition,display:'block'}}/>
+                    ? <img src={previewImg} alt="preview" onError={() => setLogoLoadFailed(true)} style={{width:logoWidth,height:logoHeight,objectFit:logoFit,objectPosition:logoPosition,display:'block'}}/>
                     : <div style={{width:logoWidth,height:logoHeight,display:'flex',alignItems:'center',justifyContent:'center',border:'1px dashed rgba(255,255,255,0.2)',borderRadius:6}}>
                         <ImageIcon style={{width:24,height:24,color:'rgba(255,255,255,0.2)'}}/>
                       </div>
@@ -647,10 +726,10 @@ export default function SettingsPage() {
               {/* Fit */}
               <div className="space-y-2">
                 <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Modo de Exibição</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {([['contain','Conter','Logo completa visível'],['cover','Cobrir','Preenche o espaço (pode cortar)'],['fill','Esticar','Ocupa todo o espaço']] as const).map(([val,label])=>(
                     <button key={val} type="button" onClick={()=>setLogoFit(val)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-bold transition-all ${logoFit===val?'border-primary bg-primary/10 text-primary':'border-border bg-muted/30 text-muted-foreground hover:border-primary/50'}`}>
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-bold transition-all min-h-[74px] ${logoFit===val?'border-primary bg-primary/10 text-primary':'border-border bg-muted/30 text-muted-foreground hover:border-primary/50'}`}>
                       <span className="text-lg">{val==='contain'?'□':val==='cover'?'■':'▬'}</span>
                       <span>{label}</span>
                     </button>
@@ -667,7 +746,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-3 gap-1.5 p-3 bg-muted/20 border border-border rounded-xl w-fit">
                   {POSITION_OPTIONS.map(opt=>(
                     <button key={opt.value} type="button" onClick={()=>setLogoPosition(opt.value)} title={opt.title}
-                      className={`w-10 h-10 flex items-center justify-center text-base rounded-lg border transition-all font-bold ${logoPosition===opt.value?'bg-primary border-primary text-primary-foreground':'border-border bg-background text-muted-foreground hover:border-primary/60 hover:text-foreground'}`}>
+                      className={`w-10 h-10 flex items-center justify-center text-base rounded-lg border transition-all font-bold ${logoPosition===opt.value?'bg-zinc-950 border-zinc-950 text-white':'border-border bg-background text-muted-foreground hover:border-zinc-500 hover:text-foreground'}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -675,9 +754,9 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-muted-foreground">Define de onde a logo é "ancorada" ao cortar (modo Cobrir).</p>
               </div>
 
-              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
+              <div className="mt-4 p-3 rounded-xl border border-border bg-background/70 backdrop-blur-sm shadow-sm">
                 <Button onClick={handleSaveDisplaySettings} disabled={savingDisplay}
-                  className="w-full h-11 font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-lg transition-all active:scale-[0.98] rounded-xl text-[10px]">
+                  className="w-full h-11 font-black uppercase tracking-widest bg-zinc-950 text-white hover:bg-zinc-800 shadow-lg transition-all active:scale-[0.98] rounded-xl text-[10px]">
                   {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição
                 </Button>
               </div>
@@ -751,7 +830,7 @@ export default function SettingsPage() {
                          </div>
                       </div>
                     </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-lg border-t border-border z-50 md:relative md:bg-transparent md:backdrop-blur-none md:border-none md:p-0 mb-16 md:mb-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
+                    <div className="mt-4 p-3 rounded-xl border border-border bg-background/70 backdrop-blur-sm shadow-sm">
                       <Button type="submit" disabled={savingShopee} className="w-full bg-[#f53d2d] hover:bg-[#d43527] text-white font-black uppercase tracking-widest h-14 shadow-xl shadow-[#f53d2d]/20 rounded-xl transition-all active:scale-[0.98]">
                          {savingShopee ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
                          Salvar Taxas Marketplaces

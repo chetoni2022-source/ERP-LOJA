@@ -466,7 +466,7 @@ export default function InventoryPage() {
     setIsZipping(true);
     try {
       const zip = new JSZip();
-      const folderName = `fotos-${name || 'produto'}`.toLowerCase().replace( * (1.0/100.0) * 100.0 /\s+ * (1.0/100.0) * 100.0 /g, '-');
+      const folderName = `fotos-${name || 'produto'}`.toLowerCase().replace(/\s+/g, '-');
       
       // Download all images and add to zip
       const promises = images.map(async (img, idx) => {

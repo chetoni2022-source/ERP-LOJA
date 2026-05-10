@@ -17,6 +17,29 @@ interface TenantLoginBranding {
   tenant_name: string;
 }
 
+interface TenantBrandingRelation {
+  store_name?: string | null;
+  logo_url?: string | null;
+  login_bg_url?: string | null;
+  login_bg_color?: string | null;
+  login_bg_mode?: 'image' | 'color' | 'gradient' | null;
+  primary_color?: string | null;
+}
+
+interface TenantByDomain {
+  id: string;
+  name: string;
+  tenant_branding?: TenantBrandingRelation | TenantBrandingRelation[] | null;
+}
+
+interface TeamInvite {
+  role: string | null;
+  tenant_id: string | null;
+}
+
+const getTenantBranding = (branding: TenantByDomain['tenant_branding']) =>
+  Array.isArray(branding) ? branding[0] : branding;
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -42,51 +65,43 @@ export default function AuthPage() {
 
     setBrandingLoading(true);
     try {
-      // Try to find tenant by owner_email or users with that email domain
-      const domain = emailValue.split('@')[1];
+      const domain = emailValue.split('@')[1]?.toLowerCase();
+      if (!domain) {
+        setTenantBranding(null);
+        return;
+      }
 
-      // Look for tenant branding linked to users with this email domain
-      const { data } = await supabase
+      const { data: tenantByDomain } = await supabase
         .from('tenants')
         .select(`
-          id, name, slug,
+          id,
+          name,
           tenant_branding (
-            store_name, logo_url, login_bg_url, primary_color
+            store_name,
+            logo_url,
+            login_bg_url,
+            login_bg_color,
+            login_bg_mode,
+            primary_color
           )
         `)
+        .ilike('owner_email', `%@${domain}`)
         .eq('status', 'active')
-        .limit(10);
+        .maybeSingle<TenantByDomain>();
 
-      if (data && data.length > 0) {
-        // Check if any tenant has a user with this email
-        const { data: profileMatch } = await supabase
-          .from('profiles')
-          .select('tenant_id, full_name')
-          .limit(1)
-          .single();
-
-        // For now, try to match by owner_email domain
-        const { data: tenantByDomain } = await supabase
-          .from('tenants')
-          .select(`id, name, slug, tenant_branding (store_name, logo_url, login_bg_url, primary_color)`)
-          .ilike('owner_email', `%@${domain}`)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (tenantByDomain) {
-          const branding = (tenantByDomain as any).tenant_branding;
-          setTenantBranding({
-            store_name: branding?.store_name ?? null,
-            logo_url: branding?.logo_url ?? null,
-            login_bg_url: branding?.login_bg_url ?? null,
-            login_bg_color: branding?.login_bg_color ?? null,
-            login_bg_mode: branding?.login_bg_mode ?? null,
-            primary_color: branding?.primary_color ?? null,
-            tenant_id: tenantByDomain.id,
-            tenant_name: tenantByDomain.name,
-          });
-          return;
-        }
+      if (tenantByDomain) {
+        const branding = getTenantBranding(tenantByDomain.tenant_branding);
+        setTenantBranding({
+          store_name: branding?.store_name ?? null,
+          logo_url: branding?.logo_url ?? null,
+          login_bg_url: branding?.login_bg_url ?? null,
+          login_bg_color: branding?.login_bg_color ?? null,
+          login_bg_mode: branding?.login_bg_mode ?? null,
+          primary_color: branding?.primary_color ?? null,
+          tenant_id: tenantByDomain.id,
+          tenant_name: tenantByDomain.name,
+        });
+        return;
       }
 
       setTenantBranding(null);
@@ -121,28 +136,44 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
+        const normalizedEmail = email.trim().toLowerCase();
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: { data: { full_name: name } },
         });
         if (signUpError) throw signUpError;
         if (data.user) {
-          const profilePayload: any = {
+          const { data: invite } = await supabase
+            .from('team_invites')
+            .select('role, tenant_id')
+            .eq('email', normalizedEmail)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle<TeamInvite>();
+
+          const profilePayload: {
+            id: string;
+            full_name: string;
+            role: string;
+            tenant_id?: string;
+          } = {
             id: data.user.id,
             full_name: name,
-            role: 'admin',
+            role: invite?.role || 'admin',
           };
-          // If a tenant was detected by email, assign the user to it
-          if (tenantBranding?.tenant_id) {
-            profilePayload.tenant_id = tenantBranding.tenant_id;
+          const tenantId = invite?.tenant_id || tenantBranding?.tenant_id;
+          if (tenantId) {
+            profilePayload.tenant_id = tenantId;
           }
-          await supabase.from('profiles').insert([profilePayload]);
+          const { error: profileError } = await supabase.from('profiles').insert([profilePayload]);
+          if (profileError) throw profileError;
           success('Conta criada! Verifique seu e-mail.');
         }
       }
-    } catch (err: any) {
-      toastError(err.message || 'Erro ao autenticar. Tente novamente.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao autenticar. Tente novamente.';
+      toastError(message);
     } finally {
       setLoading(false);
     }
@@ -155,7 +186,6 @@ export default function AuthPage() {
   const bgMode = tenantBranding?.login_bg_mode || 'image';
   const logoUrl = tenantBranding?.logo_url || null;
   const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
-  const isDarkBg = true;
 
   return (
     <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
@@ -234,7 +264,6 @@ export default function AuthPage() {
               <div className="mb-8 flex items-center justify-center w-full transition-transform duration-500 hover:scale-[1.02]">
                 <img
                   src={logoUrl}
-                  crossOrigin="anonymous"
                   alt={storeName}
                   className="h-28 sm:h-32 w-auto max-w-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
                 />

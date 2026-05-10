@@ -1,26 +1,6 @@
 {
   "version": 2,
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
-      ]
-    },
-    {
-      "source": "/storage-proxy/(.*)",
-      "headers": [
-        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    }
-  ],
   "rewrites": [
-    {
-      "source": "/storage-proxy/(.*)",
-      "destination": "https://tcgwkazgelkonnuyebls.supabase.co/storage/v1/object/public/$1"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

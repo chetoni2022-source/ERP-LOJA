@@ -9,7 +9,17 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTenant } from '../../contexts/TenantContext';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { Button } from '../ui';
-import { Eye, ShieldAlert, ArrowLeftCircle } from 'lucide-react';
+import { Eye, ArrowLeftCircle } from 'lucide-react';
+
+interface StoreSettings {
+  store_name: string | null;
+  logo_url: string | null;
+  favicon_url: string | null;
+  logo_width: number | null;
+  logo_height: number | null;
+  logo_fit: React.CSSProperties['objectFit'] | null;
+  logo_position: React.CSSProperties['objectPosition'] | null;
+}
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
@@ -36,7 +46,7 @@ const bottomNavItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut, previewTenantId, setPreviewTenant, profile } = useAuthStore();
-  const { branding: tenantBranding } = useTenant();
+  const { branding: tenantBranding, tenantId } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -68,10 +78,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     const fetchSettings = async () => {
-      const { data } = await supabase.from('store_settings')
+      let query = supabase.from('store_settings')
         .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
-        .eq('user_id', user.id)
-        .limit(1).maybeSingle();
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(1);
+
+      query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', user.id);
+
+      const { data } = await query.maybeSingle();
 
       if (data) {
         applySettings(data);
@@ -80,7 +94,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const applySettings = (data: any) => {
+    const applySettings = (data: StoreSettings) => {
       const proxyLogo = getProxyUrl(data.logo_url);
       const proxyFavicon = getProxyUrl(data.favicon_url);
 
@@ -97,7 +111,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       if (proxyFavicon) {
         let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
         if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-        link.crossOrigin = "anonymous";
         link.href = `${proxyFavicon}?v=${Date.now()}`;
       }
       if (data.store_name) {
@@ -119,13 +132,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     fetchSettings();
 
-    // Check for preview_tenant param
-    const params = new URLSearchParams(window.location.search);
-    const pTenant = params.get('preview_tenant');
-    if (pTenant && profile?.role === 'super_admin' && pTenant !== previewTenantId) {
-      setPreviewTenant(pTenant);
-    }
-
     // Subscribe to realtime updates
     const channel = supabase
       .channel('schema-db-changes')
@@ -135,7 +141,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           event: '*',
           schema: 'public',
           table: 'store_settings',
-          filter: `user_id=eq.${user.id}`
+          filter: tenantId ? `tenant_id=eq.${tenantId}` : `user_id=eq.${user.id}`
         },
         (payload) => {
           if (payload.new) applySettings(payload.new);
@@ -146,7 +152,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, tenantId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pTenant = params.get('preview_tenant');
+    if (pTenant && profile?.role === 'super_admin' && pTenant !== previewTenantId) {
+      setPreviewTenant(pTenant);
+    }
+  }, [location.search, previewTenantId, profile?.role, setPreviewTenant]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -170,13 +184,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <img 
               src={effectiveLogo} 
               alt="Logo" 
-              crossOrigin="anonymous"
               style={{
                 height: 'auto',
                 maxHeight: 32,
                 width: 'auto',
                 maxWidth: 120,
-                objectFit: brand.logoFit as any,
+                objectFit: brand.logoFit,
                 objectPosition: brand.logoPos
               }}
             />
@@ -215,13 +228,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       <img 
                         src={effectiveLogo} 
                         alt="Logo" 
-                        crossOrigin="anonymous"
                         style={{
                           height: 'auto',
                           maxHeight: brand.logoH,
                           width: 'auto',
                           maxWidth: brand.logoW,
-                          objectFit: brand.logoFit as any,
+                          objectFit: brand.logoFit,
                           objectPosition: brand.logoPos
                         }}
                         className="rounded-lg"

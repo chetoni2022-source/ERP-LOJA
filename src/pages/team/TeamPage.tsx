@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { Users, Loader2, Trash2, Mail, Shield, ShieldCheck, Eye, UserPlus, AlertCircle } from 'lucide-react';
 
 const ROLES = [
@@ -26,6 +27,7 @@ interface TeamMember {
 
 export default function TeamPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -36,14 +38,15 @@ export default function TeamPage() {
 
   useEffect(() => {
     fetchMembers();
-  }, [user]);
+  }, [user?.id, tenantId]);
 
   async function fetchMembers() {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      // For now, simple: you see yourself. 
-      // Later: you see everyone linked to your store_id.
-      const { data } = await supabase.from('profiles').select('*').eq('id', user?.id).order('created_at');
+      let query = supabase.from('profiles').select('*').order('created_at');
+      query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('id', user.id);
+      const { data } = await query;
       setMembers(data || []);
     } catch (error) {
       console.error(error);
@@ -60,10 +63,14 @@ export default function TeamPage() {
     setSuccessMsg('');
 
     try {
+      if (!tenantId) {
+        throw new Error('Empresa não identificada para este convite.');
+      }
       const { error } = await supabase.from('team_invites').insert({
-        email: inviteEmail,
+        email: inviteEmail.toLowerCase().trim(),
         role: inviteRole,
-        invited_by: user?.id
+        invited_by: user?.id,
+        tenant_id: tenantId
       });
 
       if (error) {

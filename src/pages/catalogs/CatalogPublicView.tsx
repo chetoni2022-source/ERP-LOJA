@@ -158,7 +158,7 @@ export default function CatalogPublicView() {
       // Parallel fetch items and brand settings
       const [itemsRes, settingsRes] = await Promise.all([
         fetchItems(cat.id),
-        supabase.from('store_settings').select('store_name,logo_url,favicon_url,logo_width,logo_height,logo_fit,logo_position,whatsapp_number').eq('user_id', cat.user_id).limit(1).maybeSingle()
+        supabase.from('tenant_branding').select('store_name,logo_url,favicon_url,whatsapp_number').eq('tenant_id', cat.tenant_id).limit(1).maybeSingle()
       ]);
 
       const sd = settingsRes.data;

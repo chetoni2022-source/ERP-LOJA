@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { Button, Input } from '../../components/ui';
 import { Tags, Plus, Trash2, Edit2, Loader2, ArrowLeft, Package, ChevronDown, ChevronUp, Check, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ interface Product {
 
 export default function CategoriesPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -35,11 +37,17 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!tenantId) {
+      setCategories([]);
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [{ data: cats }, { data: prods }] = await Promise.all([
-        supabase.from('categories').select('*').eq('user_id', user.id).order('name', { ascending: true }),
-        supabase.from('products').select('id, name, image_url, images, category_id').eq('user_id', user.id).order('name'),
+        supabase.from('categories').select('*').eq('tenant_id', tenantId).order('name', { ascending: true }),
+        supabase.from('products').select('id, name, image_url, images, category_id').eq('tenant_id', tenantId).order('name'),
       ]);
 
       const catsWithCount = (cats || []).map(cat => ({
@@ -54,20 +62,20 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
   const handleSave = async () => {
-    if (!catName.trim() || !user) return;
+    if (!catName.trim() || !user || !tenantId) return;
     setSaving(true);
     try {
       if (editingId) {
-        await supabase.from('categories').update({ name: catName }).eq('id', editingId);
+        await supabase.from('categories').update({ name: catName }).eq('id', editingId).eq('tenant_id', tenantId);
       } else {
-        await supabase.from('categories').insert([{ name: catName, user_id: user.id }]);
+        await supabase.from('categories').insert([{ name: catName, user_id: user.id, tenant_id: tenantId }]);
       }
       setModalOpen(false);
       setCatName('');
@@ -88,15 +96,17 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (!tenantId) return;
     if (confirm(`Tem certeza que deseja apagar a categoria "${name}"? Os produtos vinculados perderão esse vínculo.`)) {
-      await supabase.from('categories').delete().eq('id', id);
+      await supabase.from('categories').delete().eq('id', id).eq('tenant_id', tenantId);
       fetchAll();
     }
   };
 
   const toggleProductCategory = async (product: Product, catId: string) => {
+    if (!tenantId) return;
     const newCatId = product.category_id === catId ? null : catId;
-    await supabase.from('products').update({ category_id: newCatId }).eq('id', product.id);
+    await supabase.from('products').update({ category_id: newCatId }).eq('id', product.id).eq('tenant_id', tenantId);
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, category_id: newCatId } : p));
     // Update count optimistically
     setCategories(prev => prev.map(cat => {

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useDashboardStore } from '../../stores/dashboardStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { BadgeDollarSign, PackageSearch, TrendingUp, AlertCircle, Loader2, CalendarDays, BarChart2, History, X, Target, TrendingDown, Download, Award, Info, Users, Tags, CheckCircle2 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { Button } from '../../components/ui';
@@ -218,28 +219,30 @@ function DateRangePicker({ startDate, endDate, onStartChange, onEndChange, onApp
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const { cachedData, setCachedData } = useDashboardStore();
+  const tenantCache = cachedData?.tenantId === tenantId ? cachedData : null;
   
-  const [loading, setLoading] = useState(!cachedData);
+  const [loading, setLoading] = useState(!tenantCache);
 
-  const [monthlySalesValue, setMonthlySalesValue] = useState(cachedData?.monthlySalesValue || 0);
-  const [lastMonthValue, setLastMonthValue] = useState(cachedData?.lastMonthValue || 0);
-  const [monthlyGoal, setMonthlyGoal] = useState(cachedData?.monthlyGoal || 0);
-  const [lowStockCount, setLowStockCount] = useState(cachedData?.lowStockCount || 0);
-  const [totalProducts, setTotalProducts] = useState(cachedData?.totalProducts || 0);
-  const [salesData, setSalesData] = useState<any[]>(cachedData?.salesData || []);
-  const [topProducts, setTopProducts] = useState<any[]>(cachedData?.topProducts || []);
-  const [topProfitableProducts, setTopProfitableProducts] = useState<any[]>(cachedData?.topProfitableProducts || []);
-  const [stockData, setStockData] = useState<any[]>(cachedData?.stockData || []);
-  const [leadSourceData, setLeadSourceData] = useState<any[]>(cachedData?.leadSourceData || []);
-  const [totalProfit, setTotalProfit] = useState(cachedData?.totalProfit || 0);
-  const [globalROAS, setGlobalROAS] = useState(cachedData?.globalROAS || 0);
-  const [stockHealthStats, setStockHealthStats] = useState<any>(cachedData?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
-  const [topCustomers, setTopCustomers] = useState<any[]>(cachedData?.topCustomers || []);
-  const [settings, setSettings] = useState<any>(cachedData?.settings || null);
+  const [monthlySalesValue, setMonthlySalesValue] = useState(tenantCache?.monthlySalesValue || 0);
+  const [lastMonthValue, setLastMonthValue] = useState(tenantCache?.lastMonthValue || 0);
+  const [monthlyGoal, setMonthlyGoal] = useState(tenantCache?.monthlyGoal || 0);
+  const [lowStockCount, setLowStockCount] = useState(tenantCache?.lowStockCount || 0);
+  const [totalProducts, setTotalProducts] = useState(tenantCache?.totalProducts || 0);
+  const [salesData, setSalesData] = useState<any[]>(tenantCache?.salesData || []);
+  const [topProducts, setTopProducts] = useState<any[]>(tenantCache?.topProducts || []);
+  const [topProfitableProducts, setTopProfitableProducts] = useState<any[]>(tenantCache?.topProfitableProducts || []);
+  const [stockData, setStockData] = useState<any[]>(tenantCache?.stockData || []);
+  const [leadSourceData, setLeadSourceData] = useState<any[]>(tenantCache?.leadSourceData || []);
+  const [totalProfit, setTotalProfit] = useState(tenantCache?.totalProfit || 0);
+  const [globalROAS, setGlobalROAS] = useState(tenantCache?.globalROAS || 0);
+  const [stockHealthStats, setStockHealthStats] = useState<any>(tenantCache?.stockHealthStats || { healthy: 0, low: 0, out: 0 });
+  const [topCustomers, setTopCustomers] = useState<any[]>(tenantCache?.topCustomers || []);
+  const [settings, setSettings] = useState<any>(tenantCache?.settings || null);
 
   // Inventory Potential States
-  const [stockProjections, setStockProjections] = useState<any>(cachedData?.stockProjections || {
+  const [stockProjections, setStockProjections] = useState<any>(tenantCache?.stockProjections || {
     revenue: 0,
     profitSite: 0,
     profitShopee: 0,
@@ -253,8 +256,35 @@ export default function DashboardPage() {
   });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
+  useEffect(() => {
+    if (cachedData?.tenantId === tenantId) return;
+    setMonthlySalesValue(0);
+    setLastMonthValue(0);
+    setMonthlyGoal(0);
+    setLowStockCount(0);
+    setTotalProducts(0);
+    setSalesData([]);
+    setTopProducts([]);
+    setTopProfitableProducts([]);
+    setStockData([]);
+    setLeadSourceData([]);
+    setTotalProfit(0);
+    setGlobalROAS(0);
+    setStockHealthStats({ healthy: 0, low: 0, out: 0 });
+    setTopCustomers([]);
+    setSettings(null);
+    setStockProjections({
+      revenue: 0,
+      profitSite: 0,
+      profitShopee: 0,
+      profitTiktok: 0,
+      investment: 0,
+      chartData: []
+    });
+  }, [cachedData?.tenantId, tenantId]);
+
   const fetchDashboardData = useCallback(async (sd?: string, ed?: string) => {
-    if (!user) return;
+    if (!user || !tenantId) return;
     
     // Variables for inventory potential (Moved to top scope to avoid ReferenceError)
     let totalInventoryRevenue = 0;
@@ -266,7 +296,7 @@ export default function DashboardPage() {
 
     try {
       // Monthly goal and Marketplace Taxes
-      const { data: stgs } = await supabase.from('store_settings').select('*').eq('user_id', user.id).limit(1).maybeSingle();
+      const { data: stgs } = await supabase.from('store_settings').select('*').eq('tenant_id', tenantId).limit(1).maybeSingle();
       if (stgs) {
         setSettings(stgs);
         if (stgs.monthly_goal) setMonthlyGoal(stgs.monthly_goal);
@@ -275,7 +305,7 @@ export default function DashboardPage() {
       const { data: products } = await supabase
         .from('products')
         .select('id, name, stock_quantity, image_url, images, price, sale_price, cost_price, shopee_price, tiktok_price, category_id, categories(name)')
-        .eq('user_id', user.id)
+        .eq('tenant_id', tenantId)
         .order('stock_quantity', { ascending: false });
 
       if (products) {
@@ -366,8 +396,8 @@ export default function DashboardPage() {
 
       const { data: sales } = await supabase
         .from('sales')
-        .select(`*, products(name, image_url, images, category_id, categories(name))`)
-        .eq('user_id', user.id)
+        .select(`*, products(name, image_url, images, category_id, categories(name)), services(name)`)
+        .eq('tenant_id', tenantId)
         .gte('created_at', startDT.toISOString())
         .lte('created_at', endDT.toISOString())
         .order('created_at', { ascending: true });
@@ -385,7 +415,8 @@ export default function DashboardPage() {
           acc[date].total += sale.total_price;
           acc[date].profit += (sale.total_price - (sale.unit_cost_at_sale * sale.quantity));
           const p = sale.products as any;
-          const prodName = p?.name || 'Excluído';
+          const svc = sale.services as any;
+          const prodName = p?.name || svc?.name || 'Item excluído';
           const prodImg = p?.images?.[0] || p?.image_url || null;
           const existing = acc[date].items.find((i: any) => i.name === prodName);
           if (existing) { 
@@ -407,7 +438,7 @@ export default function DashboardPage() {
         setSalesData(Object.values(dailyData));
 
         const prodCount = sales.reduce((acc: any, sale: any) => {
-          const name = (sale.products as any)?.name || 'Excluído';
+          const name = (sale.products as any)?.name || (sale.services as any)?.name || 'Item excluído';
           if (!acc[name]) acc[name] = { name, quantity: 0, revenue: 0, profit: 0 };
           acc[name].quantity += sale.quantity;
           acc[name].revenue += sale.total_price;
@@ -449,6 +480,7 @@ export default function DashboardPage() {
         const { data: lastMonthSales } = await supabase
           .from('sales')
           .select('total_price')
+          .eq('tenant_id', tenantId)
           .gte('created_at', prevMonthStart.toISOString())
           .lte('created_at', prevMonthEnd.toISOString());
         setLastMonthValue((lastMonthSales || []).reduce((a, s) => a + s.total_price, 0));
@@ -456,7 +488,7 @@ export default function DashboardPage() {
         const { data: thisMonthSales } = await supabase
           .from('sales')
           .select('total_price, unit_cost_at_sale, quantity')
-          .eq('user_id', user.id)
+          .eq('tenant_id', tenantId)
           .gte('created_at', curMonthStart.toISOString());
         const thisMonth = (thisMonthSales || []).reduce((a, s) => a + s.total_price, 0);
         const thisMonthProfit = (thisMonthSales || []).reduce((a, s) => a + (s.total_price - (s.unit_cost_at_sale * s.quantity)), 0);
@@ -466,6 +498,7 @@ export default function DashboardPage() {
           setTotalProfit(thisMonthProfit);
 
           setCachedData({
+            tenantId,
             monthlySalesValue: thisMonth,
             lastMonthValue: lastMonthSales ? lastMonthSales.reduce((a, s) => a + s.total_price, 0) : 0,
             monthlyGoal: settings?.monthly_goal || 0,
@@ -500,9 +533,9 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, tenantId, user, setCachedData]);
 
-  useEffect(() => { fetchDashboardData(); }, [user]);
+  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
   const handleApply = () => fetchDashboardData(startDate, endDate);
 

@@ -7,7 +7,7 @@ import {
   Building2, Plus, Loader2, X, Edit2, Power, PowerOff,
   Users, Package, BarChart3, ExternalLink, ShieldAlert,
   CheckCircle2, AlertTriangle, Clock, RefreshCcw, LogOut,
-  Eye, TrendingUp, Calendar, Activity
+  Eye, TrendingUp, Calendar, Activity, BriefcaseBusiness
 } from 'lucide-react';
 import { cn } from '../../components/ui';
 
@@ -21,6 +21,10 @@ interface Tenant {
   created_at: string;
   _userCount?: number;
   _productCount?: number;
+  _serviceCount?: number;
+  _saleCount?: number;
+  _usage7d?: number;
+  _revenue30d?: number;
   _branding?: { store_name: string | null; logo_url: string | null; primary_color: string | null; } | null;
 }
 
@@ -44,11 +48,11 @@ function formatRelativeTime(dateStr: string | null): string {
 }
 
 function TenantModal({ tenant, onClose, onSave }: { tenant: Partial<Tenant> | null; onClose: () => void; onSave: () => void; }) {
+  const { user } = useAuthStore();
   const [name, setName] = useState(tenant?.name ?? '');
   const [slug, setSlug] = useState(tenant?.slug ?? '');
   const [ownerEmail, setOwnerEmail] = useState(tenant?.owner_email ?? '');
   const [ownerName, setOwnerName] = useState('');
-  const [ownerPassword, setOwnerPassword] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#a855f7');
   const [status, setStatus] = useState<Tenant['status']>(tenant?.status ?? 'active');
   const [saving, setSaving] = useState(false);
@@ -75,30 +79,22 @@ function TenantModal({ tenant, onClose, onSave }: { tenant: Partial<Tenant> | nu
           store_name: name,
           primary_color: primaryColor
         }]);
+        await supabase.from('store_settings').insert([{
+          tenant_id: tenantData.id,
+          store_name: name,
+        }]);
 
-        // 3. Criar o usuário dono (usa signUp com anon key, sem precisar de service role)
-        if (ownerEmail && ownerPassword) {
-          const { data: authData, error: authErr } = await supabase.auth.signUp({
-            email: ownerEmail,
-            password: ownerPassword,
-            options: {
-              data: { full_name: ownerName || name }
-            }
+        // 3. Registrar convite do dono sem trocar a sessão do super admin.
+        if (ownerEmail) {
+          await supabase.from('team_invites').insert({
+            email: ownerEmail.toLowerCase().trim(),
+            role: 'admin',
+            invited_by: user?.id ?? null,
+            tenant_id: tenantData.id
           });
-          if (authErr) throw authErr;
-          if (authData.user) {
-            // Criar perfil vinculado ao tenant
-            await supabase.from('profiles').upsert([{
-              id: authData.user.id,
-              full_name: ownerName || name,
-              role: 'admin',
-              tenant_id: tenantData.id
-            }]);
-            // Atualizar owner_email no tenant
-            await supabase.from('tenants').update({ owner_email: ownerEmail }).eq('id', tenantData.id);
-          }
+          await supabase.from('tenants').update({ owner_email: ownerEmail }).eq('id', tenantData.id);
         }
-        success(`Empresa "${name}" criada! O dono receberá um e-mail de confirmação.`);
+        success(`Empresa "${name}" criada! O dono deve criar a conta usando o e-mail convidado.`);
       } else {
         const { error } = await supabase.from('tenants').update({ name, slug, status, owner_email: ownerEmail || null }).eq('id', tenant!.id);
         if (error) throw error;
@@ -143,8 +139,8 @@ function TenantModal({ tenant, onClose, onSave }: { tenant: Partial<Tenant> | nu
                     <Input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Nome" className="h-10 bg-white/5 border-white/10 text-white" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-white/40 font-bold">Senha Inicial</Label>
-                    <Input type="password" value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)} placeholder="Mín. 6 caracteres" className="h-10 bg-white/5 border-white/10 text-white" />
+                    <Label className="text-[10px] uppercase text-white/40 font-bold">Acesso</Label>
+                    <div className="h-10 flex items-center px-3 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white/50 font-semibold">O dono cria a senha no cadastro.</div>
                   </div>
                 </div>
               </div>
@@ -203,12 +199,29 @@ export default function SuperAdminPage() {
         .order('created_at', { ascending: false });
       if (error) throw error;
 
+      const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
       const enriched = await Promise.all((data || []).map(async (t: any) => {
-        const [{ count: userCount }, { count: productCount }] = await Promise.all([
+        const [{ count: userCount }, { count: productCount }, { count: serviceCount }, { count: saleCount }, { count: usage7d }, revenueRes] = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('tenant_id', t.id),
           supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', t.id),
+          supabase.from('services').select('*', { count: 'exact', head: true }).eq('tenant_id', t.id),
+          supabase.from('sales').select('*', { count: 'exact', head: true }).eq('tenant_id', t.id),
+          supabase.from('tenant_usage_events').select('*', { count: 'exact', head: true }).eq('tenant_id', t.id).gte('created_at', since7d),
+          supabase.from('sales').select('total_price').eq('tenant_id', t.id).gte('created_at', since30d),
         ]);
-        return { ...t, _branding: Array.isArray(t._branding) ? t._branding[0] : t._branding, _userCount: userCount ?? 0, _productCount: productCount ?? 0 };
+        const revenue30d = (revenueRes.data || []).reduce((sum: number, sale: any) => sum + Number(sale.total_price || 0), 0);
+        return {
+          ...t,
+          _branding: Array.isArray(t._branding) ? t._branding[0] : t._branding,
+          _userCount: userCount ?? 0,
+          _productCount: productCount ?? 0,
+          _serviceCount: serviceCount ?? 0,
+          _saleCount: saleCount ?? 0,
+          _usage7d: usage7d ?? 0,
+          _revenue30d: revenue30d,
+        };
       }));
       setTenants(enriched);
     } catch (err: any) { toastError('Erro: ' + err.message); }
@@ -247,6 +260,8 @@ export default function SuperAdminPage() {
   const suspendedCount = tenants.filter(t => t.status === 'suspended').length;
   const totalUsers = tenants.reduce((s, t) => s + (t._userCount ?? 0), 0);
   const totalProducts = tenants.reduce((s, t) => s + (t._productCount ?? 0), 0);
+  const totalServices = tenants.reduce((s, t) => s + (t._serviceCount ?? 0), 0);
+  const totalUsage7d = tenants.reduce((s, t) => s + (t._usage7d ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-[#08080f] text-white overflow-x-hidden w-full max-w-[100vw]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -286,8 +301,8 @@ export default function SuperAdminPage() {
           {[
             { label: 'Empresas', value: tenants.length, icon: Building2, color: 'from-purple-500 to-indigo-600', text: 'text-purple-300' },
             { label: 'Ativas', value: activeCount, icon: CheckCircle2, color: 'from-emerald-500 to-teal-600', text: 'text-emerald-300' },
-            { label: 'Suspensas', value: suspendedCount, icon: AlertTriangle, color: 'from-red-500 to-rose-600', text: 'text-red-300' },
-            { label: 'Produtos Total', value: totalProducts, icon: Package, color: 'from-blue-500 to-cyan-600', text: 'text-blue-300' },
+            { label: 'Acessos 7d', value: totalUsage7d, icon: Activity, color: 'from-cyan-500 to-sky-600', text: 'text-cyan-300' },
+            { label: 'Produtos/Serviços', value: `${totalProducts}/${totalServices}`, icon: Package, color: 'from-blue-500 to-cyan-600', text: 'text-blue-300' },
           ].map((kpi, i) => (
             <div key={kpi.label} className="relative bg-[#ffffff05] border border-[#ffffff10] rounded-3xl p-6 overflow-hidden group hover:border-[#ffffff20] hover:bg-[#ffffff08] transition-all duration-500 hover:-translate-y-1 shadow-2xl shadow-black/50">
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -366,6 +381,15 @@ export default function SuperAdminPage() {
                         </span>
                         <span className="text-[11px] text-white/40 flex items-center gap-1.5">
                           <Package className="h-3.5 w-3.5" />{t._productCount}
+                        </span>
+                        <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+                          <BriefcaseBusiness className="h-3.5 w-3.5" />{t._serviceCount}
+                        </span>
+                        <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+                          <TrendingUp className="h-3.5 w-3.5" />{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t._revenue30d || 0)}
+                        </span>
+                        <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+                          <BarChart3 className="h-3.5 w-3.5" />{t._usage7d} acessos/7d
                         </span>
                         <span className={cn("text-[11px] flex items-center gap-1.5", t.last_accessed_at ? 'text-emerald-400' : 'text-white/30')}>
                           <Activity className="h-3.5 w-3.5" />{formatRelativeTime(t.last_accessed_at)}

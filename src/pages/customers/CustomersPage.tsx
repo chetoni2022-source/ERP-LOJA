@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { UserCircle2, Plus, Trash2, Edit2, Loader2, Search, Phone, Mail, ShoppingBag, X, ChevronRight, MessageCircle, ArrowLeft } from 'lucide-react';
 
@@ -18,6 +19,7 @@ interface Customer {
 
 export default function CustomersPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const { success, error: toastError } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +34,15 @@ export default function CustomersPage() {
   const [form, setForm] = useState({ full_name: '', phone: '', email: '', notes: '' });
 
   const fetchCustomers = useCallback(async () => {
+    if (!tenantId) {
+      setCustomers([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const { data: custs } = await supabase.from('customers').select('*').eq('user_id', user.id).order('full_name');
-      const { data: salesData } = await supabase.from('sales').select('customer_id, total_price').eq('user_id', user.id);
+      const { data: custs } = await supabase.from('customers').select('*').eq('tenant_id', tenantId).order('full_name');
+      const { data: salesData } = await supabase.from('sales').select('customer_id, total_price').eq('tenant_id', tenantId);
 
       const enriched = (custs || []).map(c => {
         const custSales = (salesData || []).filter(s => s.customer_id === c.id);
@@ -51,7 +58,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [user.id, toastError]);
+  }, [tenantId, toastError]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
@@ -68,14 +75,14 @@ export default function CustomersPage() {
   };
 
   const handleSave = async () => {
-    if (!form.full_name.trim() || !user) return;
+    if (!form.full_name.trim() || !user || !tenantId) return;
     setSaving(true);
     try {
       if (editingId) {
-        await supabase.from('customers').update({ ...form }).eq('id', editingId);
+        await supabase.from('customers').update({ ...form }).eq('id', editingId).eq('tenant_id', tenantId);
         success('Cliente atualizado!');
       } else {
-        await supabase.from('customers').insert([{ ...form, user_id: user.id }]);
+        await supabase.from('customers').insert([{ ...form, user_id: user.id, tenant_id: tenantId }]);
         success('Cliente cadastrado!');
       }
       setModalOpen(false);
@@ -88,20 +95,22 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async (c: Customer) => {
+    if (!tenantId) return;
     if (!confirm(`Remover "${c.full_name}" do cadastro?`)) return;
-    await supabase.from('customers').delete().eq('id', c.id);
+    await supabase.from('customers').delete().eq('id', c.id).eq('tenant_id', tenantId);
     success('Cliente removido.');
     if (selectedCustomer?.id === c.id) setSelectedCustomer(null);
     fetchCustomers();
   };
 
   const openHistory = async (c: Customer) => {
+    if (!tenantId) return;
     setSelectedCustomer(c);
     setSalesLoading(true);
     const { data } = await supabase
       .from('sales')
-      .select('*, products(name, image_url)')
-      .eq('user_id', user.id)
+      .select('*, products(name, image_url), services(name)')
+      .eq('tenant_id', tenantId)
       .eq('customer_id', c.id)
       .order('created_at', { ascending: false });
     setCustomerSales(data || []);
@@ -249,7 +258,7 @@ export default function CustomersPage() {
                         ) : <ShoppingBag className="w-full h-full p-2 text-muted-foreground/40" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-xs text-foreground truncate">{(sale.products as any)?.name || 'Produto excluído'}</p>
+                        <p className="font-bold text-xs text-foreground truncate">{(sale.products as any)?.name || (sale.services as any)?.name || 'Item excluído'}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {new Date(sale.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })} · {sale.quantity} un
                         </p>

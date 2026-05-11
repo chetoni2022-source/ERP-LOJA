@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Label } from '../../components/ui';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import {
   Loader2, Plus, Store, Link as LinkIcon, ExternalLink, Trash2, Edit2,
@@ -22,6 +23,7 @@ interface CustomColors { bg: string; accent: string; text: string; }
 
 export default function CatalogBuilderPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const { success, error: toastError } = useToast();
   const [catalogs, setCatalogs] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -43,14 +45,21 @@ export default function CatalogBuilderPage() {
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
   const [catalogSlug, setCatalogSlug] = useState('');
 
-  useEffect(() => { fetchData(); }, [user]);
+  useEffect(() => { fetchData(); }, [user, tenantId]);
 
   async function fetchData() {
+    if (!tenantId) {
+      setCatalogs([]);
+      setProducts([]);
+      setCategories([]);
+      setLoading(false);
+      return;
+    }
     try {
       const [{ data: catData }, { data: prodData }, { data: catsData }] = await Promise.all([
-        supabase.from('catalogs').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
-        supabase.from('products').select('*').eq('user_id', user?.id).order('name'),
-        supabase.from('categories').select('*').eq('user_id', user?.id).order('name'),
+        supabase.from('catalogs').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+        supabase.from('products').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('categories').select('*').eq('tenant_id', tenantId).order('name'),
       ]);
       setCatalogs(catData || []);
       setProducts(prodData || []);
@@ -94,7 +103,7 @@ export default function CatalogBuilderPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || (selectedProducts.length === 0 && selectedCategories.length === 0)) {
+    if (!user || !tenantId || (selectedProducts.length === 0 && selectedCategories.length === 0)) {
       toastError('Adicione ao menos um produto ou categoria ao catálogo.');
       return;
     }
@@ -106,6 +115,7 @@ export default function CatalogBuilderPage() {
         description: catalogDesc, 
         theme, 
         user_id: user.id,
+        tenant_id: tenantId,
         slug: catalogSlug.trim().toLowerCase() || null,
         settings: { hide_out_of_stock: hideOutOfStock }
       };
@@ -115,7 +125,7 @@ export default function CatalogBuilderPage() {
       let catalogId: string;
       if (mode === 'edit' && editingCatalog) {
         catalogId = editingCatalog.id;
-        await supabase.from('catalogs').update(payload).eq('id', catalogId);
+        await supabase.from('catalogs').update(payload).eq('id', catalogId).eq('tenant_id', tenantId);
         await supabase.from('catalog_items').delete().eq('catalog_id', catalogId);
         await supabase.from('catalog_categories').delete().eq('catalog_id', catalogId);
       } else {
@@ -138,10 +148,11 @@ export default function CatalogBuilderPage() {
   }
 
   async function handleDelete(cat: any) {
+    if (!tenantId) return;
     if (!confirm(`Excluir "${cat.name}"? O link público vai parar de funcionar.`)) return;
     await supabase.from('catalog_items').delete().eq('catalog_id', cat.id);
     await supabase.from('catalog_categories').delete().eq('catalog_id', cat.id);
-    await supabase.from('catalogs').delete().eq('id', cat.id);
+    await supabase.from('catalogs').delete().eq('id', cat.id).eq('tenant_id', tenantId);
     success('Catálogo excluído.');
     fetchData();
   }
@@ -307,7 +318,7 @@ export default function CatalogBuilderPage() {
                   <div className="col-span-full py-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</div>
                 ) : products.map(p => {
                   const isSelected = selectedProducts.includes(p.id);
-                  const displayImg = getProxyUrl(p.image_url);
+        const displayImg = getProxyUrl(p.images?.[0] || p.image_url);
                   const outOfStock = (p.stock_quantity || 0) <= 0;
                   
                   return (
@@ -412,8 +423,8 @@ export default function CatalogBuilderPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
              <div className="relative aspect-square bg-muted">
-                {viewingProduct.image_url ? (
-                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
+                {(viewingProduct.images?.[0] || viewingProduct.image_url) ? (
+                  <img src={getProxyUrl(viewingProduct.images?.[0] || viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
                 ) : (
                   <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
                 )}
@@ -521,8 +532,8 @@ export default function CatalogBuilderPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
              <div className="relative aspect-square bg-muted">
-                {viewingProduct.image_url ? (
-                  <img src={getProxyUrl(viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
+                {(viewingProduct.images?.[0] || viewingProduct.image_url) ? (
+                  <img src={getProxyUrl(viewingProduct.images?.[0] || viewingProduct.image_url) || ''} alt={viewingProduct.name} className="object-cover w-full h-full" />
                 ) : (
                   <Store className="h-16 w-16 text-muted-foreground/20 m-auto absolute inset-0" />
                 )}

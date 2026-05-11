@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, PackageSearch, BadgeDollarSign, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, Store, Link as LinkIcon, Tags, Menu, X,
-  Users, UserCircle2, Calculator, ShieldCheck
+  Users, UserCircle2, Calculator, ShieldCheck, BriefcaseBusiness
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenant } from '../../contexts/TenantContext';
@@ -26,6 +26,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => classes.filter
 const navItems = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
   { icon: PackageSearch, label: 'Estoque', path: '/inventory' },
+  { icon: BriefcaseBusiness, label: 'Serviços', path: '/services' },
   { icon: Calculator, label: 'Lucros', path: '/inventory/analytics' },
   { icon: Tags, label: 'Categorias', path: '/categories' },
   { icon: BadgeDollarSign, label: 'Vendas', path: '/sales' },
@@ -39,8 +40,8 @@ const navItems = [
 const bottomNavItems = [
   { icon: LayoutDashboard, label: 'Painel', path: '/dashboard' },
   { icon: PackageSearch, label: 'Estoque', path: '/inventory' },
+  { icon: BriefcaseBusiness, label: 'Serviços', path: '/services' },
   { icon: BadgeDollarSign, label: 'Vendas', path: '/sales' },
-  { icon: UserCircle2, label: 'Clientes', path: '/customers' },
   { icon: Menu, label: 'Menu', path: '__menu__' },
 ];
 
@@ -161,6 +162,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       setPreviewTenant(pTenant);
     }
   }, [location.search, previewTenantId, profile?.role, setPreviewTenant]);
+
+  useEffect(() => {
+    if (!user?.id || !tenantId) return;
+
+    const timeout = window.setTimeout(() => {
+      supabase.from('tenant_usage_events').insert({
+        tenant_id: tenantId,
+        user_id: user.id,
+        event_type: 'page_view',
+        route: location.pathname,
+      }).then(({ error }) => {
+        if (error) console.warn('Usage event not recorded:', error.message);
+      });
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [location.pathname, tenantId, user?.id]);
 
   const handleSignOut = async () => {
     await signOut();

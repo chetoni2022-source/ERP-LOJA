@@ -259,7 +259,7 @@ export default function InventoryPage() {
       
       // Se tiver tenantId, filtra. Se for admin e não tiver, tenta buscar órfãos também
       if (tenantId) {
-        query = query.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
+        query = query.eq('tenant_id', tenantId);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });

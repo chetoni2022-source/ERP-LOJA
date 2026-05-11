@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, getProxyUrl } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useTenant } from '../../contexts/TenantContext';
 import { Button, Input } from '../../components/ui';
 import { Link } from 'react-router-dom';
 import { 
@@ -72,6 +73,7 @@ const HeaderTooltip = ({ title, content, align = 'center' }: { title: string, co
 
 export default function UnitEconomicsPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,12 +96,12 @@ export default function UnitEconomicsPage() {
   });
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!user || !tenantId) return;
     setLoading(true);
     try {
       const [productsRes, settingsRes] = await Promise.all([
-        supabase.from('products').select('*').order('name'),
-        supabase.from('store_settings').select('*').eq('user_id', user.id).maybeSingle()
+        supabase.from('products').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('store_settings').select('*').eq('tenant_id', tenantId).maybeSingle()
       ]);
 
       if (productsRes.data) setProducts(productsRes.data);
@@ -119,7 +121,7 @@ export default function UnitEconomicsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, tenantId]);
 
   useEffect(() => {
     fetchData();

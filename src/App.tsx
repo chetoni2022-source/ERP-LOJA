@@ -11,6 +11,7 @@ const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage'));
 const InventoryPage = lazy(() => import('./pages/inventory/InventoryPage'));
 const UnitEconomicsPage = lazy(() => import('./pages/inventory/UnitEconomicsPage'));
+const ServicesPage = lazy(() => import('./pages/services/ServicesPage'));
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage'));
 const SalesPage = lazy(() => import('./pages/sales/SalesPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
@@ -97,6 +98,7 @@ export default function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/inventory/analytics" element={<UnitEconomicsPage />} />
+                  <Route path="/services" element={<ServicesPage />} />
                   <Route path="/categories" element={<CategoriesPage />} />
                   <Route path="/sales" element={<SalesPage />} />
                   <Route path="/catalogs" element={<CatalogBuilderPage />} />

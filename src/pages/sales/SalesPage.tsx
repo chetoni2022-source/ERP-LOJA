@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   BadgeDollarSign, Plus, Loader2, CheckCircle2, 
   UserCircle2, Trash2, Minus, History as HistoryIcon,
@@ -8,9 +8,12 @@ import { Button, Input, Label } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface Product {
   id: string;
+  kind?: 'product' | 'service';
+  service_id?: string;
   name: string;
   price: number;
   sale_price?: number;
@@ -22,6 +25,16 @@ interface Product {
   ean?: string;
 }
 
+interface Service {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  cost_price?: number | null;
+  duration_minutes?: number | null;
+  active: boolean;
+}
+
 interface CartItem {
   product: Product;
   quantity: number;
@@ -30,7 +43,9 @@ interface CartItem {
 interface Sale {
   id: string;
   created_at: string;
-  product_id: string;
+  product_id: string | null;
+  service_id?: string | null;
+  sale_type?: 'product' | 'service';
   quantity: number;
   total_price: number;
   customer_name?: string;
@@ -40,6 +55,7 @@ interface Sale {
   shopee_fee_pct?: number;
   shopee_order_id?: string;
   products?: { name: string, stock_quantity: number };
+  services?: { name: string };
 }
 
 interface Customer {
@@ -54,9 +70,11 @@ const cn = (...classes: (string | undefined | null | false)[]) => classes.filter
 
 export default function SalesPage() {
   const { user } = useAuthStore();
+  const { tenantId } = useTenant();
   const { success, error: toastError } = useToast();
   
   const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +105,7 @@ export default function SalesPage() {
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   useEffect(() => {
-    if (user) {
+    if (user && tenantId) {
       fetchData();
       fetchStoreSettings();
     }
@@ -101,7 +119,7 @@ export default function SalesPage() {
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [user]);
+  }, [user, tenantId]);
 
   // --- PDV Scanner Listener (Modo Supermercado) ---
   const barcodeBuffer = useRef('');
@@ -168,11 +186,11 @@ export default function SalesPage() {
 
   async function fetchStoreSettings() {
     try {
-      if (!user) return;
+      if (!user || !tenantId) return;
       const { data } = await supabase
         .from('store_settings')
         .select('lead_sources')
-        .eq('user_id', user.id)
+        .eq('tenant_id', tenantId)
         .maybeSingle();
       
       if (data?.lead_sources && data.lead_sources.length > 0) {
@@ -186,12 +204,13 @@ export default function SalesPage() {
 
   async function fetchData() {
     try {
-      if (!user) return;
-      const [{ data: prodData }, { data: custData }, { data: salesData }, { data: allSalesForLtv }] = await Promise.all([
-        supabase.from('products').select('*').eq('user_id', user.id).order('name'),
-        supabase.from('customers').select('id, full_name, phone').eq('user_id', user.id).order('full_name'),
-        supabase.from('sales').select(`*, products(name, stock_quantity)`).eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-        supabase.from('sales').select('customer_id, total_price').eq('user_id', user.id)
+      if (!user || !tenantId) return;
+      const [{ data: prodData }, { data: serviceData }, { data: custData }, { data: salesData }, { data: allSalesForLtv }] = await Promise.all([
+        supabase.from('products').select('*').eq('tenant_id', tenantId).order('name'),
+        supabase.from('services').select('*').eq('tenant_id', tenantId).eq('active', true).order('name'),
+        supabase.from('customers').select('id, full_name, phone').eq('tenant_id', tenantId).order('full_name'),
+        supabase.from('sales').select(`*, products(name, stock_quantity), services(name)`).eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(20),
+        supabase.from('sales').select('customer_id, total_price').eq('tenant_id', tenantId)
       ]);
 
       const enrichedCustomers = (custData || []).map(c => {
@@ -203,7 +222,8 @@ export default function SalesPage() {
         };
       });
 
-      setProducts(prodData || []);
+      setProducts((prodData || []).map((product) => ({ ...product, kind: 'product' as const })));
+      setServices(serviceData || []);
       setCustomers(enrichedCustomers);
       setSales(salesData?.map(s => ({ ...s, products: (s.products as any) })) || []);
     } catch (err) {
@@ -215,13 +235,13 @@ export default function SalesPage() {
   }
 
   const addToCart = () => {
-    const p = products.find(prod => prod.id === selectedProductId);
+    const p = saleableItems.find(item => item.id === selectedProductId);
     if (!p) return;
     const qty = parseInt(cartQty) || 1;
     const existing = cart.find(c => c.product.id === p.id);
     const currentInCart = existing?.quantity || 0;
     
-    if (qty + currentInCart > p.stock_quantity) {
+    if (p.kind !== 'service' && qty + currentInCart > p.stock_quantity) {
       toastError(`Estoque insuficiente! Disponível: ${p.stock_quantity - currentInCart}`);
       return;
     }
@@ -241,7 +261,7 @@ export default function SalesPage() {
       if (c.product.id !== productId) return c;
       const newQty = c.quantity + delta;
       if (newQty < 1) return c;
-      if (newQty > c.product.stock_quantity) {
+      if (c.product.kind !== 'service' && newQty > c.product.stock_quantity) {
         toastError('Limite de estoque atingido.');
         return c;
       }
@@ -258,18 +278,33 @@ export default function SalesPage() {
     return acc + price * item.quantity;
   }, 0);
 
+  const saleableItems = useMemo<Product[]>(() => [
+    ...products,
+    ...services.map((service) => ({
+      id: `service:${service.id}`,
+      service_id: service.id,
+      kind: 'service' as const,
+      name: service.name,
+      price: service.price,
+      sale_price: null,
+      cost_price: service.cost_price || 0,
+      stock_quantity: 999999,
+      sku: 'SERVICO',
+    })),
+  ], [products, services]);
+
   const filteredCustomers = customers.filter(c =>
     c.full_name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     c.phone?.includes(customerSearch)
   );
 
-  const filteredProducts = products.filter(p =>
+  const filteredProducts = saleableItems.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
     p.sku?.toLowerCase().includes(productSearch.toLowerCase())
   );
 
   const selectProduct = (p: Product) => {
-    if (p.stock_quantity <= 0) return;
+    if (p.kind !== 'service' && p.stock_quantity <= 0) return;
     setSelectedProductId(p.id);
     setProductSearch(p.name);
     setProductDropdownOpen(false);
@@ -283,7 +318,7 @@ export default function SalesPage() {
 
   async function handleRegisterSale(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || cart.length === 0) return;
+    if (!user || !tenantId || cart.length === 0) return;
     setSaving(true);
 
     try {
@@ -294,7 +329,8 @@ export default function SalesPage() {
       if (!finalCustomerId && customerSearch.trim()) {
         const { data: newCust, error: custErr } = await supabase.from('customers').insert({
           full_name: customerSearch.trim(),
-          user_id: user.id
+          user_id: user.id,
+          tenant_id: tenantId
         }).select('id').single();
         
         if (!custErr && newCust) {
@@ -304,12 +340,15 @@ export default function SalesPage() {
       }
 
       for (const item of cart) {
+        const isService = item.product.kind === 'service';
         const unitPrice = item.product.sale_price || item.product.price;
         const totalPrice = unitPrice * item.quantity;
         const unitCost = item.product.cost_price || 0;
 
         await supabase.from('sales').insert([{
-          product_id: item.product.id,
+          product_id: isService ? null : item.product.id,
+          service_id: isService ? item.product.service_id : null,
+          sale_type: isService ? 'service' : 'product',
           quantity: item.quantity,
           total_price: totalPrice,
           unit_cost_at_sale: unitCost,
@@ -317,19 +356,24 @@ export default function SalesPage() {
           customer_name: finalCustomerName || null,
           lead_source: leadSource || null,
           user_id: user.id,
+          tenant_id: tenantId,
         }]);
 
-        await supabase.from('products')
-          .update({ stock_quantity: item.product.stock_quantity - item.quantity })
-          .eq('id', item.product.id);
+        if (!isService) {
+          await supabase.from('products')
+            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+            .eq('id', item.product.id)
+            .eq('tenant_id', tenantId);
 
-        await supabase.from('product_movements').insert([{
-          product_id: item.product.id,
-          user_id: user.id,
-          type: 'out',
-          quantity: item.quantity,
+          await supabase.from('product_movements').insert([{
+            product_id: item.product.id,
+            user_id: user.id,
+            tenant_id: tenantId,
+            type: 'out',
+            quantity: item.quantity,
           reason: `Venda registrada — ${customerSearch || 'Balcão'}`,
-        }]);
+          }]);
+        }
       }
 
       success(`Venda enviada com sucesso!`);
@@ -346,6 +390,7 @@ export default function SalesPage() {
   }
 
   async function handleDeleteSale(sale: Sale) {
+    if (!tenantId) return;
     if (!window.confirm(`Deseja realmente cancelar esta venda? O estoque de "${sale.products?.name || 'Item Excluído'}" será devolvido (+${sale.quantity}).`)) return;
     
     try {
@@ -353,13 +398,15 @@ export default function SalesPage() {
       if (sale.product_id && sale.products) {
         const { error: stockErr } = await supabase.from('products')
           .update({ stock_quantity: (sale.products.stock_quantity || 0) + sale.quantity })
-          .eq('id', sale.product_id);
+          .eq('id', sale.product_id)
+          .eq('tenant_id', tenantId);
         if (stockErr) throw stockErr;
 
         // 2. Registrar movimento corretivo
         await supabase.from('product_movements').insert([{
           product_id: sale.product_id,
           user_id: user?.id,
+          tenant_id: tenantId,
           type: 'in',
           quantity: sale.quantity,
           reason: `Venda cancelada (Exclusão) — ${sale.customer_name || 'Balcão'}`,
@@ -367,7 +414,7 @@ export default function SalesPage() {
       }
 
       // 3. Deletar venda
-      const { error: delErr } = await supabase.from('sales').delete().eq('id', sale.id);
+      const { error: delErr } = await supabase.from('sales').delete().eq('id', sale.id).eq('tenant_id', tenantId);
       if (delErr) throw delErr;
 
       success('Venda cancelada e estoque devolvido.');
@@ -386,7 +433,7 @@ export default function SalesPage() {
 
   async function handleUpdateSale(e: React.FormEvent) {
     e.preventDefault();
-    if (!editingSale || !user) return;
+    if (!editingSale || !user || !tenantId) return;
     setSaving(true);
 
     try {
@@ -395,7 +442,7 @@ export default function SalesPage() {
       const qtyDelta = newQty - oldQty; // +1 means we sold 1 more, so stock goes -1
 
       // 1. Validar estoque se aumentou a venda
-      if (qtyDelta > 0) {
+      if (qtyDelta > 0 && editingSale.product_id) {
         if (qtyDelta > (editingSale.products?.stock_quantity || 0)) {
            toastError('Estoque insuficiente para este aumento.');
            return;
@@ -406,12 +453,14 @@ export default function SalesPage() {
       if (qtyDelta !== 0 && editingSale.product_id) {
          const { error: stockErr } = await supabase.from('products')
            .update({ stock_quantity: (editingSale.products?.stock_quantity || 0) - qtyDelta })
-           .eq('id', editingSale.product_id);
+           .eq('id', editingSale.product_id)
+           .eq('tenant_id', tenantId);
          if (stockErr) throw stockErr;
 
          await supabase.from('product_movements').insert([{
            product_id: editingSale.product_id,
            user_id: user.id,
+           tenant_id: tenantId,
            type: qtyDelta > 0 ? 'out' : 'in',
            quantity: Math.abs(qtyDelta),
            reason: `Venda editada (Ajuste Qtd) — ${editCustomer}`,
@@ -424,7 +473,7 @@ export default function SalesPage() {
         total_price: (editingSale.total_price / oldQty) * newQty, // Proportionally update total
         customer_name: editCustomer || null,
         lead_source: editSource || null
-      }).eq('id', editingSale.id);
+      }).eq('id', editingSale.id).eq('tenant_id', tenantId);
 
       if (saleErr) throw saleErr;
 
@@ -513,7 +562,7 @@ export default function SalesPage() {
             {/* Seleção de Produto */}
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Produto</Label>
+                <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Produto ou serviço</Label>
                 <div ref={productRef} className="relative">
                   <Input
                     value={productSearch}
@@ -528,17 +577,17 @@ export default function SalesPage() {
                         <button
                           key={p.id}
                           type="button"
-                          disabled={p.stock_quantity <= 0}
+                          disabled={p.kind !== 'service' && p.stock_quantity <= 0}
                           onClick={() => selectProduct(p)}
                           className={cn("w-full text-left px-3 py-2 text-[11px] rounded-lg transition-colors flex items-center justify-between group", 
-                            p.stock_quantity > 0 ? "hover:bg-primary/10 cursor-pointer" : "opacity-50 cursor-not-allowed bg-muted/10")}
+                            p.kind === 'service' || p.stock_quantity > 0 ? "hover:bg-primary/10 cursor-pointer" : "opacity-50 cursor-not-allowed bg-muted/10")}
                         >
                           <div className="flex flex-col truncate pr-2">
                              <span className="font-bold truncate">{p.name} {p.sku ? `(${p.sku})` : ''}</span>
                              <span className="text-[9px] text-muted-foreground font-medium">{fmt(p.sale_price || p.price)}</span>
                           </div>
-                          <span className={cn("text-[9px] font-black uppercase tracking-widest shrink-0", p.stock_quantity > 0 ? "text-primary" : "text-red-500")}>
-                            {p.stock_quantity > 0 ? `${p.stock_quantity} un.` : 'Esgotado'}
+                          <span className={cn("text-[9px] font-black uppercase tracking-widest shrink-0", p.kind === 'service' || p.stock_quantity > 0 ? "text-primary" : "text-red-500")}>
+                            {p.kind === 'service' ? 'Serviço' : p.stock_quantity > 0 ? `${p.stock_quantity} un.` : 'Esgotado'}
                           </span>
                         </button>
                       ))}
@@ -730,7 +779,7 @@ export default function SalesPage() {
                     {sales.map(sale => (
                       <tr key={sale.id} className="text-[11px] group">
                         <td className="px-2 py-3">
-                           <span className="font-bold block truncate max-w-[100px] sm:max-w-[150px]">{sale.products?.name || 'Item Excluído'}</span>
+                           <span className="font-bold block truncate max-w-[100px] sm:max-w-[150px]">{sale.products?.name || sale.services?.name || 'Item excluído'}</span>
                            {sale.origin === 'shopee' ? (
                              <span className="text-[8px] text-[#f53d2d] flex flex-row items-center gap-1 font-black sm:hidden tracking-tighter"><ShoppingBag size={8} /> SHOPEE</span>
                            ) : (
@@ -793,7 +842,7 @@ export default function SalesPage() {
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">Produto</Label>
                 <div className="p-3 bg-muted/20 border border-border/40 rounded-xl text-xs font-bold text-foreground">
-                  {editingSale.products?.name || 'Item Excluído'}
+                  {editingSale.products?.name || editingSale.services?.name || 'Item excluído'}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

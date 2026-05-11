@@ -328,7 +328,7 @@ export default function CatalogBuilderPage() {
                         !outOfStock ? "cursor-pointer hover:shadow-md" : "opacity-60 grayscale-[0.2] cursor-not-allowed"
                       )}
                       style={{ 
-                        borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))', 
+                        borderColor: isSelected ? 'hsl(var(--primary))' : 'var(--border)', 
                         boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none' 
                       }}>
                       <div className="aspect-square bg-muted overflow-hidden border-b border-border relative">
@@ -388,7 +388,7 @@ export default function CatalogBuilderPage() {
                 ) : categories.map(cat => (
                   <div key={cat.id} onClick={() => toggleCategory(cat.id)}
                     className="cursor-pointer border rounded-xl p-4 flex items-center gap-3 transition-all relative"
-                    style={{ borderColor: selectedCategories.includes(cat.id) ? 'hsl(var(--primary))' : 'hsl(var(--border))', boxShadow: selectedCategories.includes(cat.id) ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none', background: 'hsl(var(--card))' }}>
+                    style={{ borderColor: selectedCategories.includes(cat.id) ? 'hsl(var(--primary))' : 'var(--border)', boxShadow: selectedCategories.includes(cat.id) ? '0 0 0 2px hsl(var(--primary)/0.35)' : 'none', background: 'var(--card)' }}>
                     <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                       <Tags className="h-4 w-4 text-primary" />
                     </div>

@@ -750,7 +750,7 @@ export default function SettingsPage() {
                 <input type="range" min="60" max="400" step="4" value={logoWidth}
                   onChange={e=>setLogoWidth(Number(e.target.value))}
                   className="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary"
-                  style={{background:`linear-gradient(to right, hsl(var(--primary)) ${((logoWidth-60)/(400-60))*100}%, hsl(var(--border)) ${((logoWidth-60)/(400-60))*100}%)`}}
+                  style={{background:`linear-gradient(to right, hsl(var(--primary)) ${((logoWidth-60)/(400-60))*100}%, var(--border) ${((logoWidth-60)/(400-60))*100}%)`}}
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground"><span>60px</span><span>400px</span></div>
               </div>
@@ -764,7 +764,7 @@ export default function SettingsPage() {
                 <input type="range" min="20" max="160" step="2" value={logoHeight}
                   onChange={e=>setLogoHeight(Number(e.target.value))}
                   className="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary"
-                  style={{background:`linear-gradient(to right, hsl(var(--primary)) ${((logoHeight-20)/(160-20))*100}%, hsl(var(--border)) ${((logoHeight-20)/(160-20))*100}%)`}}
+                  style={{background:`linear-gradient(to right, hsl(var(--primary)) ${((logoHeight-20)/(160-20))*100}%, var(--border) ${((logoHeight-20)/(160-20))*100}%)`}}
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground"><span>20px</span><span>160px</span></div>
               </div>

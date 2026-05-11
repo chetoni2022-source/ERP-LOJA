@@ -3,6 +3,8 @@ import { useAuthStore, TenantBranding } from '../stores/authStore';
 
 // Apply primary color as CSS custom property so all components pick it up
 function applyPrimaryColor(hex: string) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
+
   // Convert hex to HSL for Tailwind/CSS variable compatibility
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -26,9 +28,12 @@ function applyPrimaryColor(hex: string) {
   const sPct = Math.round(s * 100);
   const lPct = Math.round(l * 100);
   const hsl = `${hDeg} ${sPct}% ${lPct}%`;
+  const foreground = lPct > 62 ? '240 6% 4%' : '0 0% 98%';
 
   document.documentElement.style.setProperty('--primary', hsl);
+  document.documentElement.style.setProperty('--primary-foreground', foreground);
   document.documentElement.style.setProperty('--ring', hsl);
+  document.documentElement.style.setProperty('--primary-rgb', `${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}`);
 }
 
 interface TenantContextValue {

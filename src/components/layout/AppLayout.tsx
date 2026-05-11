@@ -289,7 +289,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               className={({ isActive }) => cn(
                 'group/nav flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-black uppercase tracking-[0.1em] transition-all duration-200',
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-zinc-950 text-white shadow-sm ring-1 ring-zinc-950/5 dark:bg-white dark:text-zinc-950'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
               title={collapsed ? item.label : undefined}
@@ -304,7 +304,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLink
               to="/superadmin-laris"
               onClick={() => setMobileMenuOpen(false)}
-            className="mt-4 flex items-center gap-3 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2.5 text-xs font-black uppercase tracking-[0.1em] text-primary transition-all duration-200 hover:bg-primary/15"
+              className={({ isActive }) => cn(
+                'mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-black uppercase tracking-[0.1em] transition-all duration-200',
+                isActive
+                  ? 'bg-zinc-950 text-white shadow-sm ring-1 ring-zinc-950/5 dark:bg-white dark:text-zinc-950'
+                  : 'border border-primary/15 bg-primary/10 text-foreground hover:bg-primary/15'
+              )}
               title={collapsed ? 'Painel Master' : undefined}
             >
               <ShieldCheck size={16} className="shrink-0" />
@@ -387,11 +392,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               onClick={() => handleBottomNavClick(item.path)}
               className={cn(
                 'flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground',
-                isMenu && mobileMenuOpen ? 'text-primary' : undefined
+                isActive ? 'text-zinc-950 dark:text-white' : 'text-muted-foreground',
+                isMenu && mobileMenuOpen ? 'text-zinc-950 dark:text-white' : undefined
               )}
             >
-              <item.icon size={20} className={cn('mb-0.5', isActive ? 'text-primary' : 'text-muted-foreground')} />
+              <item.icon size={20} className={cn('mb-0.5', isActive ? 'text-zinc-950 dark:text-white' : 'text-muted-foreground')} />
               {item.label}
             </button>
           );

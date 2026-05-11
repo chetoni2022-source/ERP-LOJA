@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
@@ -121,12 +121,27 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [tenantBranding, setTenantBranding] = useState<TenantLoginBranding | null>(null);
+  const companyInputRef = useRef<HTMLInputElement>(null);
+  const latestCompanyCodeRef = useRef(companyCode);
+  const localFallbackLoadedRef = useRef(Boolean(companyCode));
+  const lastSyncedSearchRef = useRef(location.search);
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { success, error: toastError } = useToast();
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
+
+  const clearCompanyCode = () => {
+    localFallbackLoadedRef.current = true;
+    setCompanyCode('');
+    setTenantBranding(null);
+    window.requestAnimationFrame(() => companyInputRef.current?.focus());
+  };
+
+  useEffect(() => {
+    latestCompanyCodeRef.current = companyCode;
+  }, [companyCode]);
 
   const rememberTenant = useCallback((branding: TenantLoginBranding) => {
     localStorage.setItem('lastTenantId', branding.tenant_id);
@@ -208,6 +223,7 @@ export default function AuthPage() {
 
       if (error || !data) return;
       const branding = toTenantLoginBranding(data);
+      if (normalizeTenantHint(latestCompanyCodeRef.current)) return;
       setTenantBranding(branding);
       setCompanyCode(branding.tenant_slug);
       rememberTenant(branding);
@@ -217,16 +233,22 @@ export default function AuthPage() {
   }, [rememberTenant]);
 
   useEffect(() => {
+    if (lastSyncedSearchRef.current === location.search) return;
+    lastSyncedSearchRef.current = location.search;
     const nextHint = getInitialTenantHint(location.search);
-    if (nextHint && nextHint !== companyCode) {
-      setCompanyCode(nextHint);
+    if (nextHint) {
+      setCompanyCode((current) => current === nextHint ? current : nextHint);
     }
-  }, [companyCode, location.search]);
+  }, [location.search]);
 
   useEffect(() => {
     const hint = normalizeTenantHint(companyCode);
     if (!hint) {
-      loadLocalFallbackBranding();
+      setTenantBranding(null);
+      if (!localFallbackLoadedRef.current) {
+        localFallbackLoadedRef.current = true;
+        loadLocalFallbackBranding();
+      }
       return;
     }
     const timer = setTimeout(() => {
@@ -421,16 +443,28 @@ export default function AuthPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <Label className="text-zinc-500">Empresa</Label>
-                {tenantBranding && !brandingLoading && (
-                  <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
-                    <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
-                    {tenantBranding.tenant_name}
-                  </span>
-                )}
+                <div className="flex min-w-0 items-center gap-2">
+                  {tenantBranding && !brandingLoading && (
+                    <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                      <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
+                      {tenantBranding.tenant_name}
+                    </span>
+                  )}
+                  {companyCode && (
+                    <button
+                      type="button"
+                      onClick={clearCompanyCode}
+                      className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-950 dark:border-zinc-800 dark:hover:text-white"
+                    >
+                      Trocar
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <Input
+                  ref={companyInputRef}
                   value={companyCode}
                   onChange={e => setCompanyCode(normalizeTenantHint(e.target.value))}
                   placeholder="laris-acess-rios ou tmcar"

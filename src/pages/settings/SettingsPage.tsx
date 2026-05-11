@@ -8,15 +8,15 @@ import { Users, UserPlus, Loader2, Moon, Sun, Monitor, UploadCloud, Store, Palet
 import { supabase, getProxyUrl } from '../../lib/supabase';
 
 const POSITION_OPTIONS = [
-  { value: 'top left',    label: '↖', title: 'Superior Esquerda' },
-  { value: 'top center',  label: '↑', title: 'Superior Centro' },
-  { value: 'top right',   label: '↗', title: 'Superior Direita' },
-  { value: 'center left', label: '←', title: 'Centro Esquerda' },
-  { value: 'center',      label: '⬤', title: 'Centro' },
-  { value: 'center right',label: '→', title: 'Centro Direita' },
-  { value: 'bottom left', label: '↙', title: 'Inferior Esquerda' },
-  { value: 'bottom center',label:'↓', title: 'Inferior Centro' },
-  { value: 'bottom right',label: '↘', title: 'Inferior Direita' },
+  { value: 'top left', label: '↖', title: 'Superior esquerda' },
+  { value: 'top center', label: '↑', title: 'Superior centro' },
+  { value: 'top right', label: '↗', title: 'Superior direita' },
+  { value: 'center left', label: '←', title: 'Centro esquerda' },
+  { value: 'center', label: '•', title: 'Centro' },
+  { value: 'center right', label: '→', title: 'Centro direita' },
+  { value: 'bottom left', label: '↙', title: 'Inferior esquerda' },
+  { value: 'bottom center', label: '↓', title: 'Inferior centro' },
+  { value: 'bottom right', label: '↘', title: 'Inferior direita' },
 ];
 
 function selectLatestStoreSettings(tenantId: string, columns = '*') {
@@ -388,20 +388,21 @@ export default function SettingsPage() {
   const loginBgImg = loginBgPreview || (loginBgLoadFailed ? null : getProxyUrl(currentLoginBgUrl));
 
   return (
-    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-20">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
-        <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
+    <div className="mx-auto max-w-7xl space-y-5 p-3 pb-24 sm:p-4 md:p-8 md:pb-20 animate-in fade-in duration-300">
+      <div className="rounded-lg border border-border bg-card/90 p-4 shadow-sm sm:p-5 md:p-6">
+        <p className="mb-2 text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">Central do sistema</p>
+        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">Ajustes e Identidade Visual</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Controle marca, equipe, canais e integrações em um layout preparado para notebook e celular.</p>
         
         {/* Contexto de Tenant para Admin/Super Admin */}
         {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
-          <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="mt-5 flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary/10 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Store size={16} />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Contexto de Edição</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Contexto de edição</p>
                 <p className="text-sm font-bold text-foreground">
                   {tenantId ? `Editando Tenant ID: ${tenantId}` : 'Nenhuma empresa selecionada'}
                 </p>
@@ -417,22 +418,22 @@ export default function SettingsPage() {
       </div>
 
       {/* Menu de Abas Premium */}
-      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex w-full snap-x gap-2 overflow-x-auto rounded-lg border border-border bg-card/70 p-1.5 shadow-sm scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <button 
           onClick={() => setActiveTab('geral')}
-          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-md font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all snap-start ${activeTab === 'geral' ? 'bg-zinc-950 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}
         >
           <Settings2 size={16} /> Geral & Equipe
         </button>
         <button 
           onClick={() => setActiveTab('marca')}
-          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-md font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all snap-start ${activeTab === 'marca' ? 'bg-zinc-950 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}
         >
           <Palette size={16} /> Identidade Visual
         </button>
         <button 
           onClick={() => setActiveTab('integracoes')}
-          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'integracoes' ? 'bg-[#f53d2d] text-white border-[#f53d2d]/80 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-[#f53d2d]/10 hover:text-[#f53d2d]'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-md font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all snap-start ${activeTab === 'integracoes' ? 'bg-[#f53d2d] text-white shadow-sm' : 'text-muted-foreground hover:bg-[#f53d2d]/10 hover:text-[#f53d2d]'}`}
         >
           <Blocks size={16} /> Integrações Omnichannel
         </button>
@@ -510,21 +511,21 @@ export default function SettingsPage() {
 
         {/* TAB 2: MARCA E PLATAFORMA */}
         {activeTab === 'marca' && (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] animate-in slide-in-from-bottom-2 duration-300">
-            <div className="xl:col-span-2 sticky top-14 md:top-0 z-30 -mx-1 rounded-xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,460px)] animate-in slide-in-from-bottom-2 duration-300">
+            <div className="xl:col-span-2 sticky top-14 md:top-0 z-30 -mx-1 rounded-lg border border-border bg-background/95 p-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/85">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Identidade Visual</p>
-                  <p className="text-sm text-foreground font-semibold">Salve a marca e os ajustes de exibição sem perder o ponto da página.</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">Identidade visual</p>
+                  <p className="text-sm font-semibold text-foreground">Configure nome, imagens, cores e preview do login da empresa.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:min-w-[320px] lg:min-w-[420px]">
                   <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
-                    className="h-11 text-[10px] font-black uppercase tracking-widest bg-zinc-950 text-white hover:bg-zinc-800 shadow-md rounded-xl">
+                    className="h-11 rounded-md bg-zinc-950 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-zinc-800">
                     {savingBrand ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Target className="h-4 w-4 mr-2" />}
                     Salvar Marca
                   </Button>
                   <Button type="button" onClick={handleSaveDisplaySettings} disabled={savingDisplay}
-                    className="h-11 text-[10px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 shadow-md rounded-xl">
+                    className="h-11 rounded-md bg-foreground text-[10px] font-black uppercase tracking-widest text-background shadow-sm hover:bg-foreground/90">
                     {savingDisplay ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Crop className="h-4 w-4 mr-2" />}
                     Salvar Exibição
                   </Button>
@@ -533,19 +534,22 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-5 min-w-0">
               {/* Identidade visual */}
-              <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-sm border-t-4 border-t-primary">
-            <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Store className="w-5 h-5 text-primary"/> Identidade Visual (White-label)</h2>
-            <p className="text-sm text-muted-foreground mb-5">Personalize o sistema com a sua marca.</p>
+              <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="border-b border-border p-4 sm:p-5">
+              <h2 className="flex items-center gap-2 text-xl font-black tracking-tight text-foreground"><Store className="h-5 w-5 text-primary"/> Marca da empresa</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Dados principais aplicados no painel, catalogo e tela de login.</p>
+            </div>
 
-            <form onSubmit={handleSaveBranding} className="space-y-5">
+            <form onSubmit={handleSaveBranding} className="space-y-5 p-4 sm:p-5">
+              <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="font-semibold text-foreground text-sm">Nome Principal do ERP</Label>
-                <Input value={storeName} onChange={e=>setStoreName(e.target.value)} placeholder="Laris Acessórios" className="bg-background shadow-sm h-11 font-medium" />
+                <Input value={storeName} onChange={e=>setStoreName(e.target.value)} placeholder="Laris Acessórios" className="h-12 rounded-md bg-background font-semibold shadow-none" />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Phone size={14} className="text-primary"/> WhatsApp de Contato</Label>
-                <Input value={whatsappNumber} onChange={e=>setWhatsappNumber(e.target.value)} placeholder="5511999999999" className="bg-background shadow-sm h-11 font-medium" />
+                <Input value={whatsappNumber} onChange={e=>setWhatsappNumber(e.target.value)} placeholder="5511999999999" className="h-12 rounded-md bg-background font-semibold shadow-none" />
                 <p className="text-[10px] text-muted-foreground">Formato: 55 + DDD + Numero (apenas números)</p>
               </div>
 
@@ -556,9 +560,9 @@ export default function SettingsPage() {
                     type="color" 
                     value={primaryColor} 
                     onChange={e => setPrimaryColor(e.target.value)}
-                    className="h-11 w-11 rounded-xl border border-border cursor-pointer bg-background"
+                    className="h-12 w-12 cursor-pointer rounded-md border border-border bg-background p-1"
                   />
-                  <Input value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="bg-background shadow-sm h-11 font-mono uppercase" />
+                  <Input value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="h-12 rounded-md bg-background font-mono font-bold uppercase shadow-none" />
                 </div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Esta cor será aplicada em botões e destaques para toda sua equipe.</p>
               </div>
@@ -567,22 +571,26 @@ export default function SettingsPage() {
                 <Label className="font-semibold text-foreground text-sm flex items-center gap-2"><Target size={14} className="text-primary"/> Meta Mensal (R$)</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xs">R$</span>
-                  <Input type="number" step="0.01" value={monthlyGoal} onChange={e=>setMonthlyGoal(e.target.value)} placeholder="5000.00" className="bg-background shadow-sm h-11 pl-10 font-bold" />
+                  <Input type="number" step="0.01" value={monthlyGoal} onChange={e=>setMonthlyGoal(e.target.value)} placeholder="5000.00" className="h-12 rounded-md bg-background pl-10 font-bold shadow-none" />
                 </div>
                 <p className="text-xs text-muted-foreground">Aparece como barra de progresso no Painel.</p>
               </div>
+              </div>
               
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {/* Logo */}
                 <div className="space-y-2">
-                  <Label className="font-semibold text-foreground text-sm">Logotipo Principal</Label>
-                  <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="font-semibold text-foreground text-sm">Logotipo principal</Label>
+                    <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">PNG/SVG</span>
+                  </div>
+                  <div className="group relative flex h-[160px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/20 text-center transition-colors hover:bg-muted/40">
                     {previewImg
-                      ? <img src={previewImg} alt="Logo" onError={() => setLogoLoadFailed(true)} className="w-full h-full object-contain z-10 drop-shadow-sm p-3" />
+                      ? <img src={previewImg} alt="Logo" onError={() => setLogoLoadFailed(true)} className="z-10 h-full w-full object-contain p-4 drop-shadow-sm" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Logo</span>
-                          <span className="text-[10px] text-muted-foreground mt-1">PNG/JPG/SVG · máx 3MB</span>
+                          <span className="mt-1 px-4 text-[10px] text-muted-foreground">Fundo transparente, ate 3MB, recomendado 600x240px</span>
                         </div>
                     }
                     <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setLogoFile,setLogoPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
@@ -590,14 +598,17 @@ export default function SettingsPage() {
                 </div>
                 {/* Favicon */}
                 <div className="space-y-2">
-                  <Label className="font-semibold text-foreground text-sm">Ícone da Aba (Favicon)</Label>
-                  <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[140px] overflow-hidden shadow-inner">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="font-semibold text-foreground text-sm">Icone da aba</Label>
+                    <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">512x512</span>
+                  </div>
+                  <div className="group relative flex h-[160px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/20 text-center transition-colors hover:bg-muted/40">
                     {faviconImg
                       ? <img src={faviconImg} alt="Favicon" onError={() => setFaviconLoadFailed(true)} className="h-14 w-14 object-contain z-10" />
                       : <div className="flex flex-col items-center z-10 pointer-events-none">
                           <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                           <span className="text-xs font-bold">Enviar Favicon</span>
-                          <span className="text-[10px] text-muted-foreground mt-1">ICO/PNG/JPG · 32x32px</span>
+                          <span className="mt-1 px-4 text-[10px] text-muted-foreground">PNG quadrado ou ICO, ate 3MB</span>
                         </div>
                     }
                     <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setFaviconFile,setFaviconPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
@@ -607,16 +618,16 @@ export default function SettingsPage() {
 
               {/* ── LOGIN EXPERIENCE ── */}
               <div className="border-t border-border pt-5">
-                <h2 className="text-xl font-bold mb-1 text-foreground flex items-center gap-2"><Layout className="w-5 h-5 text-primary"/> Experiência de Login</h2>
-                <p className="text-sm text-muted-foreground mb-6">Personalize como seus clientes e equipe veem a porta de entrada do sistema.</p>
+                <h2 className="mb-1 flex items-center gap-2 text-xl font-black tracking-tight text-foreground"><Layout className="h-5 w-5 text-primary"/> Tela de login</h2>
+                <p className="mb-5 text-sm text-muted-foreground">Escolha o fundo e confira o resultado no preview ao lado.</p>
 
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Tipo de Fundo</Label>
-                    <div className="flex bg-muted/40 p-1 rounded-xl border border-border">
+                    <div className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/40 p-1">
                       {([['image','Imagem'],['color','Cor Sólida'],['gradient','Gradiente Profissional']] as const).map(([val,label])=>(
                         <button key={val} type="button" onClick={()=>setLoginBgMode(val)}
-                          className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${loginBgMode===val?'bg-background shadow-md text-foreground':'text-muted-foreground hover:text-foreground'}`}>
+                          className={`min-h-10 rounded-md px-2 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${loginBgMode===val?'bg-background text-foreground shadow-sm':'text-muted-foreground hover:text-foreground'}`}>
                           {label}
                         </button>
                       ))}
@@ -626,13 +637,13 @@ export default function SettingsPage() {
                   {loginBgMode === 'image' && (
                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                       <Label className="font-semibold text-foreground text-sm flex items-center gap-2">Imagem de Fundo</Label>
-                      <div className="relative border-2 border-dashed border-border rounded-xl text-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group flex flex-col items-center justify-center h-[180px] overflow-hidden shadow-inner">
+                      <div className="group relative flex h-[190px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/20 text-center transition-colors hover:bg-muted/40">
                         {loginBgImg
                           ? <img src={loginBgImg} alt="Login Background" onError={() => setLoginBgLoadFailed(true)} className="w-full h-full object-cover z-10" />
                           : <div className="flex flex-col items-center z-10 pointer-events-none">
                               <UploadCloud className="h-7 w-7 text-muted-foreground group-hover:text-primary mb-2" />
                               <span className="text-xs font-bold">Enviar Imagem</span>
-                              <span className="text-[10px] text-muted-foreground mt-1">HD 1920x1080px recomendado</span>
+                              <span className="mt-1 px-4 text-[10px] text-muted-foreground">JPG/PNG horizontal, recomendado 1920x1080px, ate 3MB</span>
                             </div>
                         }
                         <Input type="file" accept="image/*" onChange={e=>handleFileChange(e,setLoginBgFile,setLoginBgPreview)} className="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-20" />
@@ -648,9 +659,9 @@ export default function SettingsPage() {
                           type="color" 
                           value={loginBgColor} 
                           onChange={e => setLoginBgColor(e.target.value)}
-                          className="h-14 w-14 rounded-2xl border border-border cursor-pointer bg-background p-1"
+                          className="h-14 w-14 cursor-pointer rounded-md border border-border bg-background p-1"
                         />
-                        <Input value={loginBgColor} onChange={e => setLoginBgColor(e.target.value)} className="bg-background shadow-sm h-14 font-mono uppercase text-lg font-black" />
+                        <Input value={loginBgColor} onChange={e => setLoginBgColor(e.target.value)} className="h-14 rounded-md bg-background font-mono text-lg font-black uppercase shadow-none" />
                       </div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Essa cor será usada no fundo da tela de login {loginBgMode==='gradient'?'como base do gradiente':''}.</p>
                     </div>
@@ -658,10 +669,10 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 p-3 rounded-xl border border-border bg-background/70 backdrop-blur-sm shadow-sm">
+              <div className="mt-4 rounded-lg border border-border bg-background/70 p-3 shadow-sm">
                 <Button type="button" onClick={handleSaveBranding} disabled={savingBrand}
-                  className="w-full h-14 text-sm font-black tracking-[0.2em] shadow-xl bg-zinc-950 text-white hover:bg-zinc-800 transition-all active:scale-[0.98] rounded-2xl uppercase">
-                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:<Target className="h-5 w-5 mr-2"/>} Salvar Identidade Master
+                  className="h-12 w-full rounded-md bg-zinc-950 text-sm font-black uppercase tracking-[0.18em] text-white shadow-sm transition-all hover:bg-zinc-800 active:scale-[0.98]">
+                  {savingBrand?<Loader2 className="animate-spin h-5 w-5 mr-2"/>:<Target className="h-5 w-5 mr-2"/>} Salvar Identidade
                 </Button>
               </div>
             </form>
@@ -669,13 +680,53 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-5 min-w-0">
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="border-b border-border p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">Preview ao vivo</p>
+              <h2 className="mt-1 flex items-center gap-2 text-lg font-black text-foreground"><Layout className="h-5 w-5 text-primary" /> Tela de login</h2>
+            </div>
+            <div
+              className="relative min-h-[360px] p-4"
+              style={{
+                background: loginBgMode === 'image' && loginBgImg
+                  ? `url(${loginBgImg}) center/cover no-repeat`
+                  : loginBgMode === 'gradient'
+                    ? `linear-gradient(135deg, ${loginBgColor} 0%, ${primaryColor} 100%)`
+                    : loginBgColor
+              }}
+            >
+              <div className="absolute inset-0 bg-black/42" />
+              <div className="relative mx-auto flex min-h-[320px] max-w-[320px] flex-col justify-center rounded-lg border border-white/20 bg-white/92 p-4 shadow-2xl backdrop-blur">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                    {previewImg ? (
+                      <img src={previewImg} alt="Logo" onError={() => setLogoLoadFailed(true)} className="h-full w-full object-contain p-1.5" />
+                    ) : (
+                      <Store className="h-5 w-5" style={{ color: primaryColor }} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-zinc-950">{storeName || 'Nome da empresa'}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Portal de acesso</p>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  <div className="h-10 rounded-md border border-zinc-200 bg-zinc-50" />
+                  <div className="h-10 rounded-md border border-zinc-200 bg-zinc-50" />
+                  <div className="mt-3 h-11 rounded-md" style={{ background: primaryColor }} />
+                </div>
+              </div>
+            </div>
+          </div>
           {/* ── LOGO DISPLAY SETTINGS ── */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-1 flex items-center gap-2 text-foreground"><Crop className="w-5 h-5 text-primary"/> Exibição da Logo no Painel e Catálogo</h2>
-            <p className="text-sm text-muted-foreground mb-5">Ajuste o tamanho e posição da logo que aparece no seu menu lateral e na vitrine pública.</p>
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="border-b border-border p-4">
+              <h2 className="flex items-center gap-2 text-lg font-black text-foreground"><Crop className="h-5 w-5 text-primary"/> Exibição da logo</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Ajuste como a logo aparece no menu, painel e catálogo público.</p>
+            </div>
 
             {/* Live preview */}
-            <div className="border border-border rounded-xl overflow-hidden mb-5 bg-[#0c0b09]">
+            <div className="m-4 overflow-hidden rounded-lg border border-border bg-[#0c0b09]">
               <div className="p-3 text-center">
                 <p className="text-[9px] font-bold tracking-widest uppercase text-white/30 mb-2">Preview do catálogo</p>
                 <div style={{width:'100%',minHeight:104,height:Math.min(logoHeight+24,184),display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
@@ -689,7 +740,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 p-4 pt-1">
               {/* Width */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -721,10 +772,10 @@ export default function SettingsPage() {
               {/* Fit */}
               <div className="space-y-2">
                 <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Modo de Exibição</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {([['contain','Conter','Logo completa visível'],['cover','Cobrir','Preenche o espaço (pode cortar)'],['fill','Esticar','Ocupa todo o espaço']] as const).map(([val,label])=>(
                     <button key={val} type="button" onClick={()=>setLogoFit(val)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-bold transition-all min-h-[74px] ${logoFit===val?'border-primary bg-primary/10 text-primary':'border-border bg-muted/30 text-muted-foreground hover:border-primary/50'}`}>
+                      className={`flex min-h-[74px] flex-col items-center gap-1 rounded-lg border p-3 text-xs font-bold transition-all ${logoFit===val?'border-primary bg-primary/10 text-primary':'border-border bg-muted/30 text-muted-foreground hover:border-primary/50'}`}>
                       <span className="text-lg">{val==='contain'?'□':val==='cover'?'■':'▬'}</span>
                       <span>{label}</span>
                     </button>
@@ -738,10 +789,10 @@ export default function SettingsPage() {
               {/* Position (crop anchor) */}
               <div className="space-y-2">
                 <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Ponto de Corte / Posição</Label>
-                <div className="grid grid-cols-3 gap-1.5 p-3 bg-muted/20 border border-border rounded-xl w-fit">
+                <div className="grid w-fit grid-cols-3 gap-1.5 rounded-lg border border-border bg-muted/20 p-3">
                   {POSITION_OPTIONS.map(opt=>(
                     <button key={opt.value} type="button" onClick={()=>setLogoPosition(opt.value)} title={opt.title}
-                      className={`w-10 h-10 flex items-center justify-center text-base rounded-lg border transition-all font-bold ${logoPosition===opt.value?'bg-zinc-950 border-zinc-950 text-white':'border-border bg-background text-muted-foreground hover:border-zinc-500 hover:text-foreground'}`}>
+                      className={`flex h-10 w-10 items-center justify-center rounded-md border text-base font-bold transition-all ${logoPosition===opt.value?'border-zinc-950 bg-zinc-950 text-white':'border-border bg-background text-muted-foreground hover:border-zinc-500 hover:text-foreground'}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -749,9 +800,9 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-muted-foreground">Define de onde a logo é "ancorada" ao cortar (modo Cobrir).</p>
               </div>
 
-              <div className="mt-4 p-3 rounded-xl border border-border bg-background/70 backdrop-blur-sm shadow-sm">
+              <div className="mt-4 rounded-lg border border-border bg-background/70 p-3 shadow-sm">
                 <Button onClick={handleSaveDisplaySettings} disabled={savingDisplay}
-                  className="w-full h-11 font-black uppercase tracking-widest bg-zinc-950 text-white hover:bg-zinc-800 shadow-lg transition-all active:scale-[0.98] rounded-xl text-[10px]">
+                  className="h-11 w-full rounded-md bg-zinc-950 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-zinc-800 active:scale-[0.98]">
                   {savingDisplay?<Loader2 className="animate-spin h-4 w-4 mr-2"/>:null} Salvar Exibição
                 </Button>
               </div>

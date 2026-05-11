@@ -198,9 +198,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-background overflow-hidden relative w-full">
+    <div className="relative flex h-[100dvh] w-full overflow-hidden bg-[#f7f6f3] dark:bg-[#080808]">
       {/* ── Mobile Top Bar ────────────────────────────────── */}
-      <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-card border-b border-border z-30 fixed top-0 w-full shadow-sm">
+      <div className="fixed top-0 z-30 flex h-14 w-full shrink-0 items-center justify-between border-b border-border/70 bg-card/95 px-4 shadow-sm backdrop-blur md:hidden">
           <div className="flex items-center gap-3 overflow-hidden h-full py-1">
           {effectiveLogo ? (
             <img 
@@ -229,7 +229,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Sidebar (Desktop + Drawer Mobile) ─────────────── */}
       <aside className={cn(
-        'flex-col border-r border-border bg-card transition-all duration-500 z-[100] shadow-sm fixed md:relative h-full overflow-hidden',
+        'fixed z-[100] flex-col overflow-hidden border-r border-border/70 bg-card/95 shadow-[16px_0_42px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all duration-500 md:relative h-full',
         collapsed ? 'w-20 hidden md:flex' : 'w-64 max-w-[85vw]',
         mobileMenuOpen ? 'flex translate-x-0' : '-translate-x-full md:translate-x-0 md:flex',
       )}>
@@ -239,7 +239,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Branding */}
-        <div className="flex items-center justify-center p-4 pt-14 md:pt-4 border-b border-border/40 shrink-0 md:min-h-[88px]">
+        <div className="flex shrink-0 items-center justify-center border-b border-border/50 p-4 pt-14 md:min-h-[88px] md:pt-4">
           {!collapsed ? (
             <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-1000 group">
               {effectiveLogo ? (
@@ -264,7 +264,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </NavLink>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 bg-primary/10 p-4 rounded-3xl mb-2 shadow-inner border border-primary/5 transition-all duration-500 group-hover:scale-105 group-hover:bg-primary/15">
+                <div className="mb-2 flex items-center gap-3 rounded-lg border border-primary/10 bg-primary/10 p-4 shadow-inner transition-all duration-500 group-hover:scale-[1.02] group-hover:bg-primary/15">
                   <div className="text-primary"><Store size={28} className="drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]" /></div>
                   <span className="font-black text-[18px] tracking-tight truncate text-foreground">{effectiveName}</span>
                 </div>
@@ -287,10 +287,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               end={item.path === '/inventory'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) => cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.1em] transition-all duration-200 group/nav',
+                'group/nav flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-black uppercase tracking-[0.1em] transition-all duration-200',
                 isActive
-                  ? 'bg-zinc-950 text-white shadow-md shadow-zinc-200/50'
-                  : 'text-zinc-500 hover:bg-zinc-100/50 hover:text-zinc-900'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -304,7 +304,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLink
               to="/superadmin-laris"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.1em] text-purple-600 hover:bg-purple-50 transition-all duration-200 mt-4 border border-purple-100 bg-purple-50/30"
+            className="mt-4 flex items-center gap-3 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2.5 text-xs font-black uppercase tracking-[0.1em] text-primary transition-all duration-200 hover:bg-primary/15"
               title={collapsed ? 'Painel Master' : undefined}
             >
               <ShieldCheck size={16} className="shrink-0" />
@@ -314,7 +314,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border/50 shrink-0 space-y-1.5">
+        <div className="shrink-0 space-y-1.5 border-t border-border/50 p-3">
           <Button
             className="w-full justify-start text-muted-foreground hover:text-red-500 hover:bg-red-500/10 border-transparent bg-transparent shadow-none font-semibold"
             onClick={handleSignOut}
@@ -332,7 +332,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Main ──────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 max-w-full md:max-w-none overflow-x-hidden overflow-y-auto overscroll-contain bg-background/50 pt-14 md:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 w-full relative">
+      <main className="relative flex w-full max-w-full min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain bg-background/70 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] md:max-w-none md:pt-0 md:pb-0">
         {/* Preview Mode Banner */}
         {previewTenantId && profile?.role === 'super_admin' && (
           <div className="bg-blue-600 px-4 py-2 flex items-center justify-between gap-3 text-white z-[60] sticky top-0 md:relative">
@@ -377,7 +377,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ── Bottom Navigation Bar (Mobile Only) ───────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex items-stretch h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] shadow-lg safe-area-inset-bottom">
+      <nav className="safe-area-inset-bottom fixed right-0 bottom-0 left-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-border/70 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
         {bottomNavItems.map((item) => {
           const isActive = item.path !== '__menu__' && location.pathname === item.path;
           const isMenu = item.path === '__menu__';

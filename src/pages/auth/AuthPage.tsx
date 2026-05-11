@@ -4,7 +4,17 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Input, Label } from '../../components/ui';
-import { Loader2, ArrowRight, Building2 } from 'lucide-react';
+import {
+  Loader2,
+  ArrowRight,
+  Building2,
+  Mail,
+  LockKeyhole,
+  Store,
+  UserRound,
+  ShieldCheck,
+  BadgeCheck,
+} from 'lucide-react';
 
 interface TenantLoginBranding {
   store_name: string | null;
@@ -243,7 +253,7 @@ export default function AuthPage() {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        success('Link de recuperação enviado para o seu e-mail!');
+        success('Link de recuperacao enviado para o seu e-mail!');
         setRecoveryMode(false);
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -295,13 +305,23 @@ export default function AuthPage() {
     }
   };
 
-  const title = recoveryMode ? 'Recuperar Acesso' : isLogin ? 'Entrar' : 'Criar Conta';
+  const title = recoveryMode ? 'Recuperar acesso' : isLogin ? 'Entrar' : 'Criar conta';
   const primaryColor = tenantBranding?.primary_color || '#18181b';
   const bgImage = tenantBranding?.login_bg_url || '/auth-bg.jpg';
   const bgColor = tenantBranding?.login_bg_color || '#000000';
   const bgMode = tenantBranding?.login_bg_mode || 'image';
   const logoUrl = tenantBranding?.logo_url || null;
   const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
+  const actionLabel = recoveryMode ? 'Enviar link seguro' : isLogin ? 'Entrar no painel' : 'Criar conta';
+  const formSubtitle = recoveryMode
+    ? 'Informe seu e-mail para receber o link de recuperacao.'
+    : isLogin
+      ? 'Acesse o ambiente da sua empresa.'
+      : 'Crie o primeiro acesso vinculado a esta empresa.';
+  const brandInitial = storeName.trim().charAt(0).toUpperCase() || 'E';
+  const backgroundStyle = bgMode === 'image'
+    ? { backgroundImage: `url(${bgImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }
+    : { background: bgMode === 'gradient' ? `linear-gradient(135deg, ${bgColor} 0%, ${primaryColor} 100%)` : bgColor };
 
   useEffect(() => {
     if (tenantBranding?.favicon_url) {
@@ -319,247 +339,208 @@ export default function AuthPage() {
   }, [storeName, tenantBranding]);
 
   return (
-    <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
-      
-      {/* ── Esquerda: Imagem de Fundo (Desktop) ─── */}
-      <div 
-        className="hidden md:flex md:w-1/2 lg:w-[55%] relative overflow-hidden items-center justify-center"
-        style={{ 
-          background: bgMode === 'image' 
-            ? `url(${bgImage}) center/cover no-repeat` 
-            : bgMode === 'gradient' 
-              ? `linear-gradient(135deg, ${bgColor} 0%, ${primaryColor} 100%)` 
-              : bgColor 
-        }}
-      >
-        {bgMode === 'image' && (
-          <>
-            <img
-              src={bgImage}
-              alt={storeName}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          </>
-        )}
-        
-        {/* Adicionando um overlay elegante se for gradiente ou cor */}
-        {(bgMode === 'gradient' || bgMode === 'color') && (
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        )}
-        
-        {tenantBranding && (
-          <div className="absolute top-8 left-8 flex items-center gap-3 animate-in fade-in duration-500">
-            <div
-              className="h-8 w-8 rounded-lg flex items-center justify-center"
-              style={{ background: primaryColor }}
-            >
-              <Building2 className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-white/80 text-xs font-black uppercase tracking-widest">
-              {tenantBranding.tenant_name}
-            </span>
-          </div>
-        )}
-
-        <div className="absolute bottom-12 left-12 right-12 z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-           <div className="h-px w-12 bg-white/40 mb-6" />
-           <h2 className="text-white text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-4">
-             A elegância que<br />
-             <span className="text-white/60">sua loja merece.</span>
-           </h2>
-           <p className="text-white/50 text-sm font-medium max-w-sm leading-relaxed tracking-wide uppercase text-[10px]">
-             Sistema completo de gestão para joias e acessórios.
-           </p>
-        </div>
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#f7f5f2] text-zinc-950 dark:bg-[#080808] dark:text-zinc-50">
+      <div className="absolute inset-0" style={backgroundStyle}>
+        <div
+          className="absolute inset-0 hidden lg:block"
+          style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.48) 42%, rgba(247,245,242,0.96) 72%, rgba(247,245,242,1) 100%)' }}
+        />
+        <div
+          className="absolute inset-0 lg:hidden"
+          style={{ background: 'linear-gradient(180deg, rgba(247,245,242,0.12) 0%, rgba(247,245,242,0.94) 42%, rgba(247,245,242,1) 100%)' }}
+        />
       </div>
 
-      {/* ── Direita: Painel de Login ─── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative bg-white dark:bg-[#050505] overflow-hidden">
-        
-        {/* Mobile background */}
-        <div className="md:hidden absolute inset-0 overflow-hidden">
-          {bgMode === 'image' ? (
-            <img src={bgImage} alt="" className="w-full h-full object-cover opacity-15" />
-          ) : (
-            <div className="w-full h-full opacity-10" style={{ background: bgMode === 'gradient' ? `linear-gradient(135deg, ${bgColor}, ${primaryColor})` : bgColor }} />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/95 to-white dark:from-black/70 dark:via-[#050505]/95 dark:to-[#050505]" />
-        </div>
+      <main className="relative z-10 mx-auto grid min-h-[100dvh] w-full max-w-7xl grid-cols-1 items-center gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,480px)] lg:px-10">
+        <section className="hidden min-h-[calc(100dvh-4rem)] flex-col justify-between py-8 text-white lg:flex">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-black uppercase tracking-[0.22em] backdrop-blur">
+            <Building2 className="h-4 w-4" />
+            {tenantBranding?.tenant_name || 'Portal ERP'}
+          </div>
 
-        <div className="relative z-10 w-full px-5 sm:px-8 py-6 sm:py-10 max-w-[440px] mx-auto flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
-          
-          {/* Logo / Branding */}
-          <div className="mb-8 sm:mb-12 flex flex-col items-center w-full">
+          <div className="max-w-xl">
             {logoUrl ? (
-              <div className="mb-8 flex items-center justify-center w-full transition-transform duration-500 hover:scale-[1.02]">
-                <img
-                  src={logoUrl}
-                  alt={storeName}
-                  className="h-20 sm:h-28 md:h-32 w-auto max-w-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
-                />
-              </div>
+              <img src={logoUrl} alt={storeName} className="mb-8 max-h-28 w-auto max-w-[320px] object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.32)]" />
             ) : (
-              <div className="mb-8 flex flex-col items-center gap-4">
-                <div
-                  className="h-20 w-20 rounded-3xl flex items-center justify-center shadow-2xl relative group overflow-hidden"
-                  style={{ background: primaryColor }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  <span className="text-white text-3xl font-black">
-                    {storeName[0]?.toUpperCase() ?? 'E'}
-                  </span>
-                </div>
-                <span className="text-xs font-black text-zinc-400 dark:text-zinc-500 tracking-[0.4em] uppercase">{storeName}</span>
+              <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-lg text-3xl font-black text-white shadow-2xl" style={{ background: primaryColor }}>
+                {brandInitial}
               </div>
             )}
-
-            <div className="text-center space-y-2">
-              <h1 
-                className="text-3xl font-black tracking-tighter uppercase italic"
-                style={{ color: tenantBranding ? primaryColor : undefined }}
-              >
-                {title}
-              </h1>
-              <div className="h-1 w-8 mx-auto rounded-full" style={{ background: primaryColor }} />
-              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] pt-1">
-                {tenantBranding ? `Plataforma ${storeName}` : 'Acessar Plataforma'}
-              </p>
+            <p className="mb-3 text-[11px] font-black uppercase tracking-[0.28em] text-white/62">Acesso da empresa</p>
+            <h1 className="max-w-[620px] text-5xl font-black leading-[0.98] tracking-tight xl:text-6xl">
+              {storeName}
+            </h1>
+            <div className="mt-8 flex max-w-md items-center gap-3 border-l border-white/20 pl-4 text-sm font-medium leading-relaxed text-white/68">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-white/80" />
+              <span>Ambiente isolado para a equipe desta empresa.</span>
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleAuth} className="space-y-4 w-full">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between px-1">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Empresa</Label>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.26em] text-white/45">
+            <BadgeCheck className="h-4 w-4" />
+            Laris ERP
+          </div>
+        </section>
+
+        <section className="mx-auto flex w-full max-w-[470px] flex-col rounded-lg border border-white/70 bg-white/95 p-4 shadow-[0_28px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90 sm:p-5">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-500">Portal de acesso</p>
+              <h2 className="text-2xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-3xl">{title}</h2>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{formSubtitle}</p>
+            </div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
+              {logoUrl ? (
+                <img src={logoUrl} alt={storeName} className="h-full w-full object-contain p-1.5" />
+              ) : (
+                <Store className="h-5 w-5" style={{ color: primaryColor }} />
+              )}
+            </div>
+          </div>
+
+          {!recoveryMode && (
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+              <button
+                type="button"
+                onClick={() => setIsLogin(true)}
+                className={`h-10 rounded-md text-xs font-black uppercase tracking-[0.16em] transition-all ${isLogin ? 'bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-500 hover:text-zinc-950 dark:hover:text-white'}`}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLogin(false)}
+                className={`h-10 rounded-md text-xs font-black uppercase tracking-[0.16em] transition-all ${!isLogin ? 'bg-white text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-500 hover:text-zinc-950 dark:hover:text-white'}`}
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-zinc-500">Empresa</Label>
                 {tenantBranding && !brandingLoading && (
-                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                  <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                    <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
                     {tenantBranding.tenant_name}
                   </span>
                 )}
               </div>
               <div className="relative">
+                <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <Input
                   value={companyCode}
                   onChange={e => setCompanyCode(normalizeTenantHint(e.target.value))}
                   placeholder="laris-acess-rios ou tmcar"
-                  className="h-12 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5 pr-10"
+                  className="h-12 rounded-lg border-zinc-200 bg-white pl-10 pr-10 font-semibold shadow-none dark:border-zinc-800 dark:bg-zinc-900"
                   autoComplete="organization"
                 />
                 {brandingLoading && (
-                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-zinc-400" />
+                  <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-zinc-400" />
                 )}
               </div>
-              <p className="px-1 text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-300 dark:text-zinc-700">
-                Use o codigo enviado pela sua empresa.
-              </p>
             </div>
 
             {!isLogin && !recoveryMode && (
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Nome Completo</Label>
-                <Input
-                  required
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Seu nome"
-                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5"
-                />
+              <div className="space-y-2">
+                <Label className="text-zinc-500">Nome completo</Label>
+                <div className="relative">
+                  <UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <Input
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Seu nome"
+                    className="h-12 rounded-lg border-zinc-200 bg-white pl-10 font-semibold shadow-none dark:border-zinc-800 dark:bg-zinc-900"
+                  />
+                </div>
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">E-mail</Label>
+            <div className="space-y-2">
+              <Label className="text-zinc-500">E-mail</Label>
               <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <Input
                   required
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="email@empresa.com"
-                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5 pr-10"
+                  className="h-12 rounded-lg border-zinc-200 bg-white pl-10 pr-10 font-semibold shadow-none dark:border-zinc-800 dark:bg-zinc-900"
                   autoComplete="email"
                 />
                 {brandingLoading && !companyCode && (
-                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-zinc-400" />
+                  <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-zinc-400" />
                 )}
               </div>
-              {tenantBranding && !brandingLoading && (
-                <div className="flex items-center gap-2 px-1 pt-1 animate-in fade-in duration-300">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-                    {tenantBranding.tenant_name} identificado
-                  </span>
-                </div>
-              )}
             </div>
 
             {!recoveryMode && (
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center px-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Senha</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-zinc-500">Senha</Label>
                   {isLogin && (
                     <button
                       type="button"
                       onClick={() => setRecoveryMode(true)}
-                      className="text-[9px] font-black text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest"
+                      className="text-[11px] font-bold text-zinc-500 transition-colors hover:text-zinc-950 dark:hover:text-white"
                     >
-                      Esqueceu?
+                      Esqueci minha senha
                     </button>
                   )}
                 </div>
-                <Input
-                  required
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold tracking-widest focus:ring-0 transition-all pl-5"
-                  autoComplete={isLogin ? 'current-password' : 'new-password'}
-                />
+                <div className="relative">
+                  <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <Input
+                    required
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Digite sua senha"
+                    className="h-12 rounded-lg border-zinc-200 bg-white pl-10 font-semibold shadow-none dark:border-zinc-800 dark:bg-zinc-900"
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  />
+                </div>
               </div>
             )}
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-16 mt-4 text-white font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl transition-all active:scale-[0.97] shadow-2xl relative overflow-hidden group border-none"
-              style={{ background: primaryColor }}
+              className="mt-2 h-12 w-full rounded-lg border-none text-white shadow-lg transition-all active:scale-[0.98]"
+              style={{ background: primaryColor, boxShadow: `0 16px 36px ${primaryColor}2e` }}
             >
               {loading ? (
-                <Loader2 className="animate-spin h-5 w-5" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <span className="flex items-center gap-3">
-                  {title}
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em]">
+                  {actionLabel}
+                  <ArrowRight className="h-4 w-4" />
                 </span>
               )}
             </Button>
           </form>
 
-          {/* Toggle */}
-          <div className="mt-8">
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <button
               type="button"
               onClick={() => {
                 if (recoveryMode) setRecoveryMode(false);
                 else setIsLogin(!isLogin);
               }}
-              className="group flex flex-col items-center gap-1"
+              className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500 transition-colors hover:text-zinc-950 dark:hover:text-white"
             >
-              <span className="text-[10px] font-black text-zinc-300 dark:text-zinc-600 uppercase tracking-widest transition-colors group-hover:text-zinc-400">
-                {recoveryMode ? 'Voltar para o portal' : isLogin ? 'Solicitar Novo Cadastro' : 'Já possui credenciais?'}
-              </span>
-              <div className="h-0.5 w-4 bg-zinc-100 dark:bg-zinc-800 transition-all group-hover:w-8 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700" />
+              {recoveryMode ? 'Voltar ao login' : isLogin ? 'Novo cadastro' : 'Ja tenho acesso'}
             </button>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 dark:text-zinc-700">
+              Laris ERP
+            </span>
           </div>
-
-          <p className="mt-auto pt-8 sm:pt-16 text-[9px] font-black text-zinc-200 dark:text-zinc-900 uppercase tracking-[0.5em]">
-            POWERED BY LARIS ERP
-          </p>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

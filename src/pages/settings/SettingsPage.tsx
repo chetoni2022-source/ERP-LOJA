@@ -189,16 +189,19 @@ export default function SettingsPage() {
 
   const resolveActiveTenantId = async () => {
     if (tenantId) return tenantId;
+    return null;
+  };
 
-    const { data: laris } = await supabase
-      .from('tenants')
-      .select('id')
-      .eq('status', 'active')
-      .or('slug.eq.laris,slug.eq.laris-acess-rios,name.ilike.Laris%')
-      .limit(1)
+  const rememberTenantForLogin = async (finalTenantId: string) => {
+    localStorage.setItem('lastTenantId', finalTenantId);
+    const { data } = await supabase
+      .from('tenant_login_branding')
+      .select('tenant_slug')
+      .eq('tenant_id', finalTenantId)
       .maybeSingle();
-
-    return laris?.id ?? null;
+    if (data?.tenant_slug) {
+      localStorage.setItem('lastTenantSlug', data.tenant_slug);
+    }
   };
 
   const saveStoreSettings = async (finalTenantId: string, payload: Record<string, unknown>) => {
@@ -221,20 +224,9 @@ export default function SettingsPage() {
   const handleSaveBranding = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     
-    let activeTenantId = await resolveActiveTenantId();
+    const activeTenantId = await resolveActiveTenantId();
     
     // Fallback de emergência para garantir que identifique a empresa (Laris)
-    if (!activeTenantId) {
-      const { data: laris } = await supabase
-        .from('tenants')
-        .select('id')
-        .eq('status', 'active')
-        .or('slug.eq.laris,slug.eq.laris-acess-rios,name.ilike.Laris%')
-        .limit(1)
-        .maybeSingle();
-      if (laris) activeTenantId = laris.id;
-    }
-
     if (!activeTenantId) {
       toastError('Erro: Empresa não identificada. Selecione uma empresa ou recarregue a página.');
       return;
@@ -298,6 +290,7 @@ export default function SettingsPage() {
       if (faviconUrl) settingsPayload.favicon_url = faviconUrl;
 
       await saveStoreSettings(finalTenantId, settingsPayload);
+      await rememberTenantForLogin(finalTenantId);
 
       setLogoFile(null); setFaviconFile(null); setLoginBgFile(null);
       setLogoPreview(null); setFaviconPreview(null); setLoginBgPreview(null);
@@ -317,6 +310,7 @@ export default function SettingsPage() {
       if (!activeTenantId) throw new Error('Empresa nÃ£o identificada para salvar a exibiÃ§Ã£o.');
       const payload = { logo_width: logoWidth, logo_height: logoHeight, logo_fit: logoFit, logo_position: logoPosition };
       await saveStoreSettings(activeTenantId, payload);
+      await rememberTenantForLogin(activeTenantId);
       success('Configurações de exibição salvas!');
     } catch (err: any) { 
       console.error('Error saving display settings:', err);
@@ -348,6 +342,7 @@ export default function SettingsPage() {
       };
       
       await saveStoreSettings(activeTenantId, payload);
+      await rememberTenantForLogin(activeTenantId);
       success('Configurações de Marketplaces salvas no ERP!');
     } catch (err: any) { 
       console.error(err);
@@ -393,14 +388,14 @@ export default function SettingsPage() {
   const loginBgImg = loginBgPreview || (loginBgLoadFailed ? null : getProxyUrl(currentLoginBgUrl));
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center text-foreground">Configurações Base</h1>
         <p className="text-muted-foreground">Gerencie as preferências da loja, personalize sua marca e conecte ferramentas.</p>
         
         {/* Contexto de Tenant para Admin/Super Admin */}
         {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
-          <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between">
+          <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
                 <Store size={16} />
@@ -408,13 +403,13 @@ export default function SettingsPage() {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Contexto de Edição</p>
                 <p className="text-sm font-bold text-foreground">
-                  {tenantId ? `Editando Tenant ID: ${tenantId}` : 'Nenhuma empresa selecionada (Laris Master)'}
+                  {tenantId ? `Editando Tenant ID: ${tenantId}` : 'Nenhuma empresa selecionada'}
                 </p>
               </div>
             </div>
             {!tenantId && (
               <p className="text-[10px] italic text-muted-foreground">
-                Dica: Selecione uma empresa no Dashboard para editar uma marca específica.
+                Dica: selecione uma empresa no Painel Master antes de editar uma marca.
               </p>
             )}
           </div>
@@ -425,19 +420,19 @@ export default function SettingsPage() {
       <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <button 
           onClick={() => setActiveTab('geral')}
-          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'geral' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
         >
           <Settings2 size={16} /> Geral & Equipe
         </button>
         <button 
           onClick={() => setActiveTab('marca')}
-          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'marca' ? 'bg-zinc-950 text-white border-zinc-950 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-muted/80'}`}
         >
           <Palette size={16} /> Identidade Visual
         </button>
         <button 
           onClick={() => setActiveTab('integracoes')}
-          className={`flex-none flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'integracoes' ? 'bg-[#f53d2d] text-white border-[#f53d2d]/80 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-[#f53d2d]/10 hover:text-[#f53d2d]'}`}
+          className={`flex-none flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-[11px] md:text-[13px] uppercase tracking-widest whitespace-nowrap transition-all border snap-start ${activeTab === 'integracoes' ? 'bg-[#f53d2d] text-white border-[#f53d2d]/80 shadow-lg scale-[1.02]' : 'bg-card text-muted-foreground border-border hover:bg-[#f53d2d]/10 hover:text-[#f53d2d]'}`}
         >
           <Blocks size={16} /> Integrações Omnichannel
         </button>

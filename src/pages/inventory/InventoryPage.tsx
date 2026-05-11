@@ -839,7 +839,7 @@ export default function InventoryPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-20">
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-end">
         <div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1 text-foreground">Gestão de Peças</h1>
@@ -885,7 +885,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between bg-muted/20 items-center">
+        <div className="p-3 md:p-4 border-b border-border flex flex-col md:flex-row gap-3 md:gap-4 justify-between bg-muted/20 items-stretch md:items-center">
           <div className="flex gap-2 w-full md:max-w-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -898,7 +898,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
             <select
               className="h-11 px-3 bg-background border border-border text-foreground text-sm font-semibold rounded-md shadow-sm outline-none focus:ring-1 focus:ring-primary flex-1 md:flex-none min-w-[140px]"
               value={categoryFilter}
@@ -972,9 +972,9 @@ export default function InventoryPage() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto bg-muted/10 p-6">
+          <div className="flex-1 overflow-y-auto bg-muted/10 p-3 md:p-6">
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
                 {processedProducts.map(product => {
                   const rawImage = product.images?.[0] || product.image_url;
                   const displayImage = getProxyUrl(rawImage);
@@ -994,6 +994,8 @@ export default function InventoryPage() {
                         <img
                           src={displayImage}
                           alt={product.name}
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             if (rawImage && e.currentTarget.src !== rawImage) {
                               e.currentTarget.src = rawImage;

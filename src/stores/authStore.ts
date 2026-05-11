@@ -145,6 +145,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             whatsappNumber: brandingData?.whatsapp_number ?? null,
           };
           set({ branding });
+          localStorage.setItem('lastTenantId', activeTenantId);
+          localStorage.setItem('lastTenantSlug', tenantData.slug);
 
           if (brandingData?.favicon_url) {
             let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;

@@ -66,9 +66,57 @@ export default function App() {
   const { setUser, loading } = useAuthStore();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    const clearStoredAuthTokens = () => {
+      [localStorage, sessionStorage].forEach((storage) => {
+        Object.keys(storage)
+          .filter((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))
+          .forEach((key) => storage.removeItem(key));
+      });
+    };
+
+    const clearUnsafeAuthTokens = () => {
+      [localStorage, sessionStorage].forEach((storage) => {
+        Object.keys(storage)
+          .filter((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))
+          .forEach((key) => {
+            try {
+              const raw = storage.getItem(key);
+              const parsed = raw ? JSON.parse(raw) : null;
+              const session = parsed?.currentSession ?? parsed;
+              const expiresAt = Number(session?.expires_at ?? 0);
+              const secondsUntilExpiry = expiresAt - Math.floor(Date.now() / 1000);
+              const needsImmediateRefresh = expiresAt > 0 && secondsUntilExpiry <= 120;
+              if (!session?.refresh_token || needsImmediateRefresh) storage.removeItem(key);
+            } catch {
+              storage.removeItem(key);
+            }
+          });
+      });
+    };
+
+    const clearInvalidSession = async () => {
+      clearStoredAuthTokens();
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } finally {
+        clearStoredAuthTokens();
+        setUser(null);
+      }
+    };
+
+    clearUnsafeAuthTokens();
+
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          clearInvalidSession();
+          return;
+        }
+        setUser(session?.user ?? null);
+      })
+      .catch(() => {
+        clearInvalidSession();
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);

@@ -154,7 +154,7 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -162,7 +162,7 @@ export default function ServicesPage() {
           </h1>
           <p className="text-sm text-muted-foreground">Cadastre mão de obra, pacotes, diagnósticos e serviços vendidos pela empresa.</p>
         </div>
-        <Button onClick={openNew} className="h-11 px-5 font-bold bg-primary text-primary-foreground rounded-xl shadow-md">
+        <Button onClick={openNew} className="h-11 px-5 font-bold bg-primary text-primary-foreground rounded-xl shadow-md w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> Novo Serviço
         </Button>
       </div>
@@ -188,7 +188,7 @@ export default function ServicesPage() {
           <p className="text-sm mt-1">Use o botão acima para criar o primeiro serviço da empresa.</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
           {filteredServices.map((service) => (
             <div key={service.id} className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
@@ -242,7 +242,7 @@ export default function ServicesPage() {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
           <form
             onSubmit={handleSave}
-            className="relative bg-card w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
+            className="relative bg-card w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border z-10 overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 max-h-[calc(100dvh-5rem)] sm:max-h-[90vh] flex flex-col"
           >
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <h3 className="font-black text-lg text-foreground">{editing ? 'Editar Serviço' : 'Novo Serviço'}</h3>
@@ -251,7 +251,7 @@ export default function ServicesPage() {
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto">
               <div>
                 <Label>Nome *</Label>
                 <Input
@@ -296,7 +296,7 @@ export default function ServicesPage() {
               </label>
             </div>
 
-            <div className="p-4 border-t border-border flex gap-3">
+            <div className="p-4 border-t border-border flex gap-3 shrink-0">
               <Button type="button" onClick={() => setModalOpen(false)} className="flex-1 h-12 bg-muted border border-border text-foreground hover:bg-muted/80">
                 Cancelar
               </Button>

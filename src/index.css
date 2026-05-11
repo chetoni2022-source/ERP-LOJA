@@ -103,6 +103,7 @@
     width: 100%;
     position: relative;
     overscroll-behavior-x: none;
+    text-rendering: optimizeLegibility;
   }
 
   #root {
@@ -113,6 +114,39 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-mobile-stack] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  [data-mobile-full] {
+    width: 100%;
   }
 }
 

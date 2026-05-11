@@ -186,9 +186,9 @@ export default function UnitEconomicsPage() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-8 animate-in fade-in duration-700 pb-24 md:pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card/60 backdrop-blur-md border border-border/40 p-6 md:p-10 rounded-[3rem] shadow-2xl shadow-primary/5 relative overflow-hidden group">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6 bg-card/60 backdrop-blur-md border border-border/40 p-4 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl shadow-primary/5 relative overflow-hidden group">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         <div className="space-y-1 relative z-10">
           <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export default function UnitEconomicsPage() {
                className="pl-11 h-14 bg-background/80 border-border/60 font-bold rounded-[1.5rem] focus:ring-primary/20 transition-all shadow-inner text-lg"
              />
           </div>
-          <div className="flex bg-muted/40 p-1.5 rounded-[1.5rem] border border-border/40 gap-1.5 shrink-0">
+          <div className="flex bg-muted/40 p-1.5 rounded-[1.5rem] border border-border/40 gap-1.5 shrink-0 overflow-x-auto w-full sm:w-auto">
              <button 
                onClick={() => setVisiblePlatforms(p => ({ ...p, site: !p.site }))}
                className={cn("px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", visiblePlatforms.site ? "bg-primary text-primary-foreground shadow-lg scale-105" : "text-muted-foreground hover:bg-muted")}

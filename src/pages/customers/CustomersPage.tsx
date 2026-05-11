@@ -126,7 +126,7 @@ export default function CustomersPage() {
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-5 animate-in fade-in duration-300 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-5 animate-in fade-in duration-300 pb-24 md:pb-20">
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${selectedCustomer ? 'hidden md:flex' : ''}`}>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5 flex items-center gap-2">

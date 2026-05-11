@@ -588,15 +588,15 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 pb-16">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5 text-foreground">Visão Geral</h1>
           <p className="text-sm text-muted-foreground">Métricas e acompanhamento financeiro da loja.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={exportCSV} disabled={salesData.length === 0} className="h-10 px-3 bg-muted border border-border text-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-xs font-bold gap-1.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <Button onClick={exportCSV} disabled={salesData.length === 0} className="h-10 px-3 bg-muted border border-border text-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-xs font-bold gap-1.5 w-full sm:w-auto">
             <Download className="h-3.5 w-3.5" /> Exportar CSV
           </Button>
           <DateRangePicker
@@ -657,7 +657,7 @@ export default function DashboardPage() {
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {statCards.map((card, i) => (
               <div key={i} className="bg-card border border-border p-4 md:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-[80px] pointer-events-none" />
@@ -677,13 +677,13 @@ export default function DashboardPage() {
           {/* --- INVENTORY POTENTIAL SECTION --- */}
           <div className="grid gap-6 md:grid-cols-7">
             {/* Main 3D Chart: Potencial por Canal */}
-            <div className="md:col-span-5 bg-card border border-border rounded-2xl shadow-xl p-6 relative overflow-hidden group/pot">
+            <div className="md:col-span-5 bg-card border border-border rounded-2xl shadow-xl p-4 md:p-6 relative overflow-hidden group/pot">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 pointer-events-none blur-3xl opacity-50" />
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full -ml-16 -mb-16 pointer-events-none blur-3xl opacity-50" />
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 min-w-0">
                 <div className="min-w-0">
-                  <h3 className="font-black text-2xl text-foreground flex items-center gap-3 tracking-tight italic">
-                    <Award className="text-yellow-500 h-8 w-8 animate-bounce" /> 
+                  <h3 className="font-black text-lg md:text-2xl text-foreground flex items-center gap-2 md:gap-3 tracking-tight italic leading-tight">
+                    <Award className="text-yellow-500 h-5 w-5 md:h-8 md:w-8 animate-bounce shrink-0" /> 
                     POTENCIAL DO ESTOQUE
                     <MetricInfo title="Potencial de Retorno" content="Este gráfico mostra quanto você pode lucrar se vender todo o seu estoque atual em cada canal. O card ao lado soma o lucro máximo possível para cada peça individualmente (Visão Otimista)." />
                   </h3>
@@ -705,7 +705,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="h-[350px] w-full">
+              <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stockProjections.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={8}>
                     <defs>
@@ -973,13 +973,13 @@ export default function DashboardPage() {
 
           {/* Stock Health Row */}
           <div className="grid gap-4 md:gap-6 md:grid-cols-1">
-             <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col h-[300px]">
+             <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col min-h-[300px] md:h-[300px]">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-base md:text-xl text-foreground flex items-center">
                   <PackageSearch className="h-4 w-4 md:h-5 md:w-5 text-primary mr-2" /> Saúde do Inventário
                 </h3>
               </div>
-              <div className="flex-1 flex flex-col md:flex-row items-center gap-12 overflow-hidden">
+              <div className="flex-1 flex flex-col md:flex-row items-center gap-4 md:gap-12 overflow-hidden">
                 <div className="h-full w-full max-w-[180px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>

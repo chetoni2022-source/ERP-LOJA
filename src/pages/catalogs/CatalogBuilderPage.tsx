@@ -174,7 +174,7 @@ export default function CatalogBuilderPage() {
   // ── Form ────────────────────────────────────────────────────────────────────
   if (mode !== 'list') {
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300 pb-20 space-y-6">
+      <div className="p-3 sm:p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300 pb-24 md:pb-20 space-y-4 md:space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{mode === 'edit' ? 'Editar Catálogo' : 'Novo Catálogo'}</h1>
@@ -471,7 +471,7 @@ export default function CatalogBuilderPage() {
 
   // ── List ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+    <div className="p-3 sm:p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300 pb-24 md:pb-20">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-0.5">Catálogos Vitrine</h1>

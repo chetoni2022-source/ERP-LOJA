@@ -506,7 +506,7 @@ export default function SalesPage() {
   );
 
   return (
-    <div className="p-3 md:p-6 max-w-7xl mx-auto animate-in fade-in duration-500 pb-20">
+    <div className="p-3 md:p-6 max-w-7xl mx-auto animate-in fade-in duration-500 pb-24 md:pb-20">
       
       {/* ── Header Compacto ────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -707,10 +707,11 @@ export default function SalesPage() {
                 </div>
               ) : (
                 cart.map((item, i) => (
-                  <div key={i} className="group relative flex items-center gap-3 p-3 bg-muted/10 hover:bg-muted/20 border border-border/30 rounded-xl transition-all animate-in slide-in-from-right-4 duration-300">
+                  <div key={i} className="group relative flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-muted/10 hover:bg-muted/20 border border-border/30 rounded-xl transition-all animate-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 w-full min-w-0">
                     <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg border border-border/50 overflow-hidden bg-card flex-shrink-0">
                       {item.product.images?.[0] || item.product.image_url ? (
-                        <img src={item.product.images?.[0] || item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                        <img src={item.product.images?.[0] || item.product.image_url} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       ) : (
                         <Package className="w-full h-full p-2 md:p-3 text-muted-foreground/20" />
                       )}
@@ -720,8 +721,9 @@ export default function SalesPage() {
                       <p className="font-bold text-xs text-foreground truncate">{item.product.name}</p>
                       <p className="text-[10px] text-muted-foreground font-medium">{fmt(item.product.sale_price || item.product.price)} un.</p>
                     </div>
+                    </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                        <div className="flex items-center bg-card border border-border/40 rounded-lg overflow-hidden h-8 shadow-sm">
                          <button onClick={() => updateCartQty(item.product.id, -1)} className="w-7 h-full hover:bg-muted transition-colors flex items-center justify-center border-r border-border/40"><Minus size={12} /></button>
                          <span className="w-7 text-[11px] font-black text-center">{item.quantity}</span>

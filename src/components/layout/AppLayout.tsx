@@ -78,23 +78,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const fetchSettings = async () => {
-      let query = supabase.from('store_settings')
-        .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
-        .order('updated_at', { ascending: false, nullsFirst: false })
-        .limit(1);
-
-      query = tenantId ? query.eq('tenant_id', tenantId) : query.eq('user_id', user.id);
-
-      const { data } = await query.maybeSingle();
-
-      if (data) {
-        applySettings(data);
-      } else {
-        resetSettings();
-      }
-    };
-
     const applySettings = (data: StoreSettings) => {
       const proxyLogo = getProxyUrl(data.logo_url);
       const proxyFavicon = getProxyUrl(data.favicon_url);
@@ -131,7 +114,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       });
     };
 
+    const fetchSettings = async () => {
+      if (!tenantId) {
+        resetSettings();
+        return;
+      }
+
+      const { data } = await supabase.from('store_settings')
+        .select('store_name, logo_url, favicon_url, logo_width, logo_height, logo_fit, logo_position')
+        .eq('tenant_id', tenantId)
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        applySettings(data);
+      } else {
+        resetSettings();
+      }
+    };
+
     fetchSettings();
+    if (!tenantId) return;
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -142,7 +146,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           event: '*',
           schema: 'public',
           table: 'store_settings',
-          filter: tenantId ? `tenant_id=eq.${tenantId}` : `user_id=eq.${user.id}`
+          filter: `tenant_id=eq.${tenantId}`
         },
         (payload) => {
           if (payload.new) applySettings(payload.new);
@@ -194,7 +198,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden relative w-full">
+    <div className="flex h-[100dvh] bg-background overflow-hidden relative w-full">
       {/* ── Mobile Top Bar ────────────────────────────────── */}
       <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-card border-b border-border z-30 fixed top-0 w-full shadow-sm">
           <div className="flex items-center gap-3 overflow-hidden h-full py-1">
@@ -328,7 +332,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Main ──────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 max-w-full md:max-w-none overflow-x-hidden overflow-y-auto bg-background/50 pt-14 md:pt-0 pb-16 md:pb-0 w-full relative">
+      <main className="flex-1 flex flex-col min-w-0 max-w-full md:max-w-none overflow-x-hidden overflow-y-auto overscroll-contain bg-background/50 pt-14 md:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 w-full relative">
         {/* Preview Mode Banner */}
         {previewTenantId && profile?.role === 'super_admin' && (
           <div className="bg-blue-600 px-4 py-2 flex items-center justify-between gap-3 text-white z-[60] sticky top-0 md:relative">
@@ -373,7 +377,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ── Bottom Navigation Bar (Mobile Only) ───────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex items-stretch h-16 shadow-lg safe-area-inset-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex items-stretch h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] shadow-lg safe-area-inset-bottom">
         {bottomNavItems.map((item) => {
           const isActive = item.path !== '__menu__' && location.pathname === item.path;
           const isMenu = item.path === '__menu__';

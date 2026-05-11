@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
@@ -9,27 +9,28 @@ import { Loader2, ArrowRight, Building2 } from 'lucide-react';
 interface TenantLoginBranding {
   store_name: string | null;
   logo_url: string | null;
+  favicon_url: string | null;
   login_bg_url: string | null;
   login_bg_color: string | null;
   login_bg_mode: 'image' | 'color' | 'gradient' | null;
   primary_color: string | null;
   tenant_id: string;
+  tenant_slug: string;
   tenant_name: string;
 }
 
-interface TenantBrandingRelation {
-  store_name?: string | null;
-  logo_url?: string | null;
-  login_bg_url?: string | null;
-  login_bg_color?: string | null;
-  login_bg_mode?: 'image' | 'color' | 'gradient' | null;
-  primary_color?: string | null;
-}
-
-interface TenantByDomain {
-  id: string;
-  name: string;
-  tenant_branding?: TenantBrandingRelation | TenantBrandingRelation[] | null;
+interface LoginBrandingRow {
+  tenant_id: string;
+  tenant_slug: string;
+  tenant_name: string;
+  store_name: string | null;
+  logo_url: string | null;
+  favicon_url: string | null;
+  login_bg_url: string | null;
+  login_bg_color: string | null;
+  login_bg_mode: 'image' | 'color' | 'gradient' | null;
+  primary_color: string | null;
+  updated_at?: string | null;
 }
 
 interface TeamInvite {
@@ -37,14 +38,75 @@ interface TeamInvite {
   tenant_id: string | null;
 }
 
-const getTenantBranding = (branding: TenantByDomain['tenant_branding']) =>
-  Array.isArray(branding) ? branding[0] : branding;
+const LOGIN_BRANDING_COLUMNS = `
+  tenant_id,
+  tenant_slug,
+  tenant_name,
+  store_name,
+  logo_url,
+  favicon_url,
+  login_bg_url,
+  login_bg_color,
+  login_bg_mode,
+  primary_color,
+  updated_at
+`;
+
+const GENERIC_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const GENERIC_SUBDOMAINS = new Set(['www', 'erp', 'app', 'painel', 'sistema']);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeTenantHint(value: string | null | undefined) {
+  return (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^@+/, '')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getTenantHintFromHost() {
+  const host = window.location.hostname.toLowerCase();
+  if (GENERIC_HOSTS.has(host) || host.endsWith('.vercel.app')) return '';
+  const [firstPart] = host.split('.');
+  return firstPart && !GENERIC_SUBDOMAINS.has(firstPart) ? normalizeTenantHint(firstPart) : '';
+}
+
+function getInitialTenantHint(search: string) {
+  const params = new URLSearchParams(search);
+  return normalizeTenantHint(
+    params.get('empresa') ||
+    params.get('tenant') ||
+    params.get('loja') ||
+    getTenantHintFromHost() ||
+    localStorage.getItem('lastTenantSlug') ||
+    localStorage.getItem('lastTenantId')
+  );
+}
+
+function toTenantLoginBranding(row: LoginBrandingRow): TenantLoginBranding {
+  return {
+    store_name: row.store_name ?? null,
+    logo_url: row.logo_url ?? null,
+    favicon_url: row.favicon_url ?? null,
+    login_bg_url: row.login_bg_url ?? null,
+    login_bg_color: row.login_bg_color ?? null,
+    login_bg_mode: row.login_bg_mode ?? null,
+    primary_color: row.primary_color ?? null,
+    tenant_id: row.tenant_id,
+    tenant_slug: row.tenant_slug,
+    tenant_name: row.tenant_name,
+  };
+}
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [brandingLoading, setBrandingLoading] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
+  const location = useLocation();
+  const [companyCode, setCompanyCode] = useState(() => getInitialTenantHint(window.location.search));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -56,61 +118,112 @@ export default function AuthPage() {
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
 
-  // Detect tenant by email domain when user stops typing
-  const detectTenantByEmail = useCallback(async (emailValue: string) => {
-    if (!emailValue || !emailValue.includes('@')) {
-      setTenantBranding(null);
-      return;
+  const rememberTenant = useCallback((branding: TenantLoginBranding) => {
+    localStorage.setItem('lastTenantId', branding.tenant_id);
+    localStorage.setItem('lastTenantSlug', branding.tenant_slug);
+  }, []);
+
+  const loadTenantBranding = useCallback(async (
+    tenantHint: string,
+    options: { clearOnMiss?: boolean; persist?: boolean } = {}
+  ) => {
+    const hint = normalizeTenantHint(tenantHint);
+    if (!hint) {
+      if (options.clearOnMiss) setTenantBranding(null);
+      return null;
     }
 
     setBrandingLoading(true);
     try {
-      const domain = emailValue.split('@')[1]?.toLowerCase();
-      if (!domain) {
-        setTenantBranding(null);
-        return;
+      let query = supabase
+        .from('tenant_login_branding')
+        .select(LOGIN_BRANDING_COLUMNS)
+        .limit(1);
+
+      query = UUID_RE.test(hint)
+        ? query.eq('tenant_id', hint)
+        : query.eq('tenant_slug', hint);
+
+      const { data, error } = await query.maybeSingle<LoginBrandingRow>();
+      if (error) throw error;
+
+      if (data) {
+        const branding = toTenantLoginBranding(data);
+        setTenantBranding(branding);
+        if (options.persist) rememberTenant(branding);
+        return branding;
       }
 
-      const { data: tenantByDomain } = await supabase
-        .from('tenants')
-        .select(`
-          id,
-          name,
-          tenant_branding (
-            store_name,
-            logo_url,
-            login_bg_url,
-            login_bg_color,
-            login_bg_mode,
-            primary_color
-          )
-        `)
-        .ilike('owner_email', `%@${domain}`)
-        .eq('status', 'active')
-        .maybeSingle<TenantByDomain>();
-
-      if (tenantByDomain) {
-        const branding = getTenantBranding(tenantByDomain.tenant_branding);
-        setTenantBranding({
-          store_name: branding?.store_name ?? null,
-          logo_url: branding?.logo_url ?? null,
-          login_bg_url: branding?.login_bg_url ?? null,
-          login_bg_color: branding?.login_bg_color ?? null,
-          login_bg_mode: branding?.login_bg_mode ?? null,
-          primary_color: branding?.primary_color ?? null,
-          tenant_id: tenantByDomain.id,
-          tenant_name: tenantByDomain.name,
-        });
-        return;
-      }
-
-      setTenantBranding(null);
+      if (options.clearOnMiss) setTenantBranding(null);
+      return null;
     } catch {
-      setTenantBranding(null);
+      if (options.clearOnMiss) setTenantBranding(null);
+      return null;
     } finally {
       setBrandingLoading(false);
     }
-  }, []);
+  }, [rememberTenant]);
+
+  const detectTenantByEmail = useCallback(async (emailValue: string) => {
+    if (!emailValue || !emailValue.includes('@') || companyCode) return;
+    const domain = emailValue.split('@')[1]?.toLowerCase();
+    if (!domain) return;
+
+    const ignored = new Set(['gmail', 'hotmail', 'outlook', 'yahoo', 'icloud', 'live', 'uol', 'bol', 'terra']);
+    const candidates = domain
+      .split('.')
+      .map(normalizeTenantHint)
+      .filter((part) => part.length > 2 && !ignored.has(part));
+
+    for (const candidate of candidates) {
+      const branding = await loadTenantBranding(candidate, { persist: true });
+      if (branding) {
+        setCompanyCode(branding.tenant_slug);
+        return;
+      }
+    }
+  }, [companyCode, loadTenantBranding]);
+
+  const loadLocalFallbackBranding = useCallback(async () => {
+    if (!GENERIC_HOSTS.has(window.location.hostname.toLowerCase())) return;
+
+    setBrandingLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tenant_login_branding')
+        .select(LOGIN_BRANDING_COLUMNS)
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle<LoginBrandingRow>();
+
+      if (error || !data) return;
+      const branding = toTenantLoginBranding(data);
+      setTenantBranding(branding);
+      setCompanyCode(branding.tenant_slug);
+      rememberTenant(branding);
+    } finally {
+      setBrandingLoading(false);
+    }
+  }, [rememberTenant]);
+
+  useEffect(() => {
+    const nextHint = getInitialTenantHint(location.search);
+    if (nextHint && nextHint !== companyCode) {
+      setCompanyCode(nextHint);
+    }
+  }, [companyCode, location.search]);
+
+  useEffect(() => {
+    const hint = normalizeTenantHint(companyCode);
+    if (!hint) {
+      loadLocalFallbackBranding();
+      return;
+    }
+    const timer = setTimeout(() => {
+      loadTenantBranding(hint, { clearOnMiss: true, persist: true });
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [companyCode, loadLocalFallbackBranding, loadTenantBranding]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,6 +249,9 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
+        if (!tenantBranding?.tenant_id) {
+          throw new Error('Informe o codigo da empresa para criar a conta.');
+        }
         const normalizedEmail = email.trim().toLowerCase();
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: normalizedEmail,
@@ -162,7 +278,7 @@ export default function AuthPage() {
             full_name: name,
             role: invite?.role || 'admin',
           };
-          const tenantId = invite?.tenant_id || tenantBranding?.tenant_id;
+          const tenantId = invite?.tenant_id || tenantBranding.tenant_id;
           if (tenantId) {
             profilePayload.tenant_id = tenantId;
           }
@@ -186,6 +302,21 @@ export default function AuthPage() {
   const bgMode = tenantBranding?.login_bg_mode || 'image';
   const logoUrl = tenantBranding?.logo_url || null;
   const storeName = tenantBranding?.store_name || tenantBranding?.tenant_name || 'ERP';
+
+  useEffect(() => {
+    if (tenantBranding?.favicon_url) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = `${tenantBranding.favicon_url}?v=${Date.now()}`;
+    }
+    if (tenantBranding) {
+      document.title = `${storeName} | ERP`;
+    }
+  }, [storeName, tenantBranding]);
 
   return (
     <div className="min-h-[100dvh] flex items-stretch bg-black overflow-hidden font-sans">
@@ -256,16 +387,16 @@ export default function AuthPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/95 to-white dark:from-black/70 dark:via-[#050505]/95 dark:to-[#050505]" />
         </div>
 
-        <div className="relative z-10 w-full px-8 py-10 max-w-[440px] mx-auto flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
+        <div className="relative z-10 w-full px-5 sm:px-8 py-6 sm:py-10 max-w-[440px] mx-auto flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
           
           {/* Logo / Branding */}
-          <div className="mb-12 flex flex-col items-center w-full">
+          <div className="mb-8 sm:mb-12 flex flex-col items-center w-full">
             {logoUrl ? (
               <div className="mb-8 flex items-center justify-center w-full transition-transform duration-500 hover:scale-[1.02]">
                 <img
                   src={logoUrl}
                   alt={storeName}
-                  className="h-28 sm:h-32 w-auto max-w-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
+                  className="h-20 sm:h-28 md:h-32 w-auto max-w-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]"
                 />
               </div>
             ) : (
@@ -299,6 +430,32 @@ export default function AuthPage() {
 
           {/* Form */}
           <form onSubmit={handleAuth} className="space-y-4 w-full">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Empresa</Label>
+                {tenantBranding && !brandingLoading && (
+                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                    {tenantBranding.tenant_name}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  value={companyCode}
+                  onChange={e => setCompanyCode(normalizeTenantHint(e.target.value))}
+                  placeholder="laris-acess-rios ou tmcar"
+                  className="h-12 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5 pr-10"
+                  autoComplete="organization"
+                />
+                {brandingLoading && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-zinc-400" />
+                )}
+              </div>
+              <p className="px-1 text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-300 dark:text-zinc-700">
+                Use o codigo enviado pela sua empresa.
+              </p>
+            </div>
+
             {!isLogin && !recoveryMode && (
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Nome Completo</Label>
@@ -324,7 +481,7 @@ export default function AuthPage() {
                   className="h-14 text-sm rounded-2xl border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 font-bold focus:ring-0 transition-all pl-5 pr-10"
                   autoComplete="email"
                 />
-                {brandingLoading && (
+                {brandingLoading && !companyCode && (
                   <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-zinc-400" />
                 )}
               </div>
@@ -398,7 +555,7 @@ export default function AuthPage() {
             </button>
           </div>
 
-          <p className="mt-auto pt-16 text-[9px] font-black text-zinc-200 dark:text-zinc-900 uppercase tracking-[0.5em]">
+          <p className="mt-auto pt-8 sm:pt-16 text-[9px] font-black text-zinc-200 dark:text-zinc-900 uppercase tracking-[0.5em]">
             POWERED BY LARIS ERP
           </p>
         </div>
